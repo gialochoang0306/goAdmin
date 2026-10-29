@@ -1,0 +1,7 @@
+packages:
+  - .
+allowBuilds:
+  esbuild: true
+  '@firebase/util': true
+  protobufjs: true
+  unrs-resolver: true
