@@ -4,7 +4,7 @@ import react from "@vitejs/plugin-react";
 export default defineConfig({
   plugins: [react()],
   test: {
-    environment: "jsdom",
+    environment: "./vitest.environment.ts",
     setupFiles: ["./src/test/setup.ts"],
     clearMocks: true,
     testTimeout: 20_000,

@@ -34,6 +34,7 @@ import {
 import { useAuth } from "./auth";
 import { errorMessage } from "./lib/api";
 import { Loading } from "./components/common";
+import { ThemeSwitcher } from "./components/ThemeSwitcher";
 
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const Rides = lazy(() =>
@@ -94,11 +95,12 @@ export function Login() {
   }
   return (
     <div className="login-page">
+      <div className="login-theme"><ThemeSwitcher /></div>
       <main className="login-card">
         <div className="brand-mark">
-          <CarOutlined />
+          <img src="/ptitgo-logo.png" alt="PtitGo" width={112} height={112} />
         </div>
-        <div className="login-eyebrow">LÁI HỘ · QUẢN TRỊ</div>
+        <div className="login-eyebrow">PTITGO · QUẢN TRỊ</div>
         <Typography.Title level={1}>Đăng nhập quản trị</Typography.Title>
         <Typography.Paragraph type="secondary">
           Quản lý chuyến đi và vận hành dịch vụ.
@@ -178,7 +180,7 @@ export function Login() {
         </div>
       </main>
       <footer className="login-footer">
-        Lái Hộ · Hệ thống quản lý dịch vụ
+        PtitGo · Hệ thống quản lý dịch vụ
       </footer>
     </div>
   );
@@ -211,10 +213,10 @@ function ProtectedLayout() {
         onClick={() => setOpen(false)}
       >
         <span className="brand-icon">
-          <CarOutlined />
+          <img src="/ptitgo-mark.png" alt="" aria-hidden="true" width={32} height={34} />
         </span>
-        <span>
-          Lái Hộ<small>TRANG QUẢN TRỊ</small>
+        <span className="brand-name">
+          PtitGo<small>TRANG QUẢN TRỊ</small>
         </span>
       </Link>
       <Menu
@@ -231,6 +233,7 @@ function ProtectedLayout() {
   );
   return (
     <Layout className="admin-layout">
+      <a href="#main-content" className="skip-link">Đi đến nội dung chính</a>
       <Layout.Sider className="desktop-sidebar" width={232} theme="light">
         {menu}
       </Layout.Sider>
@@ -258,6 +261,7 @@ function ProtectedLayout() {
             </span>
           </Space>
           <Space className="account-actions">
+            <ThemeSwitcher />
             <span className="account-name">
               <UserOutlined />{" "}
               {auth.profile.fullName || auth.profile.email || "Admin"}
@@ -283,13 +287,13 @@ function ProtectedLayout() {
             </Button>
           </Space>
         </Layout.Header>
-        <Layout.Content className="page-content">
+        <Layout.Content className="page-content" id="main-content" role="main" tabIndex={-1}>
           <Suspense fallback={<Loading />}>
             <Outlet key={location.pathname} />
           </Suspense>
         </Layout.Content>
         <Layout.Footer className="app-footer">
-          Lái Hộ · Quản lý dịch vụ
+          PtitGo · Quản lý dịch vụ
         </Layout.Footer>
       </Layout>
     </Layout>

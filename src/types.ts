@@ -120,6 +120,7 @@ export type DriverDetail = {
   driver: Driver;
   documents: DriverDocument[];
   skills: Skill[];
+  requiredDocumentTypes?: string[];
 };
 export type DocumentQueue = {
   document: DriverDocument;

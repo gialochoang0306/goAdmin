@@ -19,6 +19,7 @@ export function RideTable({
       title: "Mã chuyến",
       dataIndex: "id",
       width: 95,
+      fixed: "left",
       render: (id) => (
         <Link
           to={`/rides/${id}`}
@@ -56,6 +57,7 @@ export function RideTable({
       title: "Giá chuyến",
       key: "fare",
       width: 150,
+      align: "right",
       render: (_, r) => (
         <>
           <div>{money(r.finalFare ?? r.estimatedFare)}</div>
@@ -88,6 +90,7 @@ export function RideTable({
       loading={loading}
       onPage={onPage}
       scroll={970}
+      mobileColumns={[columns[0], columns[1], columns[3], columns[4], columns[5]]}
     />
   );
 }

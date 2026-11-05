@@ -1,3 +1,6 @@
+import { returnPath, returnLabel } from "../lib/navigation";
+import dayjs from "dayjs";
+import { FilterField } from "../components/FilterField";
 import { useEffect, useRef, useState } from "react";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
@@ -6,6 +9,8 @@ import {
   App,
   Button,
   Descriptions,
+  DatePicker,
+  Grid,
   Empty,
   Form,
   Input,
@@ -28,6 +33,7 @@ import {
   label,
   money,
   rideLabels,
+  rideDateRange,
   text,
 } from "../lib/format";
 import { useAction, useFilters } from "../lib/hooks";
@@ -40,19 +46,36 @@ import {
   QueryError,
   Refresh,
   Status,
+  UpdatedAt,
 } from "../components/common";
 import { RideTable } from "../components/RideTable";
 import type { ChatMessage, Driver, MessagePage, RideDetail } from "../types";
+const currentDateVN = () => new Date(Date.now() + 7 * 3600000).toISOString().slice(0, 10);
 
 export function Rides() {
+  const screens = Grid.useBreakpoint();
+  const [today, setToday] = useState(currentDateVN);
+  useEffect(() => {
+    const timer = window.setInterval(() => setToday(currentDateVN()), 60_000);
+    return () => window.clearInterval(timer);
+  }, []);
   const f = useFilters();
   const location = useLocation();
   const navigate = useNavigate();
   const { message } = App.useApp();
   const status = f.read("status");
+  const q = f.read("q").trim();
+  const from = f.read("from");
+  const to = f.read("to");
+  const range = rideDateRange(from, to);
+  const capabilities = useQuery({ queryKey: ["admin", "ride-filter-capabilities"], queryFn: api.rideFilterCapabilities, staleTime: Infinity });
+  const supported = capabilities.data?.search === true && capabilities.data?.createdRange === true;
+  const hasAdvanced = !!(q || from || to);
+  const params = { ...f.params, status, ...(supported && !range.error ? { q, ...range } : {}) };
   const query = useQuery({
-    queryKey: ["admin", "rides", f.page, f.size, status],
-    queryFn: () => api.rides({ ...f.params, status }),
+    queryKey: ["admin", "rides", params],
+    queryFn: () => api.rides(params),
+    enabled: !range.error && (!hasAdvanced || supported),
     refetchInterval: 30_000,
   });
   return (
@@ -67,7 +90,29 @@ export function Rides() {
           />
         }
       />
+      <UpdatedAt value={query.dataUpdatedAt} fetching={query.isFetching} />
       <div className="filters">
+        <FilterField label="Tìm khách hàng / tài xế" search>
+          <Input.Search key={q} defaultValue={q} aria-label="Tìm chuyến theo khách hoặc tài xế" placeholder="Tên hoặc số điện thoại" enterButton="Tìm" maxLength={200} disabled={!supported} onSearch={value => f.update({ q: value.trim() })} />
+        </FilterField>
+        {screens.xs ? <>
+          <FilterField label="Từ ngày tạo · Giờ Việt Nam">
+            <Input type="date" aria-label="Từ ngày tạo chuyến" value={from} disabled={!supported} onChange={event => f.update({ from: event.target.value })} />
+          </FilterField>
+          <FilterField label="Đến ngày tạo · Giờ Việt Nam">
+            <Input type="date" aria-label="Đến ngày tạo chuyến" value={to} min={from || undefined} disabled={!supported} onChange={event => f.update({ to: event.target.value })} />
+          </FilterField>
+        </> : <FilterField label="Ngày tạo chuyến · Giờ Việt Nam">
+          <label className="sr-only" htmlFor="ride-created-from">Từ ngày tạo chuyến</label>
+          <label className="sr-only" htmlFor="ride-created-to">Đến ngày tạo chuyến</label>
+          <DatePicker.RangePicker id={{start:"ride-created-from",end:"ride-created-to"}} format="DD/MM/YYYY" disabled={!supported}
+            allowEmpty={[true,true]}
+            value={!range.error && (from || to) ? [from ? dayjs(from) : null, to ? dayjs(to) : null] : null}
+            presets={[{ label: "Hôm nay", value: [dayjs(today), dayjs(today)] }]}
+            onChange={values => f.update({ from: values?.[0]?.format("YYYY-MM-DD"), to: values?.[1]?.format("YYYY-MM-DD") })}
+          />
+        </FilterField>}
+        <FilterField label="Trạng thái chuyến">
         <Select
           aria-label="Trạng thái chuyến"
           placeholder="Tất cả trạng thái"
@@ -82,9 +127,14 @@ export function Rides() {
           }))}
           onChange={(values) => f.update({ status: values.join(",") })}
         />
+        </FilterField>
         <Button onClick={() => f.update({ status: activeStatuses })}>
           Đang hoạt động
         </Button>
+        <Button onClick={() => f.update({ status: "NO_DRIVER_FOUND" })}>Chưa có tài xế</Button>
+        <Button disabled={!supported} onClick={() => f.update({ from: today, to: today })}>Hôm nay</Button>
+        <Button className="filter-reset" onClick={f.reset}>Xóa bộ lọc</Button>
+        <FilterField label="Mở trực tiếp theo mã" search>
         <Input.Search
           aria-label="Mã chuyến"
           placeholder="Mở chuyến theo mã"
@@ -103,12 +153,17 @@ export function Rides() {
               );
           }}
         />
+        </FilterField>
       </div>
+      {range.error && <Alert className="query-error" type="warning" showIcon title={range.error} />}
+      {!capabilities.isPending && !supported && <Alert className="query-error" type="info" showIcon title="Bộ lọc tên, số điện thoại và ngày chưa sẵn sàng. Bạn vẫn có thể lọc trạng thái hoặc mở theo mã chuyến."
+        description={hasAdvanced ? "Xóa bộ lọc nâng cao để xem danh sách; hệ thống chưa thể áp dụng các điều kiện này." : undefined}
+        action={<Button size="small" onClick={() => void capabilities.refetch()}>Kiểm tra lại</Button>} />}
       <QueryError error={query.error} retry={() => void query.refetch()} />
       <Panel>
         <RideTable
-          data={query.data}
-          loading={query.isPending}
+          data={range.error || (hasAdvanced && !supported) ? undefined : query.data}
+          loading={query.isLoading || (hasAdvanced && capabilities.isPending)}
           onPage={(page, size) => f.update({ page, size }, false)}
         />
       </Panel>
@@ -315,6 +370,7 @@ function AssignDriver({
   const assignment = useAction(
     (driverId: number) => api.assign(ride.id, driverId),
     onClose,
+    driverId => `Đã gán tài xế #${driverId} cho chuyến #${ride.id}.`,
   );
   const selectedRow = candidates.data?.rows.find((row) => row.id === selected);
   const unavailable = (row: Candidate) =>
@@ -524,6 +580,7 @@ export function RideDetailPage() {
   const cancellation = useAction(
     ({ reason }: { reason: string }) => api.cancel(id, reason.trim()),
     () => setCancel(false),
+    `Đã hủy chuyến #${id}.`,
   );
   if (!valid) return <InvalidRecord />;
   if (query.isPending) return <Loading />;
@@ -534,8 +591,8 @@ export function RideDetailPage() {
   const vehicle = customer.data?.vehicles.find((v) => v.id === ride.vehicleId);
   return (
     <>
-      <Link className="back-link" to={location.state?.from || "/rides"}>
-        <ArrowLeftOutlined /> Quay lại danh sách
+      <Link className="back-link" to={returnPath(location.state, "/rides")}>
+        <ArrowLeftOutlined aria-hidden /> {returnLabel(returnPath(location.state, "/rides"))}
       </Link>
       <Heading
         title={`Chuyến đi #${id}`}
@@ -650,7 +707,7 @@ export function RideDetailPage() {
                           key: "customer",
                           label: "Khách hàng",
                           children: (
-                            <Link to={`/customers/${ride.customerId}`}>
+                            <Link to={`/customers/${ride.customerId}`} state={{ from: location.pathname + location.search }}>
                               {customer.data?.fullName ||
                                 `Khách #${ride.customerId}`}
                             </Link>
@@ -665,7 +722,7 @@ export function RideDetailPage() {
                           key: "driver",
                           label: "Tài xế",
                           children: ride.driverId ? (
-                            <Link to={`/drivers/${ride.driverId}`}>
+                            <Link to={`/drivers/${ride.driverId}`} state={{ from: location.pathname + location.search }}>
                               {driver.data?.driver.fullName ||
                                 `Tài xế #${ride.driverId}`}
                             </Link>
@@ -795,6 +852,7 @@ export function RideDetailPage() {
         <QueryError
           error={cancellation.error}
           retry={() => cancellation.reset()}
+          retryLabel="Đóng thông báo"
         />
         <Form
           form={form}

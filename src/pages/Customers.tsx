@@ -1,3 +1,5 @@
+import { FilterField } from "../components/FilterField";
+import { returnPath, returnLabel } from "../lib/navigation";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useLocation, useParams } from "react-router-dom";
@@ -18,7 +20,7 @@ import type { ColumnsType } from "antd/es/table";
 import { ArrowLeftOutlined } from "@ant-design/icons";
 import { api } from "../lib/api";
 import { useAction, useFilters } from "../lib/hooks";
-import { date, label, money, rideLabels, text } from "../lib/format";
+import { date, label, money, percentage, rideLabels, text } from "../lib/format";
 import {
   DataTable,
   Heading,
@@ -54,7 +56,7 @@ export function Customers() {
   const columns: ColumnsType<Customer> = [
     {
       title: "Khách hàng",
-      width: 220,
+      width: 220, fixed: "left",
       render: (_, r) => (
         <>
           <Link
@@ -81,8 +83,8 @@ export function Customers() {
       render: (v) => (v ? <Tag color="gold">Có đánh dấu</Tag> : "Không"),
     },
     { title: "Tổng chuyến", dataIndex: "totalTrips" },
-    { title: "Tỷ lệ hủy 30 ngày", dataIndex: "cancelRate30d", render: text },
-    { title: "Số dư ví", dataIndex: "walletBalance", render: money },
+    { title: "Tỷ lệ hủy 30 ngày", dataIndex: "cancelRate30d", render: percentage },
+    { title: "Số dư ví", dataIndex: "walletBalance", render: money, align: "right" },
     { title: "Ngày tạo", dataIndex: "createdAt", render: date },
   ];
   return (
@@ -98,23 +100,23 @@ export function Customers() {
         }
       />
       <div className="filters">
-        <Input.Search
+        <FilterField label="Tìm khách hàng" search><Input.Search
           key={f.read("q")}
           aria-label="Tìm khách hàng"
           defaultValue={f.read("q")}
           placeholder="Tên, số điện thoại hoặc email"
           enterButton="Tìm"
           onSearch={(q) => f.update({ q: q.trim() })}
-        />
-        <Select
+        /></FilterField>
+        <FilterField label="Trạng thái khách hàng"><Select
           aria-label="Trạng thái khách hàng"
           placeholder="Tất cả trạng thái"
           allowClear
           options={statusOptions}
           value={f.read("status") || undefined}
           onChange={(status) => f.update({ status })}
-        />
-        <Select
+        /></FilterField>
+        <FilterField label="Đánh dấu khách hàng"><Select
           aria-label="Đánh dấu khách hàng"
           placeholder="Đánh dấu"
           allowClear
@@ -124,8 +126,8 @@ export function Customers() {
           ]}
           value={f.read("flagged") || undefined}
           onChange={(flagged) => f.update({ flagged })}
-        />
-        <Select
+        /></FilterField>
+        <FilterField label="Sắp xếp khách hàng"><Select
           aria-label="Sắp xếp khách hàng"
           value={f.read("sort", "createdAt")}
           options={[
@@ -134,7 +136,8 @@ export function Customers() {
             { value: "cancelRate30d", label: "Tỷ lệ hủy cao nhất" },
           ]}
           onChange={(sort) => f.update({ sort })}
-        />
+        /></FilterField>
+        <Button className="filter-reset" onClick={f.reset}>Xóa bộ lọc</Button>
       </div>
       <QueryError error={query.error} retry={() => void query.refetch()} />
       <Panel>
@@ -163,6 +166,7 @@ function CustomerStatus({
     (v: { status: string; reason?: string }) =>
       api.customerStatus(customer.id, v.status, v.reason?.trim()),
     onClose,
+    v => `Đã đổi trạng thái ${customer.fullName || `khách #${customer.id}`} thành ${label(v.status).toLowerCase()}.`,
   );
   return (
     <Modal
@@ -177,7 +181,7 @@ function CustomerStatus({
       confirmLoading={mutation.isPending}
       cancelButtonProps={{ disabled: mutation.isPending }}
     >
-      <QueryError error={mutation.error} retry={() => mutation.reset()} />
+      <QueryError error={mutation.error} retry={() => mutation.reset()} retryLabel="Đóng thông báo" />
       <Form
         form={form}
         layout="vertical"
@@ -231,6 +235,7 @@ function CustomerFlag({
     (v: { flagged: boolean; note?: string }) =>
       api.customerFlag(customer.id, v.flagged, v.note?.trim()),
     onClose,
+    v => `Đã ${v.flagged ? "đánh dấu" : "bỏ đánh dấu"} khách hàng #${customer.id}.`,
   );
   return (
     <Modal
@@ -245,7 +250,7 @@ function CustomerFlag({
       confirmLoading={mutation.isPending}
       cancelButtonProps={{ disabled: mutation.isPending }}
     >
-      <QueryError error={mutation.error} retry={() => mutation.reset()} />
+      <QueryError error={mutation.error} retry={() => mutation.reset()} retryLabel="Đóng thông báo" />
       <Form
         form={form}
         layout="vertical"
@@ -284,7 +289,7 @@ function CustomerRides({ id }: { id: number }) {
   return (
     <>
       <div className="filters">
-        <Select
+        <FilterField label="Trạng thái chuyến của khách"><Select
           aria-label="Trạng thái chuyến của khách"
           placeholder="Tất cả trạng thái"
           allowClear
@@ -294,7 +299,7 @@ function CustomerRides({ id }: { id: number }) {
             label,
           }))}
           onChange={(rideStatus) => f.update({ rideStatus })}
-        />
+        /></FilterField>
         <label>
           Từ ngày{" "}
           <Input
@@ -352,7 +357,7 @@ function CustomerWallet({ id }: { id: number }) {
       dataIndex: "rideId",
       render: (v) => (v ? <Link to={`/rides/${v}`}>#{v}</Link> : "—"),
     },
-    { title: "Số tiền", dataIndex: "amount", render: money },
+    { title: "Số tiền", dataIndex: "amount", render: money, align: "right" },
     { title: "Loại", dataIndex: "type", render: label },
     {
       title: "Trạng thái",
@@ -360,7 +365,7 @@ function CustomerWallet({ id }: { id: number }) {
       render: (v) => <Status value={v} />,
     },
     { title: "Loại ví", dataIndex: "walletType", render: label },
-    { title: "Số dư sau", dataIndex: "balanceAfter", render: money },
+    { title: "Số dư sau", dataIndex: "balanceAfter", render: money, align: "right" },
     { title: "Mô tả", dataIndex: "description", render: text },
     { title: "Thời gian", dataIndex: "createdAt", render: date },
   ];
@@ -449,7 +454,7 @@ function CustomerOverview({ customer }: { customer: CustomerDetail }) {
               {
                 key: "rate",
                 label: "Tỷ lệ hủy 30 ngày",
-                children: text(customer.cancelRate30d),
+                children: percentage(customer.cancelRate30d),
               },
               {
                 key: "rating",
@@ -535,8 +540,8 @@ export function CustomerDetailPage() {
   const customer = query.data;
   return (
     <>
-      <Link className="back-link" to={location.state?.from || "/customers"}>
-        <ArrowLeftOutlined /> Quay lại danh sách
+      <Link className="back-link" to={returnPath(location.state, "/customers")}>
+        <ArrowLeftOutlined aria-hidden /> {returnLabel(returnPath(location.state, "/customers"))}
       </Link>
       <Heading
         title={customer.fullName || `Khách hàng #${id}`}

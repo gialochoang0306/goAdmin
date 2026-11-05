@@ -57,6 +57,7 @@ export const labels: Record<string, string> = {
   PICKUP: "Nhận xe",
   DROPOFF: "Trả xe",
   AUTOMATIC: "Số tự động",
+  AUTO: "Số tự động",
   MANUAL: "Số sàn",
   CASH: "Tiền mặt",
   WALLET: "Ví",
@@ -67,7 +68,10 @@ export const labels: Record<string, string> = {
   RIGHT: "Bên phải",
   DASHBOARD: "Bảng điều khiển",
   CCCD: "Căn cước công dân",
+  CCCD_BACK: "Mặt sau CCCD",
+  SELFIE: "Ảnh chân dung",
   DRIVER_LICENSE: "Giấy phép lái xe",
+  DRIVER_LICENSE_BACK: "Mặt sau giấy phép lái xe",
 };
 export const text = (value: unknown) =>
   value === null || value === undefined || value === "" ? "—" : String(value);
@@ -81,6 +85,22 @@ export const money = (value: number | null | undefined) =>
         currency: "VND",
         maximumFractionDigits: 0,
       }).format(value);
+export const percentage = (value: number | null | undefined) =>
+  value == null || !Number.isFinite(value)
+    ? "Chưa có dữ liệu"
+    : new Intl.NumberFormat("vi-VN", { style: "percent", maximumFractionDigits: 1 }).format(value);
+export function rideDateRange(from: string, to: string): { createdFrom?: string; createdTo?: string; error?: string } {
+  const parse = (value: string) => {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return NaN;
+    const utc = new Date(`${value}T00:00:00.000Z`);
+    return Number.isFinite(utc.getTime()) && utc.toISOString().slice(0, 10) === value ? utc.getTime() - 7 * 3600000 : NaN;
+  };
+  const start = from ? parse(from) : undefined;
+  const end = to ? parse(to) : undefined;
+  if ((start !== undefined && !Number.isFinite(start)) || (end !== undefined && !Number.isFinite(end))) return { error: "Ngày lọc không hợp lệ. Chọn lại khoảng ngày." };
+  if (start !== undefined && end !== undefined && start > end) return { error: "Ngày bắt đầu phải trước hoặc bằng ngày kết thúc." };
+  return { ...(start === undefined ? {} : { createdFrom: new Date(start).toISOString() }), ...(end === undefined ? {} : { createdTo: new Date(end + 86400000).toISOString() }) };
+}
 export function date(value: string | null | undefined) {
   if (!value) return "—";
   if (/^\d{4}-\d{2}-\d{2}$/.test(value))

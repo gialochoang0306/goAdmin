@@ -158,6 +158,7 @@ export const api = {
     request("/api/auth/logout", { method: "POST", body: { installationId } }),
   rides: (params: Params = {}) =>
     request<Page<Ride>>(`${admin}/rides`, { params }),
+  rideFilterCapabilities: () => request<{ search: boolean; createdRange: boolean }>(`${admin}/rides/filter-capabilities`),
   ride: (id: number) => request<RideDetail>(`${admin}/rides/${id}`),
   chat: (id: number, params: Params = {}) =>
     request<MessagePage>(`${admin}/rides/${id}/chat`, {

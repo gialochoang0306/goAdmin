@@ -1,9 +1,9 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
-import { BrowserRouter } from "react-router-dom";
+import { createBrowserRouter, RouterProvider, ScrollRestoration } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { App, ConfigProvider } from "antd";
-import viVN from "antd/locale/vi_VN";
+import { App } from "antd";
+import { ThemeProvider } from "./theme/ThemeProvider";
 import dayjs from "dayjs";
 import "dayjs/locale/vi";
 import { AuthProvider } from "./auth";
@@ -11,6 +11,7 @@ import { AdminApp } from "./App";
 import "./styles.css";
 
 dayjs.locale("vi");
+const router = createBrowserRouter([{ path: "*", element: <><AdminApp /><ScrollRestoration getKey={location => location.pathname + location.search} /></> }]);
 const client = new QueryClient({
   defaultOptions: {
     queries: {
@@ -23,28 +24,14 @@ const client = new QueryClient({
 });
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    <ConfigProvider
-      locale={viVN}
-      theme={{
-        token: {
-          colorPrimary: "#800000",
-          borderRadius: 6,
-          fontSize: 14,
-          colorBgLayout: "#f7f7f8",
-          fontFamily:
-            '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
-        },
-      }}
-    >
+    <ThemeProvider>
       <App>
         <QueryClientProvider client={client}>
           <AuthProvider>
-            <BrowserRouter>
-              <AdminApp />
-            </BrowserRouter>
+            <RouterProvider router={router} />
           </AuthProvider>
         </QueryClientProvider>
       </App>
-    </ConfigProvider>
+    </ThemeProvider>
   </React.StrictMode>,
 );

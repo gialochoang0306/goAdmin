@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { MemoryRouter } from "react-router-dom";
+import { createMemoryRouter, RouterProvider } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { App as AntApp, ConfigProvider } from "antd";
 import viVN from "antd/locale/vi_VN";
@@ -33,6 +33,7 @@ let customer = structuredClone(customerFixture);
 let pricing = structuredClone(pricingFixture);
 let assignmentConflict = false;
 let verificationConflict = false;
+let supportsAdvanced = true;
 const writes: {
   path: string;
   method: string;
@@ -41,6 +42,7 @@ const writes: {
 }[] = [];
 const reads: string[] = [];
 function renderPage(path: string) {
+  const router = createMemoryRouter([{ path: "*", element: <AdminApp /> }], { initialEntries: [path] });
   const client = new QueryClient({
     defaultOptions: {
       queries: { retry: false, staleTime: 0 },
@@ -51,9 +53,7 @@ function renderPage(path: string) {
     <ConfigProvider locale={viVN} theme={{ token: { motion: false } }}>
       <AntApp>
         <QueryClientProvider client={client}>
-          <MemoryRouter initialEntries={[path]}>
-            <AdminApp />
-          </MemoryRouter>
+          <RouterProvider router={router} />
         </QueryClientProvider>
       </AntApp>
     </ConfigProvider>,
@@ -69,6 +69,7 @@ beforeEach(() => {
   reads.length = 0;
   assignmentConflict = false;
   verificationConflict = false;
+  supportsAdvanced = true;
   configureAuth(
     async () => "test-token",
     () => {},
@@ -90,6 +91,7 @@ beforeEach(() => {
           force: url.searchParams.get("force"),
         });
       else reads.push(path + url.search);
+      if (path === "/api/admin/rides/filter-capabilities") return ok({ search: supportsAdvanced, createdRange: supportsAdvanced });
       if (path === "/api/admin/rides")
         return ok(
           page(
@@ -216,6 +218,36 @@ beforeEach(() => {
 });
 
 describe("Admin pages", () => {
+  it("keeps missing price amounts visibly empty rather than formatting them as zero", async () => {
+    const { user } = renderPage("/pricing-rules");
+    await user.click(await screen.findByRole("button", { name: "Tạo bảng giá" }));
+    expect(screen.getByLabelText("Giá cơ bản (VND)")).toHaveValue("");
+    expect(screen.getByLabelText("Giá mỗi km (VND)")).toHaveValue("");
+    expect(screen.getByLabelText("Phí quay về cho tài xế (VND)")).toHaveValue("0");
+  });
+  it("does not silently show unfiltered rides when the server cannot apply advanced filters", async () => {
+    supportsAdvanced = false;
+    renderPage("/rides?q=0912345678");
+    expect(await screen.findByText(/Bộ lọc tên, số điện thoại và ngày chưa sẵn sàng/)).toBeInTheDocument();
+    expect(reads.filter(path => path.startsWith("/api/admin/rides?"))).toHaveLength(0);
+    expect(screen.queryByRole("link", { name: "#11" })).not.toBeInTheDocument();
+  });
+  it("returns from a customer profile to the originating ride and tab", async () => {
+    const { user } = renderPage("/rides/11");
+    await user.click(await screen.findByRole("link", { name: customer.fullName! }));
+    await user.click(await screen.findByRole("link", { name: "Quay lại chuyến đi" }));
+    expect(await screen.findByRole("heading", { name: "Chuyến đi #11" })).toBeInTheDocument();
+  });
+  it("sends advanced ride filters to the server and resets them without changing page size", async () => {
+    const { user } = renderPage("/rides?q=0912345678&from=2026-11-05&to=2026-11-05&page=2&size=50");
+    await waitFor(() => expect(reads.some(value => {
+      const url = new URL(value, "http://localhost");
+      return url.pathname === "/api/admin/rides" && url.searchParams.get("q") === "0912345678" && url.searchParams.get("createdFrom") === "2026-11-04T17:00:00.000Z" && url.searchParams.get("createdTo") === "2026-11-05T17:00:00.000Z";
+    })).toBe(true));
+    await user.click(screen.getByRole("button", { name: "Xóa bộ lọc" }));
+    await waitFor(() => expect(reads.at(-1)).toContain("size=50"));
+    expect(reads.at(-1)).not.toContain("0912345678");
+  });
   it.each([
     ["/dashboard", "Tổng quan vận hành"],
     ["/rides", "Quản lý chuyến đi"],
@@ -321,20 +353,21 @@ describe("Admin pages", () => {
     await user.click(
       await screen.findByRole("button", { name: "Xem và duyệt" }),
     );
-    const dialog = screen.getByRole("dialog");
+    await user.click(await screen.findByRole("button", { name: "Duyệt giấy tờ Căn cước công dân" }));
+    const dialog = await screen.findByRole("form", { name: "Duyệt Căn cước công dân · #51" });
     await user.click(within(dialog).getByRole("combobox"));
     await user.click(
       await screen.findByText("Từ chối", {
         selector: ".ant-select-item-option-content",
       }),
     );
-    await user.click(screen.getByRole("button", { name: "Lưu kết quả" }));
+    await user.click(screen.getByRole("button", { name: "Từ chối giấy tờ" }));
     expect(
       await screen.findByText("Nhập lý do từ chối giấy tờ."),
     ).toBeInTheDocument();
     expect(writes).toHaveLength(0);
     await user.type(screen.getByLabelText("Lý do từ chối"), "Ảnh không rõ");
-    await user.click(screen.getByRole("button", { name: "Lưu kết quả" }));
+    await user.click(screen.getByRole("button", { name: "Từ chối giấy tờ" }));
     await waitFor(() =>
       expect(writes[0]?.body).toEqual({
         status: "REJECTED",
@@ -344,11 +377,13 @@ describe("Admin pages", () => {
   });
   it("shows missing-document errors when approving a driver", async () => {
     verificationConflict = true;
+    driver.driver.verificationStatus = "PENDING";
     const { user } = renderPage("/drivers/41");
     await user.click(
-      await screen.findByRole("button", { name: "Duyệt tài khoản" }),
+      await screen.findByRole("button", { name: "Xem và duyệt hồ sơ" }),
     );
-    await user.click(screen.getByRole("button", { name: "Lưu quyết định" }));
+    const dossier = await screen.findByRole("dialog", { name: /Duyệt hồ sơ tài xế/ });
+    await user.click(within(dossier).getByRole("button", { name: "Duyệt tài khoản" }));
     await waitFor(() =>
       expect(
         screen.getAllByText("Chưa duyệt đủ giấy tờ bắt buộc: DRIVER_LICENSE")
@@ -357,11 +392,14 @@ describe("Admin pages", () => {
     );
     expect(screen.getByRole("dialog")).toBeInTheDocument();
   });
-  it("confirms skill verification and force offline independently", async () => {
+  it("verifies skills in the shared review window and confirms force offline", async () => {
     const { user } = renderPage("/drivers/41?tab=skills");
-    await user.click(await screen.findByRole("button", { name: "Xác minh" }));
-    await user.click(await screen.findByRole("button", { name: "Xác nhận" }));
+    await user.click(await screen.findByRole("button", { name: "Xem và duyệt hồ sơ" }));
+    const dossier = await screen.findByRole("dialog", { name: /Duyệt hồ sơ tài xế/ });
+    await user.click(await within(dossier).findByRole("button", { name: "Xác minh kỹ năng Ô tô · Số tự động · B2" }));
     await waitFor(() => expect(driver.skills[0].verified).toBe(true));
+    await waitFor(() => expect(within(dossier).getByRole("button", { name: "Đóng hồ sơ" })).toBeEnabled());
+    await user.click(within(dossier).getByRole("button", { name: "Đóng hồ sơ" }));
     await user.click(screen.getByRole("button", { name: "Ép offline" }));
     const dialog = await screen.findByRole("dialog");
     await user.click(

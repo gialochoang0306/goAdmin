@@ -1,3 +1,4 @@
+import { FilterField } from "../components/FilterField";
 import { useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import {
@@ -11,6 +12,7 @@ import {
   Modal,
   Select,
   Space,
+  Typography,
 } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import { PlusOutlined } from "@ant-design/icons";
@@ -39,6 +41,7 @@ function PricingForm({
   const mutation = useAction(
     (values: PricingInput) => api.savePricing(values, rule?.id),
     onClose,
+    rule ? `Đã lưu bảng giá #${rule.id}.` : "Đã tạo bảng giá mới.",
   );
   const amountFields = [
     { name: "baseFare", title: "Giá cơ bản" },
@@ -61,7 +64,7 @@ function PricingForm({
       confirmLoading={mutation.isPending}
       cancelButtonProps={{ disabled: mutation.isPending }}
     >
-      <QueryError error={mutation.error} retry={() => mutation.reset()} />
+      <QueryError error={mutation.error} retry={() => mutation.reset()} retryLabel="Đóng thông báo" />
       {validation && (
         <Alert
           className="toolbar-note"
@@ -116,6 +119,7 @@ function PricingForm({
             }))}
           />
         </Form.Item>
+        <Typography.Title level={5}>Giá dịch vụ</Typography.Title>
         <div className="form-grid">
           {amountFields.map((field) => (
             <Form.Item
@@ -142,9 +146,12 @@ function PricingForm({
                 precision={0}
                 step={1000}
                 controls={false}
+                formatter={(value, info) => info.userTyping ? info.input : value == null || String(value).trim() === "" ? "" : new Intl.NumberFormat("vi-VN").format(value)}
+                parser={value => value?.trim() ? Number(value.replace(/\./g, "")) : NaN}
               />
             </Form.Item>
           ))}
+          <div className="form-section-title"><Typography.Title level={5}>Phụ thu theo thời gian</Typography.Title></div>
           <Form.Item
             label="Phụ thu đêm (%)"
             name="nightSurchargePercent"
@@ -193,7 +200,7 @@ export default function PricingPage() {
     queryKey: ["admin", "pricing"],
     queryFn: api.pricing,
   });
-  const activate = useAction((id: number) => api.activate(id));
+  const activate = useAction((id: number) => api.activate(id), undefined, id => `Đã kích hoạt bảng giá #${id}.`);
   const deactivate = useMutation({
     mutationFn: (v: { id: number; force: boolean }) =>
       api.deactivate(v.id, v.force),
@@ -247,11 +254,11 @@ export default function PricingPage() {
       dataIndex: "active",
       render: (value) => <Status value={value ? "ACTIVE" : "INACTIVE"} />,
     },
-    { title: "Giá cơ bản", dataIndex: "baseFare", render: money },
-    { title: "Mỗi km", dataIndex: "perKm", render: money },
-    { title: "Phút chờ", dataIndex: "perMinuteWaiting", render: money },
-    { title: "Tối thiểu", dataIndex: "minFare", render: money },
-    { title: "Phí quay về", dataIndex: "returnFeeForDriver", render: money },
+    { title: "Giá cơ bản", dataIndex: "baseFare", render: money, align: "right" },
+    { title: "Mỗi km", dataIndex: "perKm", render: money, align: "right" },
+    { title: "Phút chờ", dataIndex: "perMinuteWaiting", render: money, align: "right" },
+    { title: "Tối thiểu", dataIndex: "minFare", render: money, align: "right" },
+    { title: "Phí quay về", dataIndex: "returnFeeForDriver", render: money, align: "right" },
     {
       title: "Phụ thu đêm",
       render: (_, rule) => (
@@ -269,6 +276,7 @@ export default function PricingPage() {
     {
       title: "Thao tác",
       width: 190,
+      fixed: "right",
       render: (_, rule) => (
         <Space>
           <Button size="small" disabled={busy} onClick={() => setEditing(rule)}>
@@ -327,7 +335,7 @@ export default function PricingPage() {
         }
       />
       <div className="filters">
-        <Select
+        <FilterField label="Loại xe bảng giá"><Select
           aria-label="Loại xe bảng giá"
           placeholder="Tất cả loại xe"
           allowClear
@@ -337,8 +345,8 @@ export default function PricingPage() {
             value,
             label: label(value),
           }))}
-        />
-        <Select
+        /></FilterField>
+        <FilterField label="Trạng thái bảng giá"><Select
           aria-label="Trạng thái bảng giá"
           placeholder="Tất cả trạng thái"
           allowClear
@@ -348,7 +356,8 @@ export default function PricingPage() {
             { value: "true", label: "Đang hoạt động" },
             { value: "false", label: "Không hoạt động" },
           ]}
-        />
+        /></FilterField>
+        <Button className="filter-reset" onClick={f.reset}>Xóa bộ lọc</Button>
       </div>
       <QueryError error={query.error} retry={() => void query.refetch()} />
       <Panel>
@@ -364,6 +373,7 @@ export default function PricingPage() {
           }}
           loading={query.isPending}
           scroll={1450}
+          mobileColumns={[columns[0], columns[1], columns[2], columns[3], columns[5], columns[columns.length - 1]]}
         />
       </Panel>
       {editing && (
@@ -396,7 +406,7 @@ export default function PricingPage() {
           showIcon
           title={`Loại xe ${label(force?.vehicleType)} có thể không còn bảng giá để tạo chuyến mới. Chỉ tiếp tục nếu bạn chấp nhận việc ngừng áp dụng giá.`}
         />
-        <QueryError error={deactivate.error} retry={() => deactivate.reset()} />
+        <QueryError error={deactivate.error} retry={() => deactivate.reset()} retryLabel="Đóng thông báo" />
       </Modal>
     </>
   );

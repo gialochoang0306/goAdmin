@@ -22,20 +22,27 @@ export function useFilters() {
       return next;
     });
   };
-  return { read, page, size, update, params: { page, size } };
+  const reset = () => setSearch(previous => {
+    const next = new URLSearchParams();
+    if (previous.has("size")) next.set("size", String(size));
+    if (previous.has("tab")) next.set("tab", previous.get("tab")!);
+    return next;
+  });
+  return { read, page, size, update, reset, params: { page, size } };
 }
 export function useAction<T>(
   action: (values: T) => Promise<unknown>,
-  onSuccess?: () => void,
+  onSuccess?: (values: T) => void,
+  successMessage?: string | ((values: T) => string),
 ) {
   const client = useQueryClient();
   const { message } = App.useApp();
   return useMutation({
     mutationFn: action,
-    onSuccess: async () => {
+    onSuccess: async (_data, values) => {
       await client.invalidateQueries({ queryKey: ["admin"] });
-      void message.success("Đã cập nhật thành công.");
-      onSuccess?.();
+      void message.success(typeof successMessage === "function" ? successMessage(values) : successMessage ?? "Đã cập nhật thành công.");
+      onSuccess?.(values);
     },
     onError: (error) => {
       void message.error(errorMessage(error));

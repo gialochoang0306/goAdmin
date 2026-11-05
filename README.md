@@ -54,11 +54,15 @@ Phiên Firebase chỉ giữ trong tab hiện tại. Đăng nhập gọi `/api/au
 - Tổng quan: số đếm vận hành từ `totalElements`, các danh sách đã lọc.
 - Chuyến đi: danh sách/chi tiết, lịch sử trạng thái, biên bản bàn giao, chat chỉ đọc, gán tài xế và hủy chuyến.
 - Tài xế: tìm kiếm/lọc, hồ sơ, duyệt giấy tờ, xác minh kỹ năng, duyệt tài khoản và ép offline.
+- Hàng chờ duyệt gom theo mã tài xế: mỗi tài xế một dòng, tổng kết quả và phân trang tính theo hồ sơ. Cửa sổ “Xem và duyệt” có toàn bộ giấy tờ hiện hành, xác minh kỹ năng và quyết định tài khoản. Biểu mẫu từng giấy tờ mở ngay trong cửa sổ; quyết định tài khoản luôn nằm ở phần dưới cố định. Các nút duyệt trên trang chi tiết tài xế cũng mở cùng cửa sổ này.
+- Duyệt giấy tờ không tự động duyệt tài khoản. Hồ sơ có giấy tờ đã nộp và tài khoản còn `PENDING` vẫn xuất hiện trong hàng chờ, kể cả khi đã xét duyệt hết giấy tờ. Backend quyết định giấy tờ nào bắt buộc; nếu chưa đủ, lỗi hiển thị ngay cạnh quyết định tài khoản. Khi đang lưu, cửa sổ khóa các thao tác ghi khác và nút đóng để tránh gửi trùng.
 - Khách hàng: hồ sơ, trạng thái, đánh dấu, lịch sử chuyến và giao dịch ví.
 - Bảng giá: tạo/sửa, kích hoạt, tắt và xác nhận riêng khi tắt cưỡng chế bảng giá cuối cùng.
 - Kết nối 23 endpoint `/api/admin`, API tìm tài xế gần vị trí và các API xác thực.
 
 Bộ lọc, phân trang và tab được lưu trên URL. Dashboard/chuyến cập nhật mỗi 30 giây, chat mỗi 10 giây khi mở; dừng polling khi tab ẩn. Tiền hiển thị VND, thời gian có múi giờ hiển thị theo Việt Nam. Giấy tờ chỉ xuất hiện trong hàng chờ khi đã được gửi thật lên backend.
+
+API hàng chờ hiện phân trang theo giấy tờ. Frontend đọc hết các trang khớp bộ lọc (tối đa 100 giấy tờ mỗi lần), rồi gom và phân trang theo tài xế để một hồ sơ không bị tách qua nhiều trang. Bộ lọc `PENDING` bổ sung các tài khoản chờ duyệt đã nộp giấy tờ; tối đa bốn yêu cầu đọc chi tiết đồng thời. Khi hàng chờ lớn, nên bổ sung API hồ sơ duyệt theo tài xế tại backend để giảm số lần tải. Số “Giấy tờ chờ duyệt” ở tổng quan vẫn đếm giấy tờ.
 
 Chưa bao gồm báo cáo doanh thu, bản đồ, quản lý voucher, quản lý tài khoản quản trị hoặc hosting.
 
@@ -75,3 +79,12 @@ pnpm preview
 Bộ kiểm thử tự động kiểm tra đăng nhập, lớp API và các luồng quản trị bằng dữ liệu giả tại ranh giới Firebase/backend. Ứng dụng bình thường chỉ gọi API thật. Kiểm thử nghiệp vụ thực tế cần backend, dữ liệu và tài khoản phù hợp.
 
 Bản build nằm trong `dist/`. Khi triển khai hosting, dùng HTTPS, cấu hình CORS đúng origin và phục vụ `index.html` cho các đường dẫn SPA như `/rides/123`. `pnpm preview` dùng để xem bản build local.
+
+
+## UI/UX và giao diện sáng/tối
+
+Ứng dụng hỗ trợ Sáng / Tối / Theo hệ thống tại thanh tài khoản và trang đăng nhập. Tùy chọn được lưu trên trình duyệt.
+
+Tìm chuyến theo tên/SĐT và ngày tạo cần backend có endpoint GET /api/admin/rides/filter-capabilities. Checklist duyệt dùng required_document_types từ chi tiết tài xế; backend vẫn kiểm tra điều kiện khi xác nhận.
+
+Kế hoạch, hợp đồng và kết quả kiểm chứng: [tasks/plan.md](tasks/plan.md), [tasks/todo.md](tasks/todo.md), [tasks/implementation.md](tasks/implementation.md).

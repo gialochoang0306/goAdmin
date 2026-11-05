@@ -10,11 +10,11 @@ import {
 } from "@ant-design/icons";
 import { api } from "../lib/api";
 import { activeStatuses, date, label } from "../lib/format";
-import { Heading, Panel, QueryError, Refresh } from "../components/common";
+import { Heading, Panel, QueryError, Refresh, UpdatedAt, Loading } from "../components/common";
 import { RideTable } from "../components/RideTable";
 
 export default function Dashboard() {
-  const [active, noDriver, documents, flagged, recent] = useQueries({
+  const [active, noDriver, documents, flagged, recent, pendingAccounts] = useQueries({
     queries: [
       {
         queryKey: ["admin", "dashboard", "active"],
@@ -39,6 +39,11 @@ export default function Dashboard() {
       {
         queryKey: ["admin", "dashboard", "recent"],
         queryFn: () => api.rides({ size: 5 }),
+        refetchInterval: 30_000,
+      },
+      {
+        queryKey: ["admin", "dashboard", "pending-accounts"],
+        queryFn: () => api.drivers({ verification_status: "PENDING", size: 1 }),
         refetchInterval: 30_000,
       },
     ],
@@ -69,7 +74,8 @@ export default function Dashboard() {
       icon: <FlagOutlined />,
     },
   ];
-  const all = [active, noDriver, documents, flagged, recent];
+  const all = [active, noDriver, documents, flagged, recent, pendingAccounts];
+  const updatedAt = Math.min(...all.map(query => query.dataUpdatedAt));
   return (
     <>
       <Heading
@@ -82,6 +88,7 @@ export default function Dashboard() {
           />
         }
       />
+      <UpdatedAt value={updatedAt} fetching={all.some(query => query.isFetching)} />
       <div className="stat-grid">
         {stats.map(({ title, query, href, icon }) => (
           <Link key={title} to={href}>
@@ -133,14 +140,22 @@ export default function Dashboard() {
           </Link>
         }
       >
+        <Typography.Paragraph type="secondary" className="queue-summary">
+          {documents.data && !documents.isError ? `${documents.data.totalElements} giấy tờ chờ duyệt` : "Chưa tải được số giấy tờ"}
+          {" · "}<Link to="/drivers?verification_status=PENDING">
+            {pendingAccounts.data && !pendingAccounts.isError ? `${pendingAccounts.data.totalElements} tài khoản tài xế chờ quyết định` : "Xem tài khoản chờ quyết định"}
+          </Link>
+        </Typography.Paragraph>
+        <QueryError error={pendingAccounts.error} retry={() => void pendingAccounts.refetch()} />
         <QueryError
           error={documents.error}
           retry={() => void documents.refetch()}
         />
+        {documents.isPending && <Loading />}
         {documents.data?.content.map((row) => (
           <div className="queue-row" key={row.document.id}>
             <div>
-              <Link to={`/drivers/${row.document.driverId}`}>
+              <Link to={`/drivers/${row.document.driverId}`} state={{ from: "/dashboard" }}>
                 {row.driverName || `Tài xế #${row.document.driverId}`}
               </Link>
               <Typography.Text type="secondary">
@@ -148,7 +163,7 @@ export default function Dashboard() {
                 {date(row.document.createdAt)}
               </Typography.Text>
             </div>
-            <Link to="/driver-documents">
+            <Link to={`/driver-documents?status=PENDING&driverId=${row.document.driverId}`}>
               <Button size="small">Xem hồ sơ</Button>
             </Link>
           </div>
