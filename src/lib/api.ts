@@ -14,6 +14,9 @@ import type {
   Pricing,
   PricingInput,
   Profile,
+  SupportTicket,
+  SupportTicketStatus,
+  SupportTicketUpdate,
 } from "../types";
 
 export class ApiError extends Error {
@@ -156,6 +159,12 @@ export const api = {
   me: () => request<Profile>("/api/auth/me"),
   logout: (installationId: string) =>
     request("/api/auth/logout", { method: "POST", body: { installationId } }),
+  supportTickets: (page: number, status?: SupportTicketStatus) =>
+    request<SupportTicket[]>(`${admin}/support/tickets`, { params: { page, status } }),
+  supportTicket: (id: number) =>
+    request<SupportTicket>(`${admin}/support/tickets/${id}`),
+  updateSupportTicket: (id: number, body: SupportTicketUpdate) =>
+    request<SupportTicket>(`${admin}/support/tickets/${id}`, { method: "PATCH", body }),
   rides: (params: Params = {}) =>
     request<Page<Ride>>(`${admin}/rides`, { params }),
   rideFilterCapabilities: () => request<{ search: boolean; createdRange: boolean }>(`${admin}/rides/filter-capabilities`),

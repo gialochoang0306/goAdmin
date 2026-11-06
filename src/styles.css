@@ -367,6 +367,20 @@ input {
   display: inline-block;
   font-size: 13px;
 }
+.support-list-controls {
+  display: flex;
+  margin-bottom: 16px;
+}
+.support-pagination {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 16px;
+}
+.support-description {
+  margin-top: 16px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
 .ant-descriptions-item-label {
   color: var(--muted) !important;
 }

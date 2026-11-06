@@ -6,6 +6,7 @@ export function returnPath(state: unknown, fallback: string) {
 
 export function returnLabel(path: string) {
   if (/^\/rides\/\d+/.test(path)) return "Quay lại chuyến đi";
+  if (/^\/support\/\d+/.test(path)) return "Quay lại yêu cầu hỗ trợ";
   if (path.startsWith("/dashboard")) return "Quay lại tổng quan";
   if (path.startsWith("/driver-documents")) return "Quay lại hàng chờ";
   return "Quay lại danh sách";

@@ -22,6 +22,7 @@ import {
 } from "antd";
 import {
   CarOutlined,
+  CustomerServiceOutlined,
   DashboardOutlined,
   FileProtectOutlined,
   LogoutOutlined,
@@ -59,6 +60,12 @@ const CustomerDetail = lazy(() =>
   import("./pages/Customers").then((m) => ({ default: m.CustomerDetailPage })),
 );
 const Pricing = lazy(() => import("./pages/Pricing"));
+const Support = lazy(() =>
+  import("./pages/Support").then((m) => ({ default: m.Support })),
+);
+const SupportDetail = lazy(() =>
+  import("./pages/Support").then((m) => ({ default: m.SupportDetail })),
+);
 const navigation = [
   { key: "/dashboard", label: "Tổng quan", icon: <DashboardOutlined /> },
   { key: "/rides", label: "Chuyến đi", icon: <CarOutlined /> },
@@ -69,6 +76,7 @@ const navigation = [
     icon: <FileProtectOutlined />,
   },
   { key: "/customers", label: "Khách hàng", icon: <TeamOutlined /> },
+  { key: "/support", label: "Hỗ trợ", icon: <CustomerServiceOutlined /> },
   { key: "/pricing-rules", label: "Bảng giá", icon: <WalletOutlined /> },
 ];
 export function Login() {
@@ -313,6 +321,8 @@ export function AdminApp() {
         <Route path="driver-documents" element={<Documents />} />
         <Route path="customers" element={<Customers />} />
         <Route path="customers/:id" element={<CustomerDetail />} />
+        <Route path="support" element={<Support />} />
+        <Route path="support/:id" element={<SupportDetail />} />
         <Route path="pricing-rules" element={<Pricing />} />
         <Route
           path="*"
