@@ -1,0 +1,198 @@
+/* 2. Surfaces: separation uses tone, never cast shadows. */
+:root body, :root .ant-app, :root .ant-layout { background: var(--md-sys-color-surface); color: var(--md-sys-color-on-surface); }
+:root :is(.ant-card, .login-card, .filters, .document-card) {
+  border: 0;
+  border-radius: var(--md-sys-shape-corner-md);
+  background: var(--md-sys-color-surface-variant);
+}
+:root :is(.ant-modal-container, .ant-modal-content, .ant-modal-header, .ant-popover-container, .ant-popover-inner, .ant-select-dropdown, .ant-dropdown-menu, .ant-picker-dropdown .ant-picker-panel-container) {
+  background: var(--md-sys-color-surface-variant);
+  color: var(--md-sys-color-on-surface);
+  border-radius: var(--md-sys-shape-corner-lg);
+}
+:root :is(.ant-modal-container, .ant-modal-content) { border-radius: var(--md-sys-shape-corner-xl); padding: 24px; }
+:root .ant-modal-header { border-radius: 0; }
+:root :is(.ant-drawer-container, .ant-drawer-content, .ant-drawer-header, .desktop-sidebar, .topbar) {
+  background: var(--md-sys-color-surface-container-low) !important;
+}
+:root :is(.desktop-sidebar, .topbar, .ant-card-head, .ant-drawer-header) { border-color: var(--md-sys-color-transparent); }
+:root .topbar { min-height: 80px; height: 80px !important; }
+:root .ant-card-head { padding: 0 24px; }
+:root .ant-card-body { padding: 24px; }
+:root .ant-card-head-title { font-size: 16px; font-weight: 500; }
+:root .ant-menu-item { height: 56px !important; line-height: 56px !important; border-radius: var(--md-sys-shape-corner-full); }
+:root .ant-menu-light .ant-menu-item-selected { background: var(--md-sys-color-secondary-container) !important; color: var(--md-sys-color-on-secondary-container) !important; font-weight: 500; }
+:root .ant-menu-item::after { border: 0; }
+:root :is([class^="ant-"], [class*=" ant-"], .login-card, .stat-card) { box-shadow: none !important; }
+:root .brand-name { color: var(--md-sys-color-primary); }
+:root .brand-icon { border: 0; border-radius: var(--md-sys-shape-corner-md); }
+:root .stat-icon { border-radius: var(--md-sys-shape-corner-full); color: var(--md-sys-color-on-primary-container); }
+:root :is(.ticket-chat, .chat-list) { background: var(--app-color-chat-surface); }
+:root :is(.ticket-bubble, .chat-message) { background: var(--app-color-chat-user-container); color: var(--md-sys-color-on-surface); border: 0; }
+:root .ant-table { background: var(--md-sys-color-surface-container-low); border-radius: var(--md-sys-shape-corner-md); }
+:root .ant-table-thead > tr > th { background: var(--md-sys-color-surface-container-highest) !important; color: var(--md-sys-color-on-surface-variant) !important; font-weight: 500 !important; }
+:root .ant-table-tbody > tr > td { border-color: var(--md-sys-color-outline-variant); padding-block: 16px; }
+:root .ant-table-cell-fix-left, :root .ant-table-cell-fix-right { background: var(--md-sys-color-surface-container-low) !important; }
+
+/* 3. Core components. */
+:root .ant-btn {
+  --md-local-container: var(--md-sys-color-transparent);
+  --md-local-content: var(--md-sys-color-primary);
+  --md-local-state: 0%;
+  position: relative;
+  min-height: var(--md-sys-size-button-height);
+  height: var(--md-sys-size-button-height);
+  padding-inline: 24px;
+  border-radius: var(--md-sys-shape-corner-full);
+  font-size: 14px;
+  font-weight: var(--md-sys-typescale-label-weight);
+  color: var(--md-local-content) !important;
+  background: var(--md-local-container) !important;
+  border: 1px solid var(--md-sys-color-outline);
+  transition: opacity var(--md-sys-motion-duration-short) var(--md-sys-motion-easing-standard);
+}
+:root .ant-btn-primary {
+  --md-local-container: var(--md-sys-color-primary);
+  --md-local-content: var(--md-sys-color-on-primary);
+  border-color: var(--md-sys-color-transparent) !important;
+}
+:root :is(.ant-btn-text, .ant-btn-link) { border-color: var(--md-sys-color-transparent) !important; }
+:root .ant-btn-dangerous { --md-local-content: var(--md-sys-color-error); border-color: var(--md-sys-color-error); }
+:root .ant-btn-primary.ant-btn-dangerous { --md-local-container: var(--md-sys-color-error); --md-local-content: var(--md-sys-color-on-error); }
+:root .ant-btn-icon-only { width: 40px; min-width: 40px; padding-inline: 0; }
+:root .ant-btn:disabled, :root .ant-btn-disabled {
+  --md-local-state: 0%;
+  --md-local-content: color-mix(in srgb, var(--md-sys-color-on-surface) var(--md-sys-state-disabled-opacity), transparent);
+  border-color: color-mix(in srgb, var(--md-sys-color-on-surface) var(--md-sys-state-disabled-container-opacity), transparent);
+}
+:root .ant-btn-primary:disabled { --md-local-container: color-mix(in srgb, var(--md-sys-color-on-surface) var(--md-sys-state-disabled-container-opacity), transparent); }
+:root :is(.ant-input, .ant-input-affix-wrapper, .ant-input-number, .ant-select, .ant-picker) {
+  --md-local-state: 0%;
+  min-height: var(--md-sys-size-field-height);
+  border: 0;
+  border-bottom: 1px solid var(--md-sys-color-outline);
+  border-radius: var(--md-sys-shape-corner-xs) var(--md-sys-shape-corner-xs) 0 0;
+  background-color: var(--md-sys-color-surface-container-highest) !important;
+  background-image: linear-gradient(color-mix(in srgb, var(--md-sys-color-on-surface) var(--md-local-state), transparent), color-mix(in srgb, var(--md-sys-color-on-surface) var(--md-local-state), transparent)) !important;
+  color: var(--md-sys-color-on-surface);
+  font-size: 16px;
+  padding-inline: 16px;
+}
+:root :is(.ant-input-affix-wrapper, .ant-input-number, .ant-select, .ant-picker) :is(input, .ant-input, .ant-select-selector, .ant-select-content) {
+  min-height: 0;
+  height: auto;
+  border: 0;
+  background: var(--md-sys-color-transparent) !important;
+  border-radius: 0;
+  color: inherit;
+}
+:root .ant-input-affix-wrapper > .ant-input { padding: 0; }
+:root .ant-input-number { padding-inline: 0; }
+:root .ant-input-number-input { height: 54px !important; padding-inline: 16px; }
+:root .ant-picker { display: inline-flex; }
+:root .ant-picker input { font-size: 16px; }
+:root .ant-select-selector { min-height: 54px !important; padding-inline: 0 !important; }
+:root .ant-select-content { align-self: center; }
+:root .ant-select-selection-placeholder, :root input::placeholder, :root textarea::placeholder { color: var(--md-sys-color-on-surface-variant); }
+:root textarea.ant-input { min-height: 112px; padding-block: 16px; resize: vertical; }
+:root .ant-input-search .ant-input-group-addon .ant-btn { height: 56px; border-radius: 0 var(--md-sys-shape-corner-xs) var(--md-sys-shape-corner-xs) 0 !important; }
+:root .ant-input-search .ant-input-affix-wrapper, :root .ant-input-search > .ant-input-wrapper > .ant-input { border-radius: var(--md-sys-shape-corner-xs) 0 0 0; }
+
+/* Existing labels float inside the field; htmlFor, ids and accessible names are preserved. */
+:root .ant-form-item:has(.ant-input, .ant-select, .ant-picker, .ant-input-number):not(:has(.ant-form-item)) > .ant-row { position: relative; }
+:root .ant-form-item:has(.ant-input, .ant-select, .ant-picker, .ant-input-number):not(:has(.ant-form-item)) > .ant-row > .ant-form-item-label {
+  position: absolute; inset-block-start: 6px; inset-inline-start: 16px;
+  z-index: 1; max-width: calc(100% - 48px); padding: 0; line-height: 16px;
+}
+:root .ant-form-item-label > label { color: var(--md-sys-color-on-surface-variant); font-size: 12px; height: auto; line-height: 16px; }
+:root .ant-form-item:has(> .ant-row > .ant-form-item-label) :is(input.ant-input, .ant-input-affix-wrapper, .ant-select, .ant-picker) { padding-top: 22px; padding-bottom: 6px; }
+:root .ant-form-item:has(> .ant-row > .ant-form-item-label) .ant-input-affix-wrapper > input { padding: 0; }
+:root .ant-form-item:has(> .ant-row > .ant-form-item-label) .ant-input-number-input { padding-top: 22px; padding-bottom: 6px; }
+:root .ant-form-item:has(> .ant-row > .ant-form-item-label) textarea.ant-input { padding-top: 28px; }
+:root .ant-form-item:has(> .ant-row > .ant-form-item-label) .ant-select-selector { min-height: 26px !important; }
+:root .filter-field { position: relative; gap: 0; }
+:root .filter-field > span:first-child { position: absolute; z-index: 1; top: 6px; left: 16px; max-width: calc(100% - 48px); pointer-events: none; font-size: 12px; font-weight: 400; line-height: 16px; }
+:root .filter-field :is(.ant-select, .ant-picker, .ant-input-affix-wrapper, .ant-input-search > .ant-input-wrapper > .ant-input) { padding-top: 22px; padding-bottom: 6px; }
+:root .filter-field .ant-select-selector { min-height: 26px !important; }
+:root :is(.ant-input, .ant-input-affix-wrapper, .ant-select, .ant-picker, .ant-input-number):focus-within { border-bottom: 2px solid var(--md-sys-color-primary); }
+:root :is(.ant-input-status-error, .ant-input-affix-wrapper-status-error, .ant-select-status-error, .ant-input-number-status-error) { border-bottom: 2px solid var(--md-sys-color-error) !important; }
+:root .ant-form-item-explain-error, :root .ant-typography-danger { color: var(--md-sys-color-error); }
+:root :is(.ant-input-disabled, .ant-input-affix-wrapper-disabled, .ant-select-disabled, .ant-input-number-disabled) { opacity: .6; cursor: not-allowed; }
+:root :is(.ant-checkbox-inner, .ant-radio-inner) { border-color: var(--md-sys-color-outline); }
+:root .ant-checkbox-checked .ant-checkbox-inner, :root .ant-radio-checked .ant-radio-inner { background: var(--md-sys-color-primary); border-color: var(--md-sys-color-primary); }
+:root .ant-tabs-ink-bar, :root .ant-switch-checked { background: var(--md-sys-color-primary); }
+:root .ant-tabs-tab-active .ant-tabs-tab-btn { color: var(--md-sys-color-primary); text-shadow: none; }
+:root .ant-pagination-item { border-radius: var(--md-sys-shape-corner-full); }
+:root .ant-pagination-item-active { background: var(--md-sys-color-secondary-container); border-color: var(--md-sys-color-transparent); }
+:root .ant-pagination-item-active a { color: var(--md-sys-color-on-secondary-container); }
+:root .ant-tag { border: 0; border-radius: var(--md-sys-shape-corner-sm); padding: 4px 10px; background: var(--md-sys-color-surface-container-highest); color: var(--md-sys-color-on-surface-variant); }
+:root :is(.ant-tag-green, .ant-tag-success) { background: var(--md-sys-color-success-container); color: var(--md-sys-color-on-success-container); }
+:root :is(.ant-tag-red, .ant-tag-error) { background: var(--md-sys-color-error-container); color: var(--md-sys-color-on-error-container); }
+:root :is(.ant-tag-gold, .ant-tag-orange, .ant-tag-warning) { background: var(--md-sys-color-warning-container); color: var(--md-sys-color-on-warning-container); }
+:root :is(.ant-tag-blue, .ant-tag-processing) { background: var(--md-sys-color-info-container); color: var(--md-sys-color-on-info-container); }
+:root .ant-alert { border: 0; border-radius: var(--md-sys-shape-corner-md); }
+:root .ant-alert-error { background: var(--md-sys-color-error-container); color: var(--md-sys-color-on-error-container); }
+:root .ant-alert-warning { background: var(--md-sys-color-warning-container); color: var(--md-sys-color-on-warning-container); }
+:root .ant-alert-info { background: var(--md-sys-color-info-container); color: var(--md-sys-color-on-info-container); }
+:root .ant-alert-success { background: var(--md-sys-color-success-container); color: var(--md-sys-color-on-success-container); }
+:root .ant-alert :is(.ant-alert-title, .ant-alert-message, .ant-alert-description) { color: inherit; }
+
+/* 4. State layers: overlay content color; never darken the base palette. */
+:root .ant-btn::after {
+  content: ""; position: absolute; inset: -1px; border-radius: inherit; pointer-events: none;
+  background: color-mix(in srgb, var(--md-local-content) var(--md-local-state), transparent);
+  transition: background-color var(--md-sys-motion-duration-short) var(--md-sys-motion-easing-standard);
+}
+@media (hover: hover) {
+  :root .ant-btn:not(:disabled):not(.ant-btn-disabled):hover,
+  :root :is(.ant-input:not(:disabled), .ant-input-affix-wrapper:not(.ant-input-affix-wrapper-disabled), .ant-select:not(.ant-select-disabled), .ant-picker:not(.ant-picker-disabled), .ant-input-number:not(.ant-input-number-disabled)):hover { --md-local-state: var(--md-sys-state-hover-opacity); }
+}
+:root .ant-btn:not(:disabled):not(.ant-btn-disabled):focus-visible,
+:root :is(.ant-input, .ant-input-affix-wrapper, .ant-select, .ant-picker, .ant-input-number):focus-within { --md-local-state: var(--md-sys-state-focus-opacity); }
+:root .ant-btn:not(:disabled):not(.ant-btn-disabled):active { --md-local-state: var(--md-sys-state-pressed-opacity); }
+:root :is(.ant-menu-item, .ant-select-item-option, .ant-dropdown-menu-item, .ant-pagination-item, .ant-table-row, .stat-card) { --md-local-state: 0%; --md-local-content: var(--md-sys-color-on-surface); }
+:root :is(.ant-menu-item, .ant-select-item-option, .ant-dropdown-menu-item, .ant-pagination-item, .stat-card) {
+  background-image: linear-gradient(color-mix(in srgb, var(--md-local-content) var(--md-local-state), transparent), color-mix(in srgb, var(--md-local-content) var(--md-local-state), transparent)) !important;
+}
+:root .ant-table-tbody > tr > td { background-image: linear-gradient(color-mix(in srgb, var(--md-sys-color-on-surface) var(--md-local-state), transparent), color-mix(in srgb, var(--md-sys-color-on-surface) var(--md-local-state), transparent)); }
+@media (hover: hover) {
+  :root :is(.ant-menu-item, .ant-select-item-option, .ant-dropdown-menu-item, .ant-pagination-item, .ant-table-row, .stat-card):hover { --md-local-state: var(--md-sys-state-hover-opacity); }
+}
+:root :is(.ant-menu-item, .ant-select-item-option, .ant-dropdown-menu-item, .ant-pagination-item, .ant-table-row, .stat-card):focus-visible { --md-local-state: var(--md-sys-state-focus-opacity); }
+:root :is(.ant-menu-item, .ant-select-item-option, .ant-dropdown-menu-item, .ant-pagination-item, .ant-table-row, .stat-card):active { --md-local-state: var(--md-sys-state-pressed-opacity); }
+:root .ant-select-item-option-selected { background-color: var(--md-sys-color-secondary-container) !important; color: var(--md-sys-color-on-secondary-container) !important; }
+:root .ant-select-item-option-active:not(.ant-select-item-option-selected), :root .ant-menu-item:not(.ant-menu-item-selected):hover { background-color: var(--md-sys-color-transparent) !important; }
+:root .ant-table-tbody > tr.ant-table-row:hover > td { background-color: var(--md-sys-color-transparent); }
+:root :is(a, button, input, textarea, [tabindex]):focus-visible { outline: 2px solid var(--md-sys-color-primary); outline-offset: 3px; }
+:root :is(.ant-input-affix-wrapper, .ant-input-number, .ant-picker, .ant-select):focus-within { outline: 2px solid var(--md-sys-color-primary); outline-offset: 3px; }
+:root :is(.ant-input-affix-wrapper, .ant-input-number, .ant-picker, .ant-select) input:focus-visible { outline: none; }
+@media (max-width: 600px) {
+  :root .ant-card-body { padding: 16px; }
+  :root .ant-card-head { padding-inline: 16px; }
+  :root .login-card { padding: 24px; }
+  :root .ant-modal-container, :root .ant-modal-content { padding: 20px; }
+}
+@media (prefers-reduced-motion: reduce) { :root * { transition: none !important; } }
+
+/* Ant Design 6 compact search markup and preset tags need explicit semantic roles. */
+:root input.ant-input, :root .ant-input-affix-wrapper, :root .ant-input-number,
+:root .ant-select-single, :root .ant-picker { height: var(--md-sys-size-field-height); }
+:root .ant-input-affix-wrapper > input.ant-input { height: auto !important; }
+:root .filter-field > span:first-child { z-index: 3; }
+:root .filter-field .ant-input-search > input.ant-input,
+:root .filter-field .ant-input-search > .ant-input-affix-wrapper { padding-top: 22px; padding-bottom: 6px; }
+:root .ant-input-search.ant-space-compact > .ant-btn { height: 56px; border-radius: 0 var(--md-sys-shape-corner-xs) var(--md-sys-shape-corner-xs) 0; }
+:root .ant-tag:is(.ant-tag-green, .ant-tag-success) { background: var(--md-sys-color-success-container) !important; color: var(--md-sys-color-on-success-container) !important; }
+:root .ant-tag:is(.ant-tag-red, .ant-tag-error) { background: var(--md-sys-color-error-container) !important; color: var(--md-sys-color-on-error-container) !important; }
+:root .ant-tag:is(.ant-tag-gold, .ant-tag-orange, .ant-tag-warning) { background: var(--md-sys-color-warning-container) !important; color: var(--md-sys-color-on-warning-container) !important; }
+:root .ant-tag:is(.ant-tag-blue, .ant-tag-processing) { background: var(--md-sys-color-info-container) !important; color: var(--md-sys-color-on-info-container) !important; }
+
+
+/* UI and code typography share centrally declared, self-hosted variable fonts. */
+:root :is(body, .ant-app, button, input, textarea, select) {
+  font-family: var(--md-sys-typescale-font-family);
+  font-optical-sizing: auto;
+}
+:root :is(code, pre, kbd, samp, .ant-typography code, .ant-typography pre) {
+  font-family: var(--md-sys-typescale-code-font-family);
+}

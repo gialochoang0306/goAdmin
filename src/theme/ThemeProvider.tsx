@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useLayoutEffect, useMemo, useState, useSyncExternalStore, type ReactNode } from "react";
-import { ConfigProvider, theme } from "antd";
+import { ConfigProvider } from "antd";
+import { md3Theme } from "./antdTheme";
 import viVN from "antd/locale/vi_VN";
 
 type Preference = "light" | "dark" | "system";
@@ -28,7 +29,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   useLayoutEffect(() => {
     document.documentElement.dataset.theme = dark ? "dark" : "light";
     document.documentElement.style.colorScheme = dark ? "dark" : "light";
-    document.querySelector('meta[name="theme-color"]')?.setAttribute("content", dark ? "#11151c" : "#f5f6f8");
+    document.querySelector('meta[name="theme-color"]')?.setAttribute("content", getComputedStyle(document.documentElement).getPropertyValue("--md-sys-color-surface").trim());
   }, [dark]);
   useEffect(() => {
     const onStorage = (event: StorageEvent) => {
@@ -42,16 +43,6 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     try { localStorage.setItem(key, next); } catch { /* Use in-memory preference when storage is blocked. */ }
   } }), [preference]);
   return <ThemeContext value={value}>
-    <ConfigProvider locale={viVN} theme={{
-      algorithm: dark ? theme.darkAlgorithm : theme.defaultAlgorithm,
-      token: {
-        colorPrimary: dark ? "#b84d60" : "#800000", colorLink: dark ? "#f2abb5" : "#800000",
-        colorBgLayout: dark ? "#11151c" : "#f5f6f8", colorBgContainer: dark ? "#1a2029" : "#ffffff",
-        colorBgElevated: dark ? "#222a35" : "#ffffff", colorText: dark ? "#eef1f6" : "#202936",
-        colorTextSecondary: dark ? "#aab4c3" : "#5e6979", colorBorder: dark ? "#6a778b" : "#8792a3",
-        colorBorderSecondary: dark ? "#303b49" : "#e5e8ed", borderRadius: 8, fontSize: 14, controlHeight: 36,
-        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
-      },
-    }}>{children}</ConfigProvider>
+    <ConfigProvider locale={viVN} theme={md3Theme}>{children}</ConfigProvider>
   </ThemeContext>;
 }
