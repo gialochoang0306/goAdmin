@@ -16,9 +16,6 @@ import type {
   Pricing,
   PricingInput,
   Profile,
-  SupportTicket,
-  SupportTicketStatus,
-  SupportTicketUpdate,
   TicketDetail,
   TicketMessage,
   TicketStatus,
@@ -166,12 +163,6 @@ export const api = {
   me: () => request<Profile>("/api/auth/me"),
   logout: (installationId: string) =>
     request("/api/auth/logout", { method: "POST", body: { installationId } }),
-  supportTickets: (page: number, status?: SupportTicketStatus) =>
-    request<SupportTicket[]>(`${admin}/support/tickets`, { params: { page, status } }),
-  supportTicket: (id: number) =>
-    request<SupportTicket>(`${admin}/support/tickets/${id}`),
-  updateSupportTicket: (id: number, body: SupportTicketUpdate) =>
-    request<SupportTicket>(`${admin}/support/tickets/${id}`, { method: "PATCH", body }),
   tickets: (page: number, status?: TicketStatus) =>
     request<Page<TicketSummary>>(`${admin}/tickets`, { params: { page, size: 20, status } }),
   ticket: (id: number) => request<TicketDetail>(`${admin}/tickets/${id}`),
@@ -179,6 +170,15 @@ export const api = {
     request<TicketDetail>(`${admin}/tickets/${id}/claim`, { method: "POST", body: {} }),
   sendTicketMessage: (id: number, body: SendTicketMessage) =>
     request<TicketMessage>(`${admin}/tickets/${id}/messages`, { method: "POST", body }),
+  uploadSupportSignature: () =>
+    request<{
+      signature: string;
+      timestamp: number;
+      apiKey: string;
+      cloudName: string;
+      folder: string;
+      allowedFormats: string[] | null;
+    }>("/api/uploads/signature", { params: { purpose: "SUPPORT" } }),
   rides: (params: Params = {}) =>
     request<Page<Ride>>(`${admin}/rides`, { params }),
   rideFilterCapabilities: () => request<{ search: boolean; createdRange: boolean }>(`${admin}/rides/filter-capabilities`),

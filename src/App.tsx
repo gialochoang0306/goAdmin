@@ -27,7 +27,6 @@ import {
   FileProtectOutlined,
   LogoutOutlined,
   MenuOutlined,
-  MessageOutlined,
   TeamOutlined,
   UserOutlined,
   WalletOutlined,
@@ -62,12 +61,6 @@ const CustomerDetail = lazy(() =>
 );
 const Withdrawals = lazy(() => import("./pages/Withdrawals"));
 const Pricing = lazy(() => import("./pages/Pricing"));
-const Support = lazy(() =>
-  import("./pages/Support").then((m) => ({ default: m.Support })),
-);
-const SupportDetail = lazy(() =>
-  import("./pages/Support").then((m) => ({ default: m.SupportDetail })),
-);
 const Tickets = lazy(() =>
   import("./pages/Tickets").then((m) => ({ default: m.Tickets })),
 );
@@ -84,8 +77,7 @@ const navigation = [
     icon: <FileProtectOutlined />,
   },
   { key: "/customers", label: "Khách hàng", icon: <TeamOutlined /> },
-  { key: "/support", label: "Hỗ trợ", icon: <CustomerServiceOutlined /> },
-  { key: "/tickets", label: "Ticket hỗ trợ", icon: <MessageOutlined /> },
+  { key: "/tickets", label: "Hỗ trợ", icon: <CustomerServiceOutlined /> },
   { key: "/withdrawals", label: "Yêu cầu rút tiền", icon: <WalletOutlined /> },
   { key: "/pricing-rules", label: "Bảng giá", icon: <WalletOutlined /> },
 ];
@@ -331,8 +323,6 @@ export function AdminApp() {
         <Route path="driver-documents" element={<Documents />} />
         <Route path="customers" element={<Customers />} />
         <Route path="customers/:id" element={<CustomerDetail />} />
-        <Route path="support" element={<Support />} />
-        <Route path="support/:id" element={<SupportDetail />} />
         <Route path="tickets" element={<Tickets />} />
         <Route path="tickets/:id" element={<TicketDetail />} />
         <Route path="withdrawals" element={<Withdrawals />} />

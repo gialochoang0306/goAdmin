@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from "react";
-import { ArrowLeftOutlined } from "@ant-design/icons";
+import { ArrowLeftOutlined, PictureOutlined } from "@ant-design/icons";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Alert,
   Button,
   Descriptions,
   Empty,
+  Image,
   Input,
   Pagination,
   Select,
@@ -18,6 +19,7 @@ import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { FilterField } from "../components/FilterField";
 import { Heading, InvalidRecord, Loading, Panel, Photo, QueryError, Refresh } from "../components/common";
 import { api, errorMessage } from "../lib/api";
+import { uploadSupportImage } from "../lib/upload";
 import { date, label } from "../lib/format";
 import { useFilters } from "../lib/hooks";
 import type { TicketDetail, TicketMessage, TicketStatus, TicketSummary } from "../types";
@@ -88,7 +90,7 @@ export function Tickets() {
   return (
     <>
       <Heading
-        title="Ticket hỗ trợ"
+        title="Hỗ trợ"
         subtitle="Hội thoại CSKH hai chiều; ticket tự chuyển trạng thái khi khách phản hồi."
         actions={<Refresh loading={query.isFetching} onClick={() => void query.refetch()} />}
       />
@@ -161,11 +163,23 @@ export function TicketDetailPage() {
   const ticket = detail?.ticket;
   const [status, setStatus] = useState<TicketStatus>();
   const [reply, setReply] = useState("");
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const fileInput = useRef<HTMLInputElement>(null);
+  const chooseImage = (file: File | null) => {
+    if (imagePreview) URL.revokeObjectURL(imagePreview);
+    setImageFile(file);
+    setImagePreview(file ? URL.createObjectURL(file) : null);
+  };
 
   const send = useMutation({
-    mutationFn: () => api.sendTicketMessage(id, { body: reply.trim(), status: status ?? ticket!.status }),
+    mutationFn: async () => {
+      const imageUrl = imageFile ? await uploadSupportImage(imageFile) : undefined;
+      return api.sendTicketMessage(id, { body: reply.trim(), status: status ?? ticket!.status, imageUrl });
+    },
     onSuccess: (message: TicketMessage) => {
       setReply("");
+      chooseImage(null);
       client.setQueryData<TicketDetail>(detailKey(id), current => current ? {
         ...current,
         ticket: { ...current.ticket, status: status ?? current.ticket.status, updatedAt: message.createdAt },
@@ -185,7 +199,7 @@ export function TicketDetailPage() {
       ) : (
         <>
           <Heading
-            title={`Ticket ${ticket.code}`}
+            title={`Hỗ trợ · ${ticket.code}`}
             actions={<><TicketStatusTag status={ticket.status} /><Refresh loading={query.isFetching} onClick={() => void query.refetch()} /></>}
           />
           <QueryError error={query.error} retry={() => void query.refetch()} />
@@ -229,7 +243,15 @@ export function TicketDetailPage() {
                 <div className="ticket-chat" role="log" aria-label="Lịch sử tin nhắn hỗ trợ">
                   {detail.messages.map(message => (
                     <div key={message.id} className={`ticket-bubble ${message.senderRole === "ADMIN" ? "admin" : "user"}`}>
-                      <Typography.Text>{message.body}</Typography.Text>
+                      {message.imageUrl ? (
+                        <Image
+                          src={message.imageUrl}
+                          alt="Ảnh trong hội thoại hỗ trợ"
+                          width={220}
+                          style={{ borderRadius: 8 }}
+                        />
+                      ) : null}
+                      {message.body.trim() ? <Typography.Text>{message.body}</Typography.Text> : null}
                       <div className="ticket-meta">
                         {message.senderRole === "ADMIN" ? "CSKH" : label(ticket.ownerRole)} · {date(message.createdAt)}
                       </div>
@@ -254,14 +276,36 @@ export function TicketDetailPage() {
                   maxLength={4000}
                   showCount
                 />
-                <Button
-                  type="primary"
-                  loading={send.isPending}
-                  disabled={send.isPending || !reply.trim()}
-                  onClick={() => send.mutate()}
-                >
-                  Gửi phản hồi
-                </Button>
+                {imagePreview ? (
+                  <div className="ticket-image-preview">
+                    <Image src={imagePreview} alt="Ảnh sẽ gửi" width={72} />
+                    <Button size="small" onClick={() => chooseImage(null)}>Xóa ảnh</Button>
+                  </div>
+                ) : null}
+                <input
+                  ref={fileInput}
+                  type="file"
+                  accept="image/*"
+                  hidden
+                  onChange={event => {
+                    const file = event.target.files?.[0] ?? null;
+                    chooseImage(file);
+                    event.target.value = "";
+                  }}
+                />
+                <div className="ticket-send-actions">
+                  <Button icon={<PictureOutlined />} onClick={() => fileInput.current?.click()} disabled={send.isPending}>
+                    Đính kèm ảnh
+                  </Button>
+                  <Button
+                    type="primary"
+                    loading={send.isPending}
+                    disabled={send.isPending || (!reply.trim() && !imageFile)}
+                    onClick={() => send.mutate()}
+                  >
+                    Gửi phản hồi
+                  </Button>
+                </div>
               </div>
             </Panel>
           </div>

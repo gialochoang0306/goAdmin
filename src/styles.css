@@ -766,3 +766,19 @@ a:focus-visible, button:focus-visible, input:focus-visible, [tabindex]:focus-vis
   gap: 10px;
   margin-top: 14px;
 }
+
+.ticket-image-preview {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.ticket-send-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+.ticket-bubble .ant-image {
+  display: block;
+  margin-bottom: 6px;
+}

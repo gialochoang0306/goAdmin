@@ -18,24 +18,6 @@ export type Params = Record<
   string,
   string | number | boolean | undefined | null
 >;
-export type SupportTicketStatus = "OPEN" | "IN_PROGRESS" | "RESOLVED";
-export type SupportTicketUpdate = {
-  expectedUpdatedAt?: string;
-  status: SupportTicketStatus;
-  response: string | null;
-};
-export type SupportTicket = SupportTicketUpdate & {
-  id: number;
-  code: string;
-  rideId: number | null;
-  category: string;
-  description: string;
-  images: { fileUrl: string; publicId: string }[];
-  ownerId: number;
-  ownerRole: string;
-  createdAt: string;
-  updatedAt: string;
-};
 export type RideStatus =
   | "PENDING"
   | "SEARCHING"
@@ -259,6 +241,7 @@ export type TicketMessage = {
   senderId: number;
   senderRole: TicketSenderRole;
   body: string;
+  imageUrl: string | null;
   createdAt: string;
 };
 export type TicketDetail = {
@@ -267,4 +250,4 @@ export type TicketDetail = {
   images: { fileUrl: string; publicId: string }[];
   messages: TicketMessage[];
 };
-export type SendTicketMessage = { body: string; status: TicketStatus };
+export type SendTicketMessage = { body: string; status: TicketStatus; imageUrl?: string };
