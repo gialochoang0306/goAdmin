@@ -88,3 +88,22 @@ Bản build nằm trong `dist/`. Khi triển khai hosting, dùng HTTPS, cấu h�
 Tìm chuyến theo tên/SĐT và ngày tạo cần backend có endpoint GET /api/admin/rides/filter-capabilities. Checklist duyệt dùng required_document_types từ chi tiết tài xế; backend vẫn kiểm tra điều kiện khi xác nhận.
 
 Kế hoạch, hợp đồng và kết quả kiểm chứng: [tasks/plan.md](tasks/plan.md), [tasks/todo.md](tasks/todo.md), [tasks/implementation.md](tasks/implementation.md).
+
+
+### Duyệt rút tiền tài xế
+
+Mở **Yêu cầu rút tiền** (`/withdrawals`). Trang mặc định hiển thị các yêu cầu
+PENDING, hỗ trợ lọc trạng thái và phân trang 20/50/100 bản ghi.
+
+- Đối chiếu tài xế, ngân hàng, số tài khoản và số tiền. Thiếu thông tin ngân hàng
+  thì nút Duyệt bị khóa; tài xế bổ sung trong app tại Hồ sơ → Thông tin cá nhân.
+- Duyệt: chuyển khoản bằng ứng dụng ngân hàng, sau đó xác nhận đã chuyển tiền
+  trong hộp thoại. Trang quản trị ghi nhận kết quả qua API, không tự chuyển tiền.
+- Từ chối: nhập lý do (1–500 ký tự). Backend hoàn số tiền giữ về ví tiền mặt,
+  lưu trạng thái và gửi thông báo cho tài xế.
+- API: `GET /api/admin/withdrawals?page=0&size=20&status=PENDING` và
+  `POST /api/admin/withdrawals/{id}/review` với `action: APPROVE | REJECT`.
+  Khi từ chối gửi thêm `rejectReason`.
+
+Kiểm thử trên Node 26: `NODE_OPTIONS=--no-experimental-webstorage npm test -- --maxWorkers=2`
+để sử dụng localStorage của jsdom thay vì Web Storage thực nghiệm của Node.

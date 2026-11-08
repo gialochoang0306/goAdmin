@@ -59,6 +59,7 @@ const Customers = lazy(() =>
 const CustomerDetail = lazy(() =>
   import("./pages/Customers").then((m) => ({ default: m.CustomerDetailPage })),
 );
+const Withdrawals = lazy(() => import("./pages/Withdrawals"));
 const Pricing = lazy(() => import("./pages/Pricing"));
 const Support = lazy(() =>
   import("./pages/Support").then((m) => ({ default: m.Support })),
@@ -77,6 +78,7 @@ const navigation = [
   },
   { key: "/customers", label: "Khách hàng", icon: <TeamOutlined /> },
   { key: "/support", label: "Hỗ trợ", icon: <CustomerServiceOutlined /> },
+  { key: "/withdrawals", label: "Yêu cầu rút tiền", icon: <WalletOutlined /> },
   { key: "/pricing-rules", label: "Bảng giá", icon: <WalletOutlined /> },
 ];
 export function Login() {
@@ -323,6 +325,7 @@ export function AdminApp() {
         <Route path="customers/:id" element={<CustomerDetail />} />
         <Route path="support" element={<Support />} />
         <Route path="support/:id" element={<SupportDetail />} />
+        <Route path="withdrawals" element={<Withdrawals />} />
         <Route path="pricing-rules" element={<Pricing />} />
         <Route
           path="*"

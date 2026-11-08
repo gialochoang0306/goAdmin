@@ -222,3 +222,11 @@ export type Pricing = {
   updatedAt: string;
 };
 export type PricingInput = Omit<Pricing, "id" | "createdAt" | "updatedAt">;
+
+export type WithdrawalStatus = "PENDING" | "SUCCESS" | "REJECTED";
+export type AdminWithdrawal = {
+  id: number; driverId: number; driverName: string | null; driverPhoneNumber: string | null;
+  bankName: string | null; bankAccountNumber: string | null; amount: number; status: WithdrawalStatus;
+  createdAt: string; reviewedAt: string | null; reviewedBy: number | null; rejectReason: string | null;
+};
+export type WithdrawalReview = { action: "APPROVE" | "REJECT"; rejectReason?: string };

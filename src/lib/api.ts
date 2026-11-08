@@ -1,4 +1,6 @@
 import type {
+  AdminWithdrawal,
+  WithdrawalReview,
   Params,
   Page,
   Ride,
@@ -229,6 +231,9 @@ export const api = {
     request<NearbyDriver[]>("/api/location/nearby-drivers", {
       params: { longitude, latitude, radius },
     }),
+  withdrawals: (params: Params = {}) => request<Page<AdminWithdrawal>>(`${admin}/withdrawals`, { params }),
+  reviewWithdrawal: (id: number, body: WithdrawalReview) =>
+    request<{ id: number; status: AdminWithdrawal["status"] }>(`${admin}/withdrawals/${id}/review`, { method: "POST", body }),
   pricing: () => request<Pricing[]>(`${admin}/pricing-rules`),
   savePricing: (values: PricingInput, id?: number) => {
     const { vehicleType, active, ...fees } = values;
