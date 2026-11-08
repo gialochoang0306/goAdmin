@@ -1,9 +1,9 @@
 /* 2. Surfaces: separation uses tone, never cast shadows. */
 :root body, :root .ant-app, :root .ant-layout { background: var(--md-sys-color-surface); color: var(--md-sys-color-on-surface); }
 :root :is(.ant-card, .login-card, .filters, .document-card) {
-  border: 0;
+  border: 0 !important;
   border-radius: var(--md-sys-shape-corner-md);
-  background: var(--md-sys-color-surface-variant);
+  background: var(--md-sys-color-surface-container) !important;
 }
 :root :is(.ant-modal-container, .ant-modal-content, .ant-modal-header, .ant-popover-container, .ant-popover-inner, .ant-select-dropdown, .ant-dropdown-menu, .ant-picker-dropdown .ant-picker-panel-container) {
   background: var(--md-sys-color-surface-variant);
@@ -20,8 +20,9 @@
 :root .ant-card-head { padding: 0 24px; }
 :root .ant-card-body { padding: 24px; }
 :root .ant-card-head-title { font-size: 16px; font-weight: 500; }
-:root .ant-menu-item { height: 56px !important; line-height: 56px !important; border-radius: var(--md-sys-shape-corner-full); }
+:root .ant-menu .ant-menu-item { height: 56px !important; line-height: 56px !important; border-radius: var(--md-sys-shape-corner-full) !important; }
 :root .ant-menu-light .ant-menu-item-selected { background: var(--md-sys-color-secondary-container) !important; color: var(--md-sys-color-on-secondary-container) !important; font-weight: 500; }
+:root .ant-menu-item-selected :is(.anticon, .ant-menu-title-content) { color: inherit !important; }
 :root .ant-menu-item::after { border: 0; }
 :root :is([class^="ant-"], [class*=" ant-"], .login-card, .stat-card) { box-shadow: none !important; }
 :root .brand-name { color: var(--md-sys-color-primary); }
@@ -29,10 +30,10 @@
 :root .stat-icon { border-radius: var(--md-sys-shape-corner-full); color: var(--md-sys-color-on-primary-container); }
 :root :is(.ticket-chat, .chat-list) { background: var(--app-color-chat-surface); }
 :root :is(.ticket-bubble, .chat-message) { background: var(--app-color-chat-user-container); color: var(--md-sys-color-on-surface); border: 0; }
-:root .ant-table { background: var(--md-sys-color-surface-container-low); border-radius: var(--md-sys-shape-corner-md); }
+:root .ant-table { background: var(--md-sys-color-surface-container); border-radius: var(--md-sys-shape-corner-md); }
 :root .ant-table-thead > tr > th { background: var(--md-sys-color-surface-container-highest) !important; color: var(--md-sys-color-on-surface-variant) !important; font-weight: 500 !important; }
 :root .ant-table-tbody > tr > td { border-color: var(--md-sys-color-outline-variant); padding-block: 16px; }
-:root .ant-table-cell-fix-left, :root .ant-table-cell-fix-right { background: var(--md-sys-color-surface-container-low) !important; }
+:root .ant-table-cell-fix-left, :root .ant-table-cell-fix-right { background: var(--md-sys-color-surface-container) !important; }
 
 /* 3. Core components. */
 :root .ant-btn {
@@ -43,7 +44,7 @@
   min-height: var(--md-sys-size-button-height);
   height: var(--md-sys-size-button-height);
   padding-inline: 24px;
-  border-radius: var(--md-sys-shape-corner-full);
+  border-radius: var(--md-sys-shape-corner-full) !important;
   font-size: 14px;
   font-weight: var(--md-sys-typescale-label-weight);
   color: var(--md-local-content) !important;
@@ -95,8 +96,6 @@
 :root .ant-select-content { align-self: center; }
 :root .ant-select-selection-placeholder, :root input::placeholder, :root textarea::placeholder { color: var(--md-sys-color-on-surface-variant); }
 :root textarea.ant-input { min-height: 112px; padding-block: 16px; resize: vertical; }
-:root .ant-input-search .ant-input-group-addon .ant-btn { height: 56px; border-radius: 0 var(--md-sys-shape-corner-xs) var(--md-sys-shape-corner-xs) 0 !important; }
-:root .ant-input-search .ant-input-affix-wrapper, :root .ant-input-search > .ant-input-wrapper > .ant-input { border-radius: var(--md-sys-shape-corner-xs) 0 0 0; }
 
 /* Existing labels float inside the field; htmlFor, ids and accessible names are preserved. */
 :root .ant-form-item:has(.ant-input, .ant-select, .ant-picker, .ant-input-number):not(:has(.ant-form-item)) > .ant-row { position: relative; }
@@ -110,10 +109,6 @@
 :root .ant-form-item:has(> .ant-row > .ant-form-item-label) .ant-input-number-input { padding-top: 22px; padding-bottom: 6px; }
 :root .ant-form-item:has(> .ant-row > .ant-form-item-label) textarea.ant-input { padding-top: 28px; }
 :root .ant-form-item:has(> .ant-row > .ant-form-item-label) .ant-select-selector { min-height: 26px !important; }
-:root .filter-field { position: relative; gap: 0; }
-:root .filter-field > span:first-child { position: absolute; z-index: 1; top: 6px; left: 16px; max-width: calc(100% - 48px); pointer-events: none; font-size: 12px; font-weight: 400; line-height: 16px; }
-:root .filter-field :is(.ant-select, .ant-picker, .ant-input-affix-wrapper, .ant-input-search > .ant-input-wrapper > .ant-input) { padding-top: 22px; padding-bottom: 6px; }
-:root .filter-field .ant-select-selector { min-height: 26px !important; }
 :root :is(.ant-input, .ant-input-affix-wrapper, .ant-select, .ant-picker, .ant-input-number):focus-within { border-bottom: 2px solid var(--md-sys-color-primary); }
 :root :is(.ant-input-status-error, .ant-input-affix-wrapper-status-error, .ant-select-status-error, .ant-input-number-status-error) { border-bottom: 2px solid var(--md-sys-color-error) !important; }
 :root .ant-form-item-explain-error, :root .ant-typography-danger { color: var(--md-sys-color-error); }
@@ -125,7 +120,7 @@
 :root .ant-pagination-item { border-radius: var(--md-sys-shape-corner-full); }
 :root .ant-pagination-item-active { background: var(--md-sys-color-secondary-container); border-color: var(--md-sys-color-transparent); }
 :root .ant-pagination-item-active a { color: var(--md-sys-color-on-secondary-container); }
-:root .ant-tag { border: 0; border-radius: var(--md-sys-shape-corner-sm); padding: 4px 10px; background: var(--md-sys-color-surface-container-highest); color: var(--md-sys-color-on-surface-variant); }
+:root .ant-tag { display: inline-flex; align-items: center; min-height: 32px; height: 32px; line-height: 20px; font-size: 14px; font-weight: 500; border: 0; border-radius: var(--md-sys-shape-corner-sm) !important; padding: 0 12px; background: var(--md-sys-color-surface-container-highest); color: var(--md-sys-color-on-surface-variant); }
 :root :is(.ant-tag-green, .ant-tag-success) { background: var(--md-sys-color-success-container); color: var(--md-sys-color-on-success-container); }
 :root :is(.ant-tag-red, .ant-tag-error) { background: var(--md-sys-color-error-container); color: var(--md-sys-color-on-error-container); }
 :root :is(.ant-tag-gold, .ant-tag-orange, .ant-tag-warning) { background: var(--md-sys-color-warning-container); color: var(--md-sys-color-on-warning-container); }
@@ -178,10 +173,6 @@
 :root input.ant-input, :root .ant-input-affix-wrapper, :root .ant-input-number,
 :root .ant-select-single, :root .ant-picker { height: var(--md-sys-size-field-height); }
 :root .ant-input-affix-wrapper > input.ant-input { height: auto !important; }
-:root .filter-field > span:first-child { z-index: 3; }
-:root .filter-field .ant-input-search > input.ant-input,
-:root .filter-field .ant-input-search > .ant-input-affix-wrapper { padding-top: 22px; padding-bottom: 6px; }
-:root .ant-input-search.ant-space-compact > .ant-btn { height: 56px; border-radius: 0 var(--md-sys-shape-corner-xs) var(--md-sys-shape-corner-xs) 0; }
 :root .ant-tag:is(.ant-tag-green, .ant-tag-success) { background: var(--md-sys-color-success-container) !important; color: var(--md-sys-color-on-success-container) !important; }
 :root .ant-tag:is(.ant-tag-red, .ant-tag-error) { background: var(--md-sys-color-error-container) !important; color: var(--md-sys-color-on-error-container) !important; }
 :root .ant-tag:is(.ant-tag-gold, .ant-tag-orange, .ant-tag-warning) { background: var(--md-sys-color-warning-container) !important; color: var(--md-sys-color-on-warning-container) !important; }
@@ -196,3 +187,70 @@
 :root :is(code, pre, kbd, samp, .ant-typography code, .ant-typography pre) {
   font-family: var(--md-sys-typescale-code-font-family);
 }
+
+
+/* Search actions remain separate controls; preserve Input.Search onSearch/Enter. */
+:root .ant-input-search.ant-space-compact,
+:root .ant-input-search .ant-input-wrapper.ant-input-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: transparent;
+}
+:root .ant-input-search.ant-space-compact > :is(.ant-input, .ant-input-affix-wrapper),
+:root .ant-input-search .ant-input-wrapper > :is(.ant-input, .ant-input-affix-wrapper) {
+  flex: 1 1 0; min-width: 0; width: 0; margin-inline: 0 !important;
+  border-radius: var(--md-sys-shape-corner-xs) !important;
+}
+:root .ant-input-search :is(.ant-btn, .ant-input-group-addon) { flex: 0 0 auto; margin: 0; }
+:root .ant-input-search .ant-input-group-addon { display: flex; align-items: center; width: auto; padding: 0; border: 0; background: transparent; }
+:root .ant-input-search .ant-btn { margin-inline: 0 !important; height: 40px !important; border-radius: var(--md-sys-shape-corner-full) !important; }
+
+/* Outlined filter fields: 56px, transparent fill, floating labels. */
+:root .filter-field { position: relative; gap: 0; --md-field-label-surface: var(--md-sys-color-surface-container); }
+:root .filter-field :is(input.ant-input, .ant-input-affix-wrapper, .ant-select, .ant-picker, .ant-input-number) {
+  height: 56px; min-height: 56px;
+  border: 1px solid var(--md-sys-color-outline) !important;
+  border-radius: var(--md-sys-shape-corner-xs) !important;
+  background: transparent !important;
+  padding: 0 16px;
+  outline: none !important;
+}
+:root .filter-field :is(.ant-input-affix-wrapper, .ant-select, .ant-picker) input {
+  min-height: 0; height: auto !important; border: 0 !important; padding: 0;
+  background: transparent !important;
+}
+:root .filter-field .ant-select-selector { min-height: 54px !important; padding: 0 !important; background: transparent !important; border: 0 !important; }
+:root .filter-field .ant-input-number-input { padding-block: 0; }
+:root .filter-field > span:first-child {
+  position: absolute; top: 28px; left: 12px; z-index: 3;
+  max-width: calc(100% - 40px); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  transform: translateY(-50%); padding-inline: 4px; pointer-events: none;
+  color: var(--md-sys-color-on-surface-variant); font-size: 16px; line-height: 20px; font-weight: 400;
+  background: transparent;
+  transition: top var(--md-sys-motion-duration-short) var(--md-sys-motion-easing-standard), font-size var(--md-sys-motion-duration-short) var(--md-sys-motion-easing-standard);
+}
+:root .filter-field.search-field > span:first-child { max-width: calc(100% - 120px); }
+:root .filter-field:focus-within > span:first-child,
+:root .filter-field:has(input[placeholder]:not(:placeholder-shown)) > span:first-child,
+:root .filter-field:has(.ant-select-content-has-value, .ant-select-selection-item, .ant-input-number) > span:first-child,
+:root .filter-field:has(input[type="date"][value]:not([value=""])) > span:first-child {
+  top: 0; font-size: 12px; line-height: 16px;
+  background: var(--md-field-label-surface);
+}
+:root .filter-field:focus-within > span:first-child { color: var(--md-sys-color-primary); }
+:root .filter-field:not(:focus-within) input::placeholder { color: transparent; }
+:root .filter-field:not(:focus-within) :is(.ant-select-placeholder, .ant-select-selection-placeholder) { color: transparent; }
+:root .filter-field:not(:focus-within) input[type="date"][value=""]::-webkit-datetime-edit { color: transparent; }
+:root .filter-field :is(input.ant-input, .ant-input-affix-wrapper, .ant-select, .ant-picker, .ant-input-number):focus-within {
+  border: 2px solid var(--md-sys-color-primary) !important; padding-inline: 15px;
+}
+:root .filter-field .ant-input-affix-wrapper input:focus-visible,
+:root .filter-field .ant-select input:focus-visible,
+:root .filter-field .ant-picker input:focus-visible { border: 0 !important; padding: 0; }
+:root .filter-field :is(.ant-input-status-error, .ant-input-affix-wrapper-status-error, .ant-select-status-error, .ant-input-number-status-error) { border-color: var(--md-sys-color-error) !important; }
+
+/* Directional chat corners communicate the sender without decorative tails. */
+:root :is(.ticket-bubble, .chat-message) { border-radius: var(--md-sys-shape-corner-lg); }
+:root .ticket-bubble.user, :root .chat-message:not(.driver) { border-bottom-left-radius: var(--md-sys-shape-corner-xs); }
+:root .ticket-bubble.admin, :root .chat-message.driver { border-bottom-right-radius: var(--md-sys-shape-corner-xs); }

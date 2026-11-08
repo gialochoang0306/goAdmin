@@ -448,7 +448,7 @@ function AssignDriver({
       <div className="filters">
         {mode === "nearby" ? (
           <>
-            <span>Bán kính (km)</span>
+            <FilterField label="Bán kính (km)">
             <InputNumber
               aria-label="Bán kính (km)"
               min={0.1}
@@ -461,9 +461,10 @@ function AssignDriver({
                 }
               }}
             />
+            </FilterField>
           </>
         ) : (
-          <Input.Search
+          <FilterField label="Tìm tài xế" search><Input.Search
             aria-label="Tìm tài xế"
             placeholder="Tên hoặc số điện thoại"
             onSearch={(value) => {
@@ -472,7 +473,7 @@ function AssignDriver({
               setSelected(undefined);
             }}
             enterButton="Tìm"
-          />
+          /></FilterField>
         )}
         <Refresh
           loading={candidates.isFetching}

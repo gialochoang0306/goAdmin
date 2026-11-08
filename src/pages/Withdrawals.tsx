@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Alert, App, Button, Checkbox, Descriptions, Input, Modal, Select, Space, Tag, Typography } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import { Link } from "react-router-dom";
+import { FilterField } from "../components/FilterField";
 import { DataTable, Heading, Panel, QueryError, Refresh, UpdatedAt } from "../components/common";
 import { api, errorMessage } from "../lib/api";
 import { date, money } from "../lib/format";
@@ -64,8 +65,10 @@ export default function Withdrawals() {
     <Heading title="Yêu cầu rút tiền" subtitle="Kiểm tra tài khoản nhận tiền và xử lý yêu cầu rút từ ví tiền mặt của tài xế." actions={<Refresh loading={query.isFetching} onClick={() => void query.refetch()} />} />
     <Panel>
       <Space wrap style={{ marginBottom: 16 }}>
-        <label htmlFor="withdrawal-status">Trạng thái</label>
+        <label htmlFor="withdrawal-status" className="sr-only">Trạng thái</label>
+        <FilterField label="Trạng thái">
         <Select id="withdrawal-status" aria-label="Lọc trạng thái rút tiền" value={status} options={statuses} style={{ minWidth: 190 }} disabled={Boolean(review)} onChange={value => filters.update({ status: value })} />
+        </FilterField>
       </Space>
       <QueryError error={query.error} retry={() => void query.refetch()} />
       <UpdatedAt value={query.dataUpdatedAt} fetching={query.isFetching} />

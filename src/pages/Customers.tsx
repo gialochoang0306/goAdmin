@@ -300,17 +300,15 @@ function CustomerRides({ id }: { id: number }) {
           }))}
           onChange={(rideStatus) => f.update({ rideStatus })}
         /></FilterField>
-        <label>
-          Từ ngày{" "}
+        <label><FilterField label="Từ ngày">
           <Input
             type="date"
             aria-label="Từ ngày"
             value={from}
             onChange={(e) => f.update({ from: e.target.value })}
           />
-        </label>
-        <label>
-          Đến ngày{" "}
+        </FilterField></label>
+        <label><FilterField label="Đến ngày">
           <Input
             type="date"
             aria-label="Đến ngày"
@@ -318,7 +316,7 @@ function CustomerRides({ id }: { id: number }) {
             value={to}
             onChange={(e) => f.update({ to: e.target.value })}
           />
-        </label>
+        </FilterField></label>
         <Refresh
           loading={query.isFetching}
           onClick={() => {
