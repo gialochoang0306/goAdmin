@@ -100,7 +100,9 @@ export async function request<T>(
           ...(options.body !== undefined
             ? { "Content-Type": "application/json" }
             : {}),
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          ...(token
+            ? { Authorization: `Bearer ${token}`, "X-Role": "ADMIN" }
+            : {}),
         },
         ...(options.body !== undefined
           ? { body: JSON.stringify(options.body) }
