@@ -18,6 +18,26 @@ export type Params = Record<
   string,
   string | number | boolean | undefined | null
 >;
+export type DashboardPeriod = 7 | 30;
+export type DashboardDay = { day: string; gmv: number; revenue: number };
+export type DashboardAnomaly = {
+  kind: "HIGH_FARE" | "REPEATED_CANCELLATIONS";
+  subjectId: number;
+  value: number;
+  occurredAt: string;
+};
+export type DashboardSummary = {
+  gmv: number;
+  revenue: number;
+  promoCost: number;
+  grossProfit: number;
+  tripCount: number;
+  previousTripCount: number;
+  daily: DashboardDay[];
+  paymentMix: { cash: number; wallet: number; other: number };
+  wallets: { driverCash: number; customer: number; driverCredit: number; pendingWithdrawals: number };
+  anomalies: DashboardAnomaly[];
+};
 export type RideStatus =
   | "PENDING"
   | "SEARCHING"
