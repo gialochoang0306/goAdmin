@@ -107,3 +107,16 @@ PENDING, hỗ trợ lọc trạng thái và phân trang 20/50/100 bản ghi.
 
 Kiểm thử trên Node 26: `NODE_OPTIONS=--no-experimental-webstorage npm test -- --maxWorkers=2`
 để sử dụng localStorage của jsdom thay vì Web Storage thực nghiệm của Node.
+
+
+### Trợ giúp / khiếu nại từ hai app
+
+Trang `/support` tiếp nhận chung CUSTOMER và DRIVER qua `GET /api/admin/support/tickets`.
+Bộ lọc trạng thái và phân trang 20 bản ghi áp dụng ở server. Trang danh sách và
+chi tiết tự làm mới mỗi 15 giây; hai app tải phản hồi mỗi 30 giây hoặc khi mở lại
+màn Trợ giúp. Trạng thái: OPEN, IN_PROGRESS, RESOLVED; đóng yêu cầu bắt buộc phản hồi.
+
+Khi lưu, Admin gửi `expectedUpdatedAt` cùng `{status, response}`. Backend khóa
+bản ghi và từ chối bản cũ (409). Giao diện giữ bản nháp nếu có cập nhật từ admin
+khác; chọn **Tải phản hồi mới nhất** và xác nhận trước khi thay nội dung đang nhập.
+Cần triển khai backend cùng thay đổi này; không cần migration mới.

@@ -1,6 +1,7 @@
+import { useRef, useState } from "react";
 import { ArrowLeftOutlined } from "@ant-design/icons";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Alert, App, Button, Descriptions, Empty, Form, Input, Select, Space, Table, Tag, Typography } from "antd";
+import { Alert, App, Button, Descriptions, Empty, Form, Input, Popconfirm, Select, Space, Table, Tag, Typography } from "antd";
 import type { TableColumnsType } from "antd";
 import { Link, useLocation, useParams } from "react-router-dom";
 import { FilterField } from "../components/FilterField";
@@ -42,6 +43,7 @@ export function Support() {
   const query = useQuery({
     queryKey: [...listKey, page, status],
     queryFn: () => api.supportTickets(page, status),
+    refetchInterval: 15000, refetchOnWindowFocus: "always",
   });
   const columns: TableColumnsType<SupportTicket> = [
     {
@@ -118,27 +120,41 @@ function TicketEditor({ ticket }: { ticket: SupportTicket }) {
   const { message } = App.useApp();
   const [form] = Form.useForm<SupportTicketUpdate>();
   const status = Form.useWatch("status", form) ?? ticket.status;
+  const [version, setVersion] = useState(ticket.updatedAt);
+  const submitting = useRef(false);
+  const stale = version !== ticket.updatedAt;
   const save = useMutation({
     mutationFn: (update: SupportTicketUpdate) => api.updateSupportTicket(ticket.id, update),
     onSuccess: async (updated) => {
       client.setQueryData(detailKey(ticket.id), updated);
       form.setFieldsValue({ status: updated.status, response: updated.response ?? "" });
+      setVersion(updated.updatedAt);
       await client.invalidateQueries({ queryKey: listKey });
       void message.success(`Đã cập nhật yêu cầu ${updated.code}.`);
     },
+    onError: () => { void client.invalidateQueries({ queryKey: detailKey(ticket.id) }); },
     retry: false,
   });
 
   return (
     <Panel title="Xử lý yêu cầu">
+      {stale && <Alert className="query-error" type="warning" showIcon title="Yêu cầu đã có cập nhật mới. Nội dung đang nhập của bạn được giữ lại."
+        action={<Popconfirm title="Thay nội dung đang nhập bằng bản mới nhất?" okText="Tải bản mới" cancelText="Giữ nội dung"
+          onConfirm={() => { form.setFieldsValue({ status: ticket.status, response: ticket.response ?? "" }); setVersion(ticket.updatedAt); save.reset(); }}>
+          <Button>Tải phản hồi mới nhất</Button>
+        </Popconfirm>} />}
       {save.error && <Alert className="query-error" type="error" showIcon title={errorMessage(save.error)} />}
       <Form<SupportTicketUpdate>
         form={form}
         layout="vertical"
         disabled={save.isPending}
         initialValues={{ status: ticket.status, response: ticket.response ?? "" }}
-        onFinish={({ status, response }) => {
-          if (!save.isPending) save.mutate({ status, response: response?.trim() || null });
+        onFinish={async ({ status, response }) => {
+          if (save.isPending || stale || submitting.current) return;
+          submitting.current = true;
+          try { await save.mutateAsync({ status, response: response?.trim() || null, expectedUpdatedAt: version }); }
+          catch { /* Keep the draft and show the server error. */ }
+          finally { submitting.current = false; }
         }}
       >
         <Form.Item name="status" label="Trạng thái" rules={[{ required: true }]}>
@@ -161,7 +177,7 @@ function TicketEditor({ ticket }: { ticket: SupportTicket }) {
         >
           <Input.TextArea rows={5} maxLength={responseLimit} showCount placeholder="Nhập nội dung trả lời người gửi" />
         </Form.Item>
-        <Button type="primary" htmlType="submit" loading={save.isPending}>Lưu cập nhật</Button>
+        <Button type="primary" htmlType="submit" loading={save.isPending} disabled={stale}>Lưu cập nhật</Button>
       </Form>
     </Panel>
   );
@@ -175,7 +191,7 @@ export function SupportDetail() {
     queryKey: detailKey(id),
     queryFn: () => api.supportTicket(id),
     enabled: valid,
-    refetchOnWindowFocus: false,
+    refetchOnWindowFocus: "always", refetchInterval: 15000,
   });
   const ticket = query.data;
 
@@ -188,7 +204,8 @@ export function SupportDetail() {
         <QueryError error={query.error} retry={() => void query.refetch()} />
       ) : (
         <>
-          <Heading title={`Yêu cầu ${ticket.code}`} actions={<TicketStatus status={ticket.status} />} />
+          <Heading title={`Yêu cầu ${ticket.code}`} actions={<><TicketStatus status={ticket.status} /><Refresh loading={query.isFetching} onClick={() => void query.refetch()} /></>} />
+          <QueryError error={query.error} retry={() => void query.refetch()} />
           <div className="detail-grid">
             <Panel title="Nội dung yêu cầu">
               <Descriptions column={{ xs: 1, md: 1, xl: 2 }} items={[

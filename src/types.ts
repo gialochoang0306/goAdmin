@@ -20,6 +20,7 @@ export type Params = Record<
 >;
 export type SupportTicketStatus = "OPEN" | "IN_PROGRESS" | "RESOLVED";
 export type SupportTicketUpdate = {
+  expectedUpdatedAt?: string;
   status: SupportTicketStatus;
   response: string | null;
 };
@@ -230,3 +231,40 @@ export type AdminWithdrawal = {
   createdAt: string; reviewedAt: string | null; reviewedBy: number | null; rejectReason: string | null;
 };
 export type WithdrawalReview = { action: "APPROVE" | "REJECT"; rejectReason?: string };
+
+export type TicketStatus =
+  | "OPEN"
+  | "IN_PROGRESS"
+  | "WAITING_FOR_USER"
+  | "RESOLVED"
+  | "CLOSED";
+export type TicketSenderRole = "CUSTOMER" | "DRIVER" | "ADMIN" | "SYSTEM";
+export type TicketSummary = {
+  id: number;
+  code: string;
+  ownerId: number;
+  ownerName: string | null;
+  ownerPhoneNumber: string | null;
+  ownerRole: string;
+  category: string;
+  rideId: number | null;
+  status: TicketStatus;
+  createdAt: string;
+  updatedAt: string;
+  handledBy: number | null;
+};
+export type TicketMessage = {
+  id: number;
+  ticketId: number;
+  senderId: number;
+  senderRole: TicketSenderRole;
+  body: string;
+  createdAt: string;
+};
+export type TicketDetail = {
+  ticket: TicketSummary;
+  description: string;
+  images: { fileUrl: string; publicId: string }[];
+  messages: TicketMessage[];
+};
+export type SendTicketMessage = { body: string; status: TicketStatus };

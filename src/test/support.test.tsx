@@ -29,7 +29,7 @@ const baseTicket = {
 let ticket: typeof baseTicket;
 let rejectUpdate: boolean;
 const listRequests: string[] = [];
-const updates: { status: string; response: string | null }[] = [];
+const updates: { status: string; response: string | null; expectedUpdatedAt?: string }[] = [];
 
 beforeEach(() => {
   ticket = structuredClone(baseTicket);
@@ -53,7 +53,7 @@ beforeEach(() => {
         const update = JSON.parse(String(init.body));
         updates.push(update);
         if (rejectUpdate) return fail(409, "Không thể lưu phản hồi.");
-        ticket = { ...ticket, ...update };
+        ticket = { ...ticket, ...update, updatedAt: "2026-11-08T03:00:00Z" };
       }
       return ok(ticket);
     }
@@ -73,7 +73,7 @@ function renderSupport(path: string) {
       </AntApp>
     </ConfigProvider>,
   );
-  return { user: userEvent.setup({ pointerEventsCheck: 0 }), router };
+  return { user: userEvent.setup({ pointerEventsCheck: 0 }), router, client };
 }
 
 it("pages through support tickets and resets the page when the status filter changes", async () => {
@@ -117,11 +117,31 @@ it("opens a ticket, requires a response to close it, and preserves the draft aft
   await user.click(screen.getByRole("button", { name: "Lưu cập nhật" }));
   expect(await screen.findByText("Đã cập nhật yêu cầu HT-41.")).toBeInTheDocument();
   expect(updates).toEqual([
-    { status: "RESOLVED", response: "Đã kiểm tra thanh toán." },
-    { status: "RESOLVED", response: "Đã kiểm tra thanh toán." },
+    { status: "RESOLVED", response: "Đã kiểm tra thanh toán.", expectedUpdatedAt: baseTicket.updatedAt },
+    { status: "RESOLVED", response: "Đã kiểm tra thanh toán.", expectedUpdatedAt: baseTicket.updatedAt },
   ]);
   await user.click(screen.getByRole("link", { name: "Quay lại danh sách" }));
   expect(router.state.location.search).toBe("?status=OPEN");
   expect(await screen.findByRole("link", { name: "HT-40" })).toBeInTheDocument();
   expect(screen.queryByRole("link", { name: "HT-41" })).not.toBeInTheDocument();
+});
+
+
+it("keeps an admin draft when a newer response arrives and requires reloading before overwriting it", async () => {
+  ticket.ownerRole = "DRIVER";
+  const { user, client } = renderSupport("/support/41");
+  expect(await screen.findByText("Tài xế #21")).toBeInTheDocument();
+  const response = screen.getByRole("textbox", { name: "Phản hồi" });
+  await user.type(response, "Nội dung tôi đang nhập");
+  ticket = { ...ticket, status: "IN_PROGRESS", response: "Admin khác đang kiểm tra", updatedAt: "2026-11-08T02:00:00Z" };
+  await client.invalidateQueries({ queryKey: ["admin", "support-tickets", "detail", 41] });
+  expect(await screen.findByText("Yêu cầu đã có cập nhật mới. Nội dung đang nhập của bạn được giữ lại.")).toBeInTheDocument();
+  expect(response).toHaveValue("Nội dung tôi đang nhập");
+  expect(screen.getByRole("button", { name: "Lưu cập nhật" })).toBeDisabled();
+  expect(updates).toHaveLength(0);
+  await user.click(screen.getByRole("button", { name: "Tải phản hồi mới nhất" }));
+  await user.click(await screen.findByRole("button", { name: "Tải bản mới" }));
+  expect(response).toHaveValue("Admin khác đang kiểm tra");
+  await user.click(screen.getByRole("button", { name: "Lưu cập nhật" }));
+  await waitFor(() => expect(updates).toEqual([{ status: "IN_PROGRESS", response: "Admin khác đang kiểm tra", expectedUpdatedAt: "2026-11-08T02:00:00Z" }]));
 });

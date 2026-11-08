@@ -19,6 +19,11 @@ import type {
   SupportTicket,
   SupportTicketStatus,
   SupportTicketUpdate,
+  TicketDetail,
+  TicketMessage,
+  TicketStatus,
+  TicketSummary,
+  SendTicketMessage,
 } from "../types";
 
 export class ApiError extends Error {
@@ -167,6 +172,13 @@ export const api = {
     request<SupportTicket>(`${admin}/support/tickets/${id}`),
   updateSupportTicket: (id: number, body: SupportTicketUpdate) =>
     request<SupportTicket>(`${admin}/support/tickets/${id}`, { method: "PATCH", body }),
+  tickets: (page: number, status?: TicketStatus) =>
+    request<Page<TicketSummary>>(`${admin}/tickets`, { params: { page, size: 20, status } }),
+  ticket: (id: number) => request<TicketDetail>(`${admin}/tickets/${id}`),
+  claimTicket: (id: number) =>
+    request<TicketDetail>(`${admin}/tickets/${id}/claim`, { method: "POST", body: {} }),
+  sendTicketMessage: (id: number, body: SendTicketMessage) =>
+    request<TicketMessage>(`${admin}/tickets/${id}/messages`, { method: "POST", body }),
   rides: (params: Params = {}) =>
     request<Page<Ride>>(`${admin}/rides`, { params }),
   rideFilterCapabilities: () => request<{ search: boolean; createdRange: boolean }>(`${admin}/rides/filter-capabilities`),

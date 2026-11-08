@@ -27,6 +27,7 @@ import {
   FileProtectOutlined,
   LogoutOutlined,
   MenuOutlined,
+  MessageOutlined,
   TeamOutlined,
   UserOutlined,
   WalletOutlined,
@@ -67,6 +68,12 @@ const Support = lazy(() =>
 const SupportDetail = lazy(() =>
   import("./pages/Support").then((m) => ({ default: m.SupportDetail })),
 );
+const Tickets = lazy(() =>
+  import("./pages/Tickets").then((m) => ({ default: m.Tickets })),
+);
+const TicketDetail = lazy(() =>
+  import("./pages/Tickets").then((m) => ({ default: m.TicketDetailPage })),
+);
 const navigation = [
   { key: "/dashboard", label: "Tổng quan", icon: <DashboardOutlined /> },
   { key: "/rides", label: "Chuyến đi", icon: <CarOutlined /> },
@@ -78,6 +85,7 @@ const navigation = [
   },
   { key: "/customers", label: "Khách hàng", icon: <TeamOutlined /> },
   { key: "/support", label: "Hỗ trợ", icon: <CustomerServiceOutlined /> },
+  { key: "/tickets", label: "Ticket hỗ trợ", icon: <MessageOutlined /> },
   { key: "/withdrawals", label: "Yêu cầu rút tiền", icon: <WalletOutlined /> },
   { key: "/pricing-rules", label: "Bảng giá", icon: <WalletOutlined /> },
 ];
@@ -325,6 +333,8 @@ export function AdminApp() {
         <Route path="customers/:id" element={<CustomerDetail />} />
         <Route path="support" element={<Support />} />
         <Route path="support/:id" element={<SupportDetail />} />
+        <Route path="tickets" element={<Tickets />} />
+        <Route path="tickets/:id" element={<TicketDetail />} />
         <Route path="withdrawals" element={<Withdrawals />} />
         <Route path="pricing-rules" element={<Pricing />} />
         <Route
