@@ -1,4 +1,5 @@
-import { useQueries } from "@tanstack/react-query";
+import { useState } from "react";
+import { useQueries, useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { Alert, Button, Card, Typography } from "antd";
 import {
@@ -12,8 +13,26 @@ import { api } from "../lib/api";
 import { activeStatuses, date, label } from "../lib/format";
 import { Heading, Panel, QueryError, Refresh, UpdatedAt, Loading } from "../components/common";
 import { RideTable } from "../components/RideTable";
+import { DashboardFinance } from "./DashboardFinance";
+import { DashboardAnomalies, WithdrawalQueue } from "./DashboardActions";
+import type { DashboardPeriod } from "../types";
+import "./dashboard.css";
+
+const financeKey = ["admin", "dashboard", "finance"];
 
 export default function Dashboard() {
+  const [period, setPeriod] = useState<DashboardPeriod>(7);
+  const [withdrawalPage, setWithdrawalPage] = useState(0);
+  const finance = useQuery({
+    queryKey: [...financeKey, period],
+    queryFn: () => api.dashboard(period),
+    refetchInterval: 30_000,
+  });
+  const withdrawals = useQuery({
+    queryKey: ["admin", "withdrawals", "dashboard", withdrawalPage],
+    queryFn: () => api.withdrawals({ status: "PENDING", page: withdrawalPage, size: 5 }),
+    refetchInterval: 30_000,
+  });
   const [active, noDriver, documents, flagged, recent, pendingAccounts] = useQueries({
     queries: [
       {
@@ -74,13 +93,13 @@ export default function Dashboard() {
       icon: <FlagOutlined />,
     },
   ];
-  const all = [active, noDriver, documents, flagged, recent, pendingAccounts];
-  const updatedAt = Math.min(...all.map(query => query.dataUpdatedAt));
+  const all = [finance, withdrawals, active, noDriver, documents, flagged, recent, pendingAccounts];
+  const updatedAt = Math.max(...all.map(query => query.dataUpdatedAt));
   return (
     <>
       <Heading
         title="Tổng quan vận hành"
-        subtitle="Dữ liệu toàn hệ thống · Tự cập nhật mỗi 30 giây"
+        subtitle="Tài chính và vận hành PTITgo · Tự cập nhật mỗi 30 giây"
         actions={
           <Refresh
             loading={all.some((q) => q.isFetching)}
@@ -89,6 +108,10 @@ export default function Dashboard() {
         }
       />
       <UpdatedAt value={updatedAt} fetching={all.some(query => query.isFetching)} />
+      <DashboardFinance query={finance} period={period} onPeriodChange={setPeriod} />
+      <div className="dashboard-section-heading">
+        <h3>Theo dõi vận hành</h3>
+      </div>
       <div className="stat-grid">
         {stats.map(({ title, query, href, icon }) => (
           <Link key={title} to={href}>
@@ -174,6 +197,20 @@ export default function Dashboard() {
           </Typography.Text>
         )}
       </Panel>
+      <div className="dashboard-section-heading">
+        <div>
+          <h3>Cần xử lý</h3>
+          <p>Yêu cầu rút tiền và các chuyến cần kiểm tra.</p>
+        </div>
+      </div>
+      <div className="dashboard-action-grid">
+        <WithdrawalQueue
+          query={withdrawals}
+          page={withdrawalPage}
+          onPageChange={setWithdrawalPage}
+        />
+        <DashboardAnomalies query={finance} />
+      </div>
     </>
   );
 }

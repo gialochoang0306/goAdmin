@@ -21,6 +21,8 @@ import type {
   TicketStatus,
   TicketSummary,
   SendTicketMessage,
+  DashboardPeriod,
+  DashboardSummary,
 } from "../types";
 
 export class ApiError extends Error {
@@ -165,6 +167,8 @@ export const api = {
   me: () => request<Profile>("/api/auth/me"),
   logout: (installationId: string) =>
     request("/api/auth/logout", { method: "POST", body: { installationId } }),
+  dashboard: (days: DashboardPeriod) =>
+    request<DashboardSummary>(`${admin}/dashboard`, { params: { days } }),
   tickets: (page: number, status?: TicketStatus, params: Params = {}) =>
     request<Page<TicketSummary>>(`${admin}/tickets`, { params: { page, size: 20, status, ...params } }),
   ticket: (id: number) => request<TicketDetail>(`${admin}/tickets/${id}`),

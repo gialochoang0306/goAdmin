@@ -34,6 +34,7 @@ let pricing = structuredClone(pricingFixture);
 let assignmentConflict = false;
 let verificationConflict = false;
 let supportsAdvanced = true;
+let withdrawalPending = true;
 const writes: {
   path: string;
   method: string;
@@ -70,6 +71,7 @@ beforeEach(() => {
   assignmentConflict = false;
   verificationConflict = false;
   supportsAdvanced = true;
+  withdrawalPending = true;
   configureAuth(
     async () => "test-token",
     () => {},
@@ -91,6 +93,23 @@ beforeEach(() => {
           force: url.searchParams.get("force"),
         });
       else reads.push(path + url.search);
+      if (path === "/api/admin/dashboard") return ok({
+        gmv: url.searchParams.get("days") === "7" ? 120000 : 980000,
+        revenue: 24000, promoCost: 10000, grossProfit: 14000,
+        tripCount: 12, previousTripCount: 10,
+        daily: [{ day: "2026-11-08", gmv: 120000, revenue: 24000 }],
+        paymentMix: { cash: 1, wallet: 3, other: 0 },
+        wallets: { driverCash: 90000, customer: 25000, driverCredit: 20000, pendingWithdrawals: withdrawalPending ? 40000 : 0 },
+        anomalies: [{ kind: "HIGH_FARE", subjectId: 11, value: 1200000, occurredAt: "2026-11-08T04:00:00Z" }],
+      });
+      if (path === "/api/admin/withdrawals") return ok(page(withdrawalPending ? [{
+        id: 91, driverId: 41, driverName: "Tài xế rút tiền", amount: 40000,
+        bankName: "ACB", bankAccountNumber: "0123456789", status: "PENDING", createdAt: "2026-11-08T02:00:00Z",
+      }] : [], withdrawalPending ? 1 : 0, 0, 5));
+      if (path === "/api/admin/withdrawals/91/review") {
+        withdrawalPending = false;
+        return ok({ id: 91, status: "SUCCESS" });
+      }
       if (path === "/api/admin/rides/filter-capabilities") return ok({ search: supportsAdvanced, createdRange: supportsAdvanced });
       if (path === "/api/admin/rides")
         return ok(
@@ -275,6 +294,34 @@ describe("Admin pages", () => {
         "8",
       ),
     ).toBeInTheDocument();
+  });
+  it("shows finance separately from wallets and switches the reporting period", async () => {
+    const { user } = renderPage("/dashboard");
+    const business = await screen.findByRole("region", { name: "Hiệu quả kinh doanh" });
+    const wallets = screen.getByRole("region", { name: "Sức khỏe tài chính" });
+    expect(await within(business).findByText(/120\.000/)).toBeInTheDocument();
+    expect(within(business).getByText(/\+20%/)).toBeInTheDocument();
+    expect(within(wallets).getByText(/175\.000/)).toBeInTheDocument();
+    expect(screen.getByText("75%")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Chuyến #11" })).toHaveAttribute("href", "/rides/11");
+    await user.click(screen.getByText("30 ngày"));
+    expect(await within(business).findByText(/980\.000/)).toBeInTheDocument();
+    expect(reads).toContain("/api/admin/dashboard?days=30");
+  });
+
+  it("confirms an external transfer before approving a withdrawal and refreshes held funds", async () => {
+    const { user } = renderPage("/dashboard");
+    await user.click(await screen.findByRole("button", { name: "Duyệt yêu cầu #91" }));
+    const dialog = await screen.findByRole("dialog", { name: "Duyệt yêu cầu #91" });
+    expect(within(dialog).getByText(/0123456789/)).toBeInTheDocument();
+    const approve = within(dialog).getByRole("button", { name: "Xác nhận đã chuyển tiền" });
+    expect(approve).toBeDisabled();
+    expect(writes).toHaveLength(0);
+    await user.click(within(dialog).getByRole("checkbox"));
+    await user.click(approve);
+    expect(await screen.findByText("Không có yêu cầu rút tiền chờ duyệt.")).toBeInTheDocument();
+    expect(writes).toEqual([{ path: "/api/admin/withdrawals/91/review", method: "POST", body: { action: "APPROVE" }, force: null }]);
+    expect(await within(screen.getByRole("region", { name: "Sức khỏe tài chính" })).findByText(/135\.000/)).toBeInTheDocument();
   });
   it("preserves filters when opening a ride and returning to its list", async () => {
     const { user } = renderPage("/rides?status=NO_DRIVER_FOUND&page=1&size=20");
