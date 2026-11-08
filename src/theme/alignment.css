@@ -1,0 +1,86 @@
+/* Shared layout contracts: label/value rows, mixed-height controls and wrapped actions. */
+:root .ant-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 20px;
+}
+:root .ant-btn.mobile-menu { display: none; }
+@media (max-width: 1023px) { :root .ant-btn.mobile-menu { display: inline-flex; } }
+:root .ant-tag { vertical-align: middle; margin-block: 0; }
+:root .filters { align-items: center; }
+:root .filters > * { max-width: 100%; }
+:root .filters > label { display: block; min-width: 0; }
+:root .page-heading { align-items: center; }
+:root .detail-grid { align-items: start; }
+:root .detail-grid > * { min-width: 0; }
+:root .ant-space-horizontal { align-items: center; }
+:root .ant-space-item { min-width: 0; }
+:root .ant-table-tbody > tr > td { vertical-align: middle; }
+:root .ant-table-cell .ant-space-horizontal { flex-wrap: wrap; row-gap: 8px; }
+
+/* Horizontal Descriptions only: keep vertical and bordered layouts intact. */
+:root .ant-descriptions-item-container:has(> .ant-descriptions-item-label):has(> .ant-descriptions-item-content) {
+  display: grid;
+  grid-template-columns: minmax(96px, 34%) minmax(0, 1fr);
+  align-items: start;
+  column-gap: 12px;
+  min-width: 0;
+}
+:root .ant-descriptions-item-container > :is(.ant-descriptions-item-label, .ant-descriptions-item-content) {
+  display: block;
+  min-width: 0;
+  min-height: 32px;
+  line-height: 24px;
+  padding-block: 4px;
+  overflow-wrap: anywhere;
+}
+:root .ant-descriptions-item-container > .ant-descriptions-item-label::after { top: 0; }
+:root .ant-descriptions-item-container:has(> .ant-descriptions-item-content :is(.ant-tag, .ant-btn, .ant-switch, .ant-space)) { align-items: center; }
+:root .ant-descriptions-item-container > .ant-descriptions-item-content:has(.ant-tag, .ant-btn, .ant-switch, .ant-space) {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding-block: 0;
+}
+:root .ant-descriptions-item-content > .ant-tag { margin: 0; }
+
+/* Card headers and operational toolbars must tolerate long titles and actions. */
+:root .ant-card-head-wrapper { align-items: center; flex-wrap: wrap; gap: 8px 16px; }
+:root .ant-card-head-title { flex: 1 1 160px; min-width: 0; white-space: normal; overflow-wrap: anywhere; }
+:root .ant-card-extra { flex: 0 1 auto; display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-inline-start: auto; }
+:root .ant-card-head:has(.ant-card-extra) { padding-block: 12px; }
+:root .ant-form-item-label > label { max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+:root .review-checklist li { align-items: center; gap: 12px; }
+:root .review-checklist .ant-tag { flex-shrink: 0; }
+:root .ant-modal-footer, :root .ant-popconfirm-buttons { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 8px; }
+:root .ant-modal-footer > .ant-btn + .ant-btn, :root .ant-popconfirm-buttons > .ant-btn + .ant-btn { margin-inline-start: 0; }
+:root .ant-alert:has(.ant-alert-action) { align-items: center; }
+
+/* The same label/value alignment applies to table cards on narrow screens. */
+:root .table-mobile-field { align-items: start; }
+:root .table-mobile-field > :is(dt, dd) { min-width: 0; min-height: 32px; line-height: 24px; padding-block: 4px; overflow-wrap: anywhere; }
+:root .table-mobile-field:has(> dd :is(.ant-tag, .ant-btn, .ant-space)) { align-items: center; }
+:root .table-mobile-field > dd:has(.ant-tag, .ant-btn, .ant-space) { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; padding-block: 0; }
+@media (max-width: 600px) {
+  :root .page-heading { align-items: stretch; }
+  :root .page-heading > .ant-space { justify-content: flex-start; }
+  :root .ant-descriptions-item-container:has(> .ant-descriptions-item-label):has(> .ant-descriptions-item-content) { grid-template-columns: minmax(88px, 34%) minmax(0, 1fr); column-gap: 8px; }
+  :root .ant-card-extra { margin-inline-start: 0; max-width: 100%; }
+}
+
+/* Keep ticket filters/pagination inset when a full-width table removes body padding. */
+:root .panel .support-list-controls { padding: 16px 16px 0; }
+:root .panel .support-pagination { padding-inline: 16px; margin-block: 16px; }
+:root .ant-form-item-label > .ant-form-item-required::before { color: var(--md-sys-color-error) !important; }
+
+/* Pagination totals stay readable; compact navigation must not inherit field height. */
+:root .ant-pagination { align-items: center; flex-wrap: wrap; row-gap: 8px; }
+:root .ant-pagination-total-text { height: auto; line-height: 24px; white-space: nowrap; }
+:root .ant-pagination-simple-pager { height: 40px; line-height: 24px; }
+:root .ant-pagination-simple-pager input { height: 40px; }
+:root .ant-input-textarea-show-count { margin-bottom: 24px; }
+@media (max-width: 600px) {
+  :root .table-mobile-pagination .ant-pagination-total-text { flex-basis: 100%; margin-inline: 0; text-align: center; }
+}

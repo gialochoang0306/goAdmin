@@ -112,6 +112,7 @@ export function Tickets() {
           rowKey="id"
           loading={query.isFetching}
           pagination={false}
+          scroll={{ x: 840 }}
           onRow={ticket => ({ onClick: () => navigate({ pathname: `/tickets/${ticket.id}`, search: location.search }) })}
           locale={{
             emptyText: (

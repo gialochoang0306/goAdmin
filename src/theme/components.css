@@ -116,7 +116,13 @@
 :root :is(.ant-checkbox-inner, .ant-radio-inner) { border-color: var(--md-sys-color-outline); }
 :root .ant-checkbox-checked .ant-checkbox-inner, :root .ant-radio-checked .ant-radio-inner { background: var(--md-sys-color-primary); border-color: var(--md-sys-color-primary); }
 :root .ant-tabs-ink-bar, :root .ant-switch-checked { background: var(--md-sys-color-primary); }
-:root .ant-tabs-tab-active .ant-tabs-tab-btn { color: var(--md-sys-color-primary); text-shadow: none; }
+/* Tabs share semantic colors in idle, selected, pointer and keyboard-focus states. */
+:root .ant-tabs .ant-tabs-tab { color: var(--md-sys-color-on-surface-variant); }
+:root .ant-tabs .ant-tabs-tab:is(.ant-tabs-tab-active, :hover, :focus-within) { color: var(--md-sys-color-primary); }
+:root .ant-tabs .ant-tabs-tab .ant-tabs-tab-btn { color: inherit !important; text-shadow: none; }
+:root .ant-tabs .ant-tabs-tab-disabled {
+  color: color-mix(in srgb, var(--md-sys-color-on-surface) var(--md-sys-state-disabled-opacity), transparent) !important;
+}
 :root .ant-pagination-item { border-radius: var(--md-sys-shape-corner-full); }
 :root .ant-pagination-item-active { background: var(--md-sys-color-secondary-container); border-color: var(--md-sys-color-transparent); }
 :root .ant-pagination-item-active a { color: var(--md-sys-color-on-secondary-container); }

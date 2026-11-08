@@ -41,6 +41,16 @@ export const md3Theme: ThemeConfig = {
   },
   components: {
     Button: { controlHeight: 40, controlHeightLG: 40, controlHeightSM: 40, borderRadius: 9999, fontWeight: 500, paddingInline: 24, primaryShadow: "none", defaultShadow: "none", dangerShadow: "none", primaryColor: color("on-primary") },
+    Tabs: {
+      itemColor: color("on-surface-variant"),
+      itemSelectedColor: color("primary"),
+      itemHoverColor: color("primary"),
+      itemActiveColor: color("primary"),
+      inkBarColor: color("primary"),
+      cardBg: color("surface-container"),
+    },
+    Descriptions: { itemPaddingBottom: 8, labelColor: color("on-surface-variant"), contentColor: color("on-surface") },
+    Pagination: { itemSize: 40, itemSizeSM: 32, itemSizeLG: 40 },
     Card: { borderRadiusLG: 12, colorBgContainer: color("surface-container") },
     Menu: { itemHeight: 56, itemBorderRadius: 9999, itemSelectedBg: color("secondary-container"), itemSelectedColor: color("on-secondary-container"), itemColor: color("on-surface-variant"), itemBg: "transparent", itemHoverBg: state("on-surface", "hover") },
     Input: { activeShadow: "none", errorActiveShadow: "none", warningActiveShadow: "none" },
