@@ -68,7 +68,7 @@ export function Rides() {
   const from = f.read("from");
   const to = f.read("to");
   const range = rideDateRange(from, to);
-  const capabilities = useQuery({ queryKey: ["admin", "ride-filter-capabilities"], queryFn: api.rideFilterCapabilities, staleTime: Infinity });
+  const capabilities = useQuery({ queryKey: ["admin", "ride-filter-capabilities"], queryFn: api.rideFilterCapabilities, staleTime: Infinity, retry: false, refetchOnWindowFocus: false, refetchOnReconnect: false });
   const supported = capabilities.data?.search === true && capabilities.data?.createdRange === true;
   const hasAdvanced = !!(q || from || to);
   const params = { ...f.params, status, ...(supported && !range.error ? { q, ...range } : {}) };

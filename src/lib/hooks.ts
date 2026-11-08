@@ -19,6 +19,7 @@ export function useFilters() {
         if (value == null || value === "") next.delete(key);
         else next.set(key, String(value));
       });
+      if (values.size != null && Number(values.size) !== size) next.delete("page");
       return next;
     });
   };

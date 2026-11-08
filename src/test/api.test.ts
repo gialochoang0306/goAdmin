@@ -26,6 +26,19 @@ describe("API authentication and contracts", () => {
     expire.mockClear();
     configureAuth(token, expire);
   });
+  it.each([400, 404])("disables advanced ride filters on legacy server %i without retrying", async (status) => {
+    const fetcher = vi.fn().mockResolvedValue(fail(status, "Unsupported route"));
+    vi.stubGlobal("fetch", fetcher);
+    expect(await api.rideFilterCapabilities()).toEqual({ search: false, createdRange: false });
+    expect(fetcher).toHaveBeenCalledTimes(1);
+  });
+  it("preserves capability flags and surfaces server failures", async () => {
+    const fetcher = vi.fn().mockResolvedValueOnce(ok({ search: true, createdRange: false }))
+      .mockResolvedValueOnce(fail(503, "Server unavailable"));
+    vi.stubGlobal("fetch", fetcher);
+    expect(await api.rideFilterCapabilities()).toEqual({ search: true, createdRange: false });
+    await expect(api.rideFilterCapabilities()).rejects.toMatchObject({ status: 503 });
+  });
   it("refreshes a read once after 401 and uses the fresh Firebase token", async () => {
     const fetcher = vi
       .fn()

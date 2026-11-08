@@ -16,6 +16,7 @@ import {
 } from "antd";
 import type { TableColumnsType } from "antd";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
+import { SearchDateFields, listSearch } from "../components/SearchDateFields";
 import { FilterField } from "../components/FilterField";
 import { Heading, InvalidRecord, Loading, Panel, Photo, QueryError, Refresh } from "../components/common";
 import { api, errorMessage } from "../lib/api";
@@ -26,7 +27,7 @@ import type { TicketDetail, TicketMessage, TicketStatus, TicketSummary } from ".
 
 const listKey = ["admin", "tickets", "list"] as const;
 const detailKey = (id: number) => ["admin", "tickets", "detail", id] as const;
-const pageSize = 20;
+
 
 const statusInfo: Record<TicketStatus, { label: string; color: string }> = {
   OPEN: { label: "Mới", color: "gold" },
@@ -54,10 +55,15 @@ export function Tickets() {
   const filters = useFilters();
   const page = filters.page;
   const rawStatus = filters.read("status");
-  const status = rawStatus && rawStatus in statusInfo ? rawStatus as TicketStatus : undefined;
+  const status = rawStatus ? rawStatus as TicketStatus : undefined;
+  const search = listSearch(filters);
+  const ownerRole = filters.read("ownerRole");
+  const category = filters.read("category");
+  const params = { ...filters.params, ...search.params, ownerRole, category };
   const query = useQuery({
-    queryKey: [...listKey, page, status],
-    queryFn: () => api.tickets(page, status),
+    queryKey: [...listKey, page, status, params],
+    queryFn: () => api.tickets(page, status, params),
+    enabled: !search.error,
     refetchInterval: 15000,
     refetchOnWindowFocus: "always",
   });
@@ -86,7 +92,7 @@ export function Tickets() {
     { title: "Trạng thái", key: "status", render: (_, ticket) => <TicketStatusTag status={ticket.status} /> },
     { title: "Cập nhật", key: "updatedAt", render: (_, ticket) => date(ticket.updatedAt) },
   ];
-  const rows = query.data?.content ?? [];
+  const rows = search.error ? [] : query.data?.content ?? [];
   return (
     <>
       <Heading
@@ -95,7 +101,12 @@ export function Tickets() {
         actions={<Refresh loading={query.isFetching} onClick={() => void query.refetch()} />}
       />
       <Panel>
-        <div className="support-list-controls">
+        <div className="support-list-controls filters">
+          <SearchDateFields filters={filters} label="Tìm yêu cầu hỗ trợ" placeholder="Mã HT-, mã chuyến, tên hoặc SĐT" />
+          <FilterField label="Vai trò người gửi"><Select aria-label="Vai trò người gửi" allowClear placeholder="Tất cả vai trò" value={ownerRole || undefined}
+            options={[{value:"CUSTOMER",label:"Khách hàng"},{value:"DRIVER",label:"Tài xế"}]} onChange={ownerRole => filters.update({ownerRole})} /></FilterField>
+          <FilterField label="Chủ đề hỗ trợ"><Select aria-label="Chủ đề hỗ trợ" allowClear placeholder="Tất cả chủ đề" value={category || undefined}
+            options={Object.entries(categories).map(([value,label])=>({value,label}))} onChange={category => filters.update({category})} /></FilterField>
           <FilterField label="Trạng thái">
             <Select
               aria-label="Lọc trạng thái ticket"
@@ -104,7 +115,9 @@ export function Tickets() {
               onChange={value => filters.update({ status: value })}
             />
           </FilterField>
+          <Button onClick={filters.reset}>Xóa bộ lọc</Button>
         </div>
+        {search.error && <Alert type="warning" showIcon title={search.error} />}
         <QueryError error={query.error} retry={() => void query.refetch()} />
         <Table<TicketSummary>
           columns={columns}
@@ -126,10 +139,10 @@ export function Tickets() {
         <div className="support-pagination">
           <Pagination
             current={page + 1}
-            pageSize={pageSize}
-            total={query.data?.totalElements ?? 0}
-            showSizeChanger={false}
-            onChange={next => filters.update({ page: next - 1 }, false)}
+            pageSize={filters.size}
+            total={search.error ? 0 : query.data?.totalElements ?? 0}
+            showSizeChanger pageSizeOptions={[20, 50, 100]}
+            onChange={(next, size) => filters.update({ page: size !== filters.size ? 0 : next - 1, size }, false)}
           />
         </div>
       </Panel>

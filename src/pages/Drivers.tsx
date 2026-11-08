@@ -116,7 +116,7 @@ export function Drivers() {
           defaultValue={f.read("search")}
           aria-label="Tìm tài xế"
           placeholder="Tên hoặc số điện thoại"
-          enterButton="Tìm"
+          enterButton="Tìm" maxLength={200}
           onSearch={(search) => f.update({ search: search.trim() })}
         /></FilterField>
         <FilterField label="Xác minh tài xế"><Select
@@ -243,7 +243,7 @@ export function Documents() {
           defaultValue={f.read("q")}
           aria-label="Tìm hồ sơ tài xế"
           placeholder="Tên, SĐT hoặc mã tài xế"
-          enterButton="Tìm"
+          enterButton="Tìm" maxLength={200}
           onSearch={q => f.update({ q: q.trim() })}
         /></FilterField>
         <FilterField label="Trạng thái xử lý hồ sơ"><Select

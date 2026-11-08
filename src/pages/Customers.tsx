@@ -19,8 +19,9 @@ import {
 import type { ColumnsType } from "antd/es/table";
 import { ArrowLeftOutlined } from "@ant-design/icons";
 import { api } from "../lib/api";
+import { SearchDateFields, listSearch } from "../components/SearchDateFields";
 import { useAction, useFilters } from "../lib/hooks";
-import { date, label, money, percentage, rideLabels, text } from "../lib/format";
+import { rideDateRange, date, label, money, percentage, rideLabels, text } from "../lib/format";
 import {
   DataTable,
   Heading,
@@ -105,7 +106,7 @@ export function Customers() {
           aria-label="Tìm khách hàng"
           defaultValue={f.read("q")}
           placeholder="Tên, số điện thoại hoặc email"
-          enterButton="Tìm"
+          enterButton="Tìm" maxLength={200}
           onSearch={(q) => f.update({ q: q.trim() })}
         /></FilterField>
         <FilterField label="Trạng thái khách hàng"><Select
@@ -280,7 +281,7 @@ function CustomerRides({ id }: { id: number }) {
   const from = f.read("from");
   const to = f.read("to");
   const status = f.read("rideStatus");
-  const validDates = !from || !to || from <= to;
+  const validDates = !rideDateRange(from, to).error;
   const query = useQuery({
     queryKey: ["admin", "customer-rides", id, f.page, f.size, status, from, to],
     queryFn: () => api.customerRides(id, { ...f.params, status, from, to }),
@@ -317,6 +318,7 @@ function CustomerRides({ id }: { id: number }) {
             onChange={(e) => f.update({ to: e.target.value })}
           />
         </FilterField></label>
+        <Button onClick={()=>f.update({from:undefined,to:undefined,rideStatus:undefined})}>Xóa bộ lọc</Button>
         <Refresh
           loading={query.isFetching}
           onClick={() => {
@@ -344,16 +346,22 @@ function CustomerRides({ id }: { id: number }) {
 }
 function CustomerWallet({ id }: { id: number }) {
   const f = useFilters();
+  const search = listSearch(f, "wallet");
+  const type = f.read("walletType");
+  const status = f.read("walletStatus");
+  const location = useLocation();
+  const params = { ...f.params, ...search.params, type, status };
   const query = useQuery({
-    queryKey: ["admin", "transactions", id, f.page, f.size],
-    queryFn: () => api.transactions(id, f.params),
+    queryKey: ["admin", "transactions", id, params],
+    queryFn: () => api.transactions(id, params),
+    enabled: !search.error,
   });
   const columns: ColumnsType<WalletTransaction> = [
     { title: "Mã", dataIndex: "id", render: (v) => `#${v}` },
     {
       title: "Chuyến",
       dataIndex: "rideId",
-      render: (v) => (v ? <Link to={`/rides/${v}`}>#{v}</Link> : "—"),
+      render: (v) => (v ? <Link to={`/rides/${v}`} state={{from:location.pathname + location.search}}>#{v}</Link> : "—"),
     },
     { title: "Số tiền", dataIndex: "amount", render: money, align: "right" },
     { title: "Loại", dataIndex: "type", render: label },
@@ -370,17 +378,24 @@ function CustomerWallet({ id }: { id: number }) {
   return (
     <>
       <div className="filters">
+        <SearchDateFields filters={f} prefix="wallet" label="Tìm giao dịch ví" placeholder="Mã giao dịch, mã chuyến hoặc mô tả" />
+        <FilterField label="Loại giao dịch"><Select aria-label="Loại giao dịch ví" allowClear placeholder="Tất cả loại" value={type || undefined}
+          options={["DEPOSIT", "TRIP_PAYMENT", "REFUND", "WITHDRAW", "COMMISSION_FEE"].map(value=>({value,label:label(value)}))} onChange={walletType=>f.update({walletType})} /></FilterField>
+        <FilterField label="Trạng thái giao dịch"><Select aria-label="Trạng thái giao dịch ví" allowClear placeholder="Tất cả trạng thái" value={status || undefined}
+          options={["PENDING","SUCCESS","FAILED"].map(value=>({value,label:label(value)}))} onChange={walletStatus=>f.update({walletStatus})} /></FilterField>
+        <Button onClick={()=>f.update({walletq:undefined,walletfrom:undefined,walletto:undefined,walletType:undefined,walletStatus:undefined})}>Xóa bộ lọc</Button>
         <Refresh
           loading={query.isFetching}
           onClick={() => void query.refetch()}
         />
       </div>
+      {search.error && <Alert type="warning" showIcon title={search.error} />}
       <QueryError error={query.error} retry={() => void query.refetch()} />
       <Panel>
         <DataTable
-          data={query.data}
+          data={search.error ? undefined : query.data}
           columns={columns}
-          loading={query.isPending}
+          loading={!search.error && query.isPending}
           onPage={(page, size) => f.update({ page, size }, false)}
           scroll={1150}
         />

@@ -84,3 +84,10 @@
 @media (max-width: 600px) {
   :root .table-mobile-pagination .ant-pagination-total-text { flex-basis: 100%; margin-inline: 0; text-align: center; }
 }
+
+/* Reserve room for floating filter labels and a separate search action. */
+@media (min-width: 601px) {
+  :root .filters > .filter-field { min-width: 200px; }
+  :root .filters > .filter-field.search-field { min-width: 320px; }
+  :root .filters > .filter-field:has(input[type="date"]) { width: 200px; }
+}

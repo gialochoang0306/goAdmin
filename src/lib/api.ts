@@ -165,8 +165,8 @@ export const api = {
   me: () => request<Profile>("/api/auth/me"),
   logout: (installationId: string) =>
     request("/api/auth/logout", { method: "POST", body: { installationId } }),
-  tickets: (page: number, status?: TicketStatus) =>
-    request<Page<TicketSummary>>(`${admin}/tickets`, { params: { page, size: 20, status } }),
+  tickets: (page: number, status?: TicketStatus, params: Params = {}) =>
+    request<Page<TicketSummary>>(`${admin}/tickets`, { params: { page, size: 20, status, ...params } }),
   ticket: (id: number) => request<TicketDetail>(`${admin}/tickets/${id}`),
   claimTicket: (id: number) =>
     request<TicketDetail>(`${admin}/tickets/${id}/claim`, { method: "POST", body: {} }),
@@ -183,7 +183,16 @@ export const api = {
     }>("/api/uploads/signature", { params: { purpose: "SUPPORT" } }),
   rides: (params: Params = {}) =>
     request<Page<Ride>>(`${admin}/rides`, { params }),
-  rideFilterCapabilities: () => request<{ search: boolean; createdRange: boolean }>(`${admin}/rides/filter-capabilities`),
+  rideFilterCapabilities: async () => {
+    try {
+      return await request<{ search: boolean; createdRange: boolean }>(`${admin}/rides/filter-capabilities`);
+    } catch (error) {
+      // Older servers resolve the missing route as /rides/{id} and return 400.
+      if (error instanceof ApiError && [400, 404].includes(error.status))
+        return { search: false, createdRange: false };
+      throw error;
+    }
+  },
   ride: (id: number) => request<RideDetail>(`${admin}/rides/${id}`),
   chat: (id: number, params: Params = {}) =>
     request<MessagePage>(`${admin}/rides/${id}/chat`, {

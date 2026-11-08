@@ -230,11 +230,13 @@ export default function PricingPage() {
         }
       },
     });
+  const term = f.read("q").trim().toLocaleLowerCase("vi");
   const vehicleType = f.read("vehicleType");
   const active = f.read("active");
   const rows =
     query.data?.filter(
       (rule) =>
+        (!term || `#${rule.id} ${label(rule.vehicleType)}`.toLocaleLowerCase("vi").includes(term)) &&
         (!vehicleType || rule.vehicleType === vehicleType) &&
         (!active || String(rule.active) === active),
     ) ?? [];
@@ -335,6 +337,7 @@ export default function PricingPage() {
         }
       />
       <div className="filters">
+        <FilterField label="Tìm bảng giá" search><Input.Search key={f.read("q")} defaultValue={f.read("q")} aria-label="Tìm bảng giá" placeholder="Mã bảng giá hoặc loại xe" maxLength={200} enterButton="Tìm" onSearch={q=>f.update({q:q.trim()})} /></FilterField>
         <FilterField label="Loại xe bảng giá"><Select
           aria-label="Loại xe bảng giá"
           placeholder="Tất cả loại xe"
