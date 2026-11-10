@@ -87,7 +87,7 @@
   border-radius: 0;
   color: inherit;
 }
-:root .ant-input-affix-wrapper > .ant-input { padding: 0; }
+:root .ant-input-affix-wrapper > input.ant-input { padding: 0; }
 :root .ant-input-number { padding-inline: 0; }
 :root .ant-input-number-input { height: 54px !important; padding-inline: 16px; }
 :root .ant-picker { display: inline-flex; }
@@ -95,21 +95,30 @@
 :root .ant-select-selector { min-height: 54px !important; padding-inline: 0 !important; }
 :root .ant-select-content { align-self: center; }
 :root .ant-select-selection-placeholder, :root input::placeholder, :root textarea::placeholder { color: var(--md-sys-color-on-surface-variant); }
-:root textarea.ant-input { min-height: 112px; padding-block: 16px; resize: vertical; }
+:root .ant-input-textarea-affix-wrapper { min-height: 0; padding: 0; }
+:root :is(textarea.ant-input, .ant-input-textarea-affix-wrapper > textarea.ant-input) {
+  min-height: var(--md-sys-size-field-height);
+  padding: 12px 16px;
+}
+:root .ant-input-textarea-show-count { margin-block-end: 28px; }
+:root .ant-input-textarea-show-count .ant-input-data-count {
+  inset-block: calc(100% + 7px) auto;
+  font-size: 12px;
+  line-height: 16px;
+}
 
-/* Existing labels float inside the field; htmlFor, ids and accessible names are preserved. */
-:root .ant-form-item:has(.ant-input, .ant-select, .ant-picker, .ant-input-number):not(:has(.ant-form-item)) > .ant-row { position: relative; }
-:root .ant-form-item:has(.ant-input, .ant-select, .ant-picker, .ant-input-number):not(:has(.ant-form-item)) > .ant-row > .ant-form-item-label {
+/* Keep multiline labels above the field and float single-line labels inside it. */
+:root .ant-form-item:has(.ant-input, .ant-select, .ant-picker, .ant-input-number):not(:has(.ant-form-item, textarea.ant-input)) > .ant-row { position: relative; }
+:root .ant-form-item:has(.ant-input, .ant-select, .ant-picker, .ant-input-number):not(:has(.ant-form-item, textarea.ant-input)) > .ant-row > .ant-form-item-label {
   position: absolute; inset-block-start: 6px; inset-inline-start: 16px;
   z-index: 1; max-width: calc(100% - 48px); padding: 0; line-height: 16px;
 }
 :root .ant-form-item-label > label { color: var(--md-sys-color-on-surface-variant); font-size: 12px; height: auto; line-height: 16px; }
-:root .ant-form-item:has(> .ant-row > .ant-form-item-label) :is(input.ant-input, .ant-input-affix-wrapper, .ant-select, .ant-picker) { padding-top: 22px; padding-bottom: 6px; }
+:root .ant-form-item:has(> .ant-row > .ant-form-item-label) :is(input.ant-input, .ant-input-affix-wrapper:where(:not(.ant-input-textarea-affix-wrapper)), .ant-select, .ant-picker) { padding-top: 22px; padding-bottom: 6px; }
 :root .ant-form-item:has(> .ant-row > .ant-form-item-label) .ant-input-affix-wrapper > input { padding: 0; }
 :root .ant-form-item:has(> .ant-row > .ant-form-item-label) .ant-input-number-input { padding-top: 22px; padding-bottom: 6px; }
-:root .ant-form-item:has(> .ant-row > .ant-form-item-label) textarea.ant-input { padding-top: 28px; }
 :root .ant-form-item:has(> .ant-row > .ant-form-item-label) .ant-select-selector { min-height: 26px !important; }
-:root :is(.ant-input, .ant-input-affix-wrapper, .ant-select, .ant-picker, .ant-input-number):focus-within { border-bottom: 2px solid var(--md-sys-color-primary); }
+:root :is(.ant-input, .ant-input-affix-wrapper, .ant-select, .ant-picker, .ant-input-number):not(:where(.ant-input-affix-wrapper > .ant-input)):focus-within { border-bottom: 2px solid var(--md-sys-color-primary); }
 :root :is(.ant-input-status-error, .ant-input-affix-wrapper-status-error, .ant-select-status-error, .ant-input-number-status-error) { border-bottom: 2px solid var(--md-sys-color-error) !important; }
 :root .ant-form-item-explain-error, :root .ant-typography-danger { color: var(--md-sys-color-error); }
 :root :is(.ant-input-disabled, .ant-input-affix-wrapper-disabled, .ant-select-disabled, .ant-input-number-disabled) { opacity: .6; cursor: not-allowed; }
@@ -166,7 +175,7 @@
 :root .ant-table-tbody > tr.ant-table-row:hover > td { background-color: var(--md-sys-color-transparent); }
 :root :is(a, button, input, textarea, [tabindex]):focus-visible { outline: 2px solid var(--md-sys-color-primary); outline-offset: 3px; }
 :root :is(.ant-input-affix-wrapper, .ant-input-number, .ant-picker, .ant-select):focus-within { outline: 2px solid var(--md-sys-color-primary); outline-offset: 3px; }
-:root :is(.ant-input-affix-wrapper, .ant-input-number, .ant-picker, .ant-select) input:focus-visible { outline: none; }
+:root :is(.ant-input-affix-wrapper, .ant-input-number, .ant-picker, .ant-select) :is(input, textarea):focus-visible { outline: none; }
 @media (max-width: 600px) {
   :root .ant-card-body { padding: 16px; }
   :root .ant-card-head { padding-inline: 16px; }
@@ -176,7 +185,7 @@
 @media (prefers-reduced-motion: reduce) { :root * { transition: none !important; } }
 
 /* Ant Design 6 compact search markup and preset tags need explicit semantic roles. */
-:root input.ant-input, :root .ant-input-affix-wrapper, :root .ant-input-number,
+:root input.ant-input, :root .ant-input-affix-wrapper:not(.ant-input-textarea-affix-wrapper), :root .ant-input-number,
 :root .ant-select-single, :root .ant-picker { height: var(--md-sys-size-field-height); }
 :root .ant-input-affix-wrapper > input.ant-input { height: auto !important; }
 :root .ant-tag:is(.ant-tag-green, .ant-tag-success) { background: var(--md-sys-color-success-container) !important; color: var(--md-sys-color-on-success-container) !important; }
