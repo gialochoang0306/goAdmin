@@ -80,7 +80,6 @@
 :root .ant-pagination-total-text { height: auto; line-height: 24px; white-space: nowrap; }
 :root .ant-pagination-simple-pager { height: 40px; line-height: 24px; }
 :root .ant-pagination-simple-pager input { height: 40px; }
-:root .ant-input-textarea-show-count { margin-bottom: 24px; }
 @media (max-width: 600px) {
   :root .table-mobile-pagination .ant-pagination-total-text { flex-basis: 100%; margin-inline: 0; text-align: center; }
 }
