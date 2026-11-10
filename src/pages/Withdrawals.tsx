@@ -43,8 +43,7 @@ export default function Withdrawals() {
     <Panel>
       <div className="filters">
         <SearchDateFields filters={filters} label="Tìm yêu cầu rút tiền" placeholder="Mã yêu cầu, tên, SĐT, ngân hàng hoặc STK" disabled={Boolean(review)} />
-        <label htmlFor="withdrawal-status" className="sr-only">Trạng thái</label>
-        <FilterField label="Trạng thái">
+        <FilterField label="Trạng thái" htmlFor="withdrawal-status">
         <Select id="withdrawal-status" aria-label="Lọc trạng thái rút tiền" value={status} options={statuses} style={{ minWidth: 190 }} disabled={Boolean(review)} onChange={value => filters.update({ status: value })} />
         </FilterField>
         <Button disabled={Boolean(review)} onClick={filters.reset}>Xóa bộ lọc</Button>

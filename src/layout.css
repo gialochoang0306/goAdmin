@@ -152,10 +152,6 @@ input {
 .filters .ant-input-number {
   width: 140px;
 }
-.filter-label {
-  font-size: 13px;
-  color: var(--muted);
-}
 .query-error {
   margin-bottom: 18px;
 }
@@ -636,7 +632,6 @@ input {
 .stat-bottom { padding-top: 12px; border-top: 1px solid var(--border); color: var(--brand); }
 .filters { padding: 16px; border: 1px solid var(--border); border-radius: var(--md-sys-shape-corner-md); background: var(--surface); }
 .filter-field { display: flex; flex-direction: column; gap: 6px; min-width: 160px; }
-.filter-field > span:first-child { font-size: 12px; font-weight: 600; color: var(--muted); }
 .filter-field .ant-select { min-width: 160px; }
 .filter-field.search-field { min-width: 260px; }
 .filter-field.search-field .ant-input-search { width: 100%; }

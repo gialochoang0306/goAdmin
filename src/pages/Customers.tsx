@@ -301,23 +301,23 @@ function CustomerRides({ id }: { id: number }) {
           }))}
           onChange={(rideStatus) => f.update({ rideStatus })}
         /></FilterField>
-        <label><FilterField label="Từ ngày">
+        <FilterField label="Từ ngày" htmlFor="customer-rides-from">
           <Input
+            id="customer-rides-from"
             type="date"
-            aria-label="Từ ngày"
             value={from}
             onChange={(e) => f.update({ from: e.target.value })}
           />
-        </FilterField></label>
-        <label><FilterField label="Đến ngày">
+        </FilterField>
+        <FilterField label="Đến ngày" htmlFor="customer-rides-to">
           <Input
+            id="customer-rides-to"
             type="date"
-            aria-label="Đến ngày"
             min={from || undefined}
             value={to}
             onChange={(e) => f.update({ to: e.target.value })}
           />
-        </FilterField></label>
+        </FilterField>
         <Button onClick={()=>f.update({from:undefined,to:undefined,rideStatus:undefined})}>Xóa bộ lọc</Button>
         <Refresh
           loading={query.isFetching}

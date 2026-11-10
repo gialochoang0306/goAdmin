@@ -107,17 +107,17 @@
   line-height: 16px;
 }
 
-/* Keep multiline labels above the field and float single-line labels inside it. */
-:root .ant-form-item:has(.ant-input, .ant-select, .ant-picker, .ant-input-number):not(:has(.ant-form-item, textarea.ant-input)) > .ant-row { position: relative; }
-:root .ant-form-item:has(.ant-input, .ant-select, .ant-picker, .ant-input-number):not(:has(.ant-form-item, textarea.ant-input)) > .ant-row > .ant-form-item-label {
-  position: absolute; inset-block-start: 6px; inset-inline-start: 16px;
-  z-index: 1; max-width: calc(100% - 48px); padding: 0; line-height: 16px;
+/* Labels occupy their own row so they can wrap above controls. */
+:root :is(.filter-label, .ant-form-item-label > label) {
+  max-inline-size: 100%;
+  height: auto;
+  color: var(--md-sys-color-on-surface-variant);
+  font-size: 13px;
+  font-weight: var(--md-sys-typescale-label-weight);
+  line-height: 18px;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
-:root .ant-form-item-label > label { color: var(--md-sys-color-on-surface-variant); font-size: 12px; height: auto; line-height: 16px; }
-:root .ant-form-item:has(> .ant-row > .ant-form-item-label) :is(input.ant-input, .ant-input-affix-wrapper:where(:not(.ant-input-textarea-affix-wrapper)), .ant-select, .ant-picker) { padding-top: 22px; padding-bottom: 6px; }
-:root .ant-form-item:has(> .ant-row > .ant-form-item-label) .ant-input-affix-wrapper > input { padding: 0; }
-:root .ant-form-item:has(> .ant-row > .ant-form-item-label) .ant-input-number-input { padding-top: 22px; padding-bottom: 6px; }
-:root .ant-form-item:has(> .ant-row > .ant-form-item-label) .ant-select-selector { min-height: 26px !important; }
 :root :is(.ant-input, .ant-input-affix-wrapper, .ant-select, .ant-picker, .ant-input-number):not(:where(.ant-input-affix-wrapper > .ant-input)):focus-within { border-bottom: 2px solid var(--md-sys-color-primary); }
 :root :is(.ant-input-status-error, .ant-input-affix-wrapper-status-error, .ant-select-status-error, .ant-input-number-status-error) { border-bottom: 2px solid var(--md-sys-color-error) !important; }
 :root .ant-form-item-explain-error, :root .ant-typography-danger { color: var(--md-sys-color-error); }
@@ -221,8 +221,7 @@
 :root .ant-input-search .ant-input-group-addon { display: flex; align-items: center; width: auto; padding: 0; border: 0; background: transparent; }
 :root .ant-input-search .ant-btn { margin-inline: 0 !important; height: 40px !important; border-radius: var(--md-sys-shape-corner-full) !important; }
 
-/* Outlined filter fields: 56px, transparent fill, floating labels. */
-:root .filter-field { position: relative; gap: 0; --md-field-label-surface: var(--md-sys-color-surface-container); }
+/* Outlined filter fields. */
 :root .filter-field :is(input.ant-input, .ant-input-affix-wrapper, .ant-select, .ant-picker, .ant-input-number) {
   height: 56px; min-height: 56px;
   border: 1px solid var(--md-sys-color-outline) !important;
@@ -237,26 +236,7 @@
 }
 :root .filter-field .ant-select-selector { min-height: 54px !important; padding: 0 !important; background: transparent !important; border: 0 !important; }
 :root .filter-field .ant-input-number-input { padding-block: 0; }
-:root .filter-field > span:first-child {
-  position: absolute; top: 28px; left: 12px; z-index: 3;
-  max-width: calc(100% - 40px); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-  transform: translateY(-50%); padding-inline: 4px; pointer-events: none;
-  color: var(--md-sys-color-on-surface-variant); font-size: 16px; line-height: 20px; font-weight: 400;
-  background: transparent;
-  transition: top var(--md-sys-motion-duration-short) var(--md-sys-motion-easing-standard), font-size var(--md-sys-motion-duration-short) var(--md-sys-motion-easing-standard);
-}
-:root .filter-field.search-field > span:first-child { max-width: calc(100% - 120px); }
-:root .filter-field:focus-within > span:first-child,
-:root .filter-field:has(input[placeholder]:not(:placeholder-shown)) > span:first-child,
-:root .filter-field:has(.ant-select-content-has-value, .ant-select-selection-item, .ant-input-number) > span:first-child,
-:root .filter-field:has(input[type="date"][value]:not([value=""])) > span:first-child {
-  top: 0; font-size: 12px; line-height: 16px;
-  background: var(--md-field-label-surface);
-}
-:root .filter-field:focus-within > span:first-child { color: var(--md-sys-color-primary); }
-:root .filter-field:not(:focus-within) input::placeholder { color: transparent; }
-:root .filter-field:not(:focus-within) :is(.ant-select-placeholder, .ant-select-selection-placeholder) { color: transparent; }
-:root .filter-field:not(:focus-within) input[type="date"][value=""]::-webkit-datetime-edit { color: transparent; }
+:root .filter-field:focus-within > .filter-label { color: var(--md-sys-color-primary); }
 :root .filter-field :is(input.ant-input, .ant-input-affix-wrapper, .ant-select, .ant-picker, .ant-input-number):focus-within {
   border: 2px solid var(--md-sys-color-primary) !important; padding-inline: 15px;
 }
