@@ -24,6 +24,7 @@ import {
   CarOutlined,
   CustomerServiceOutlined,
   DashboardOutlined,
+  GiftOutlined,
   FileProtectOutlined,
   LogoutOutlined,
   MenuOutlined,
@@ -61,6 +62,7 @@ const CustomerDetail = lazy(() =>
 );
 const Withdrawals = lazy(() => import("./pages/Withdrawals"));
 const Pricing = lazy(() => import("./pages/Pricing"));
+const Vouchers = lazy(() => import("./pages/Vouchers"));
 const Tickets = lazy(() =>
   import("./pages/Tickets").then((m) => ({ default: m.Tickets })),
 );
@@ -80,6 +82,7 @@ const navigation = [
   { key: "/tickets", label: "Hỗ trợ", icon: <CustomerServiceOutlined /> },
   { key: "/withdrawals", label: "Yêu cầu rút tiền", icon: <WalletOutlined /> },
   { key: "/pricing-rules", label: "Bảng giá", icon: <WalletOutlined /> },
+  { key: "/vouchers", label: "Khuyến mãi", icon: <GiftOutlined /> },
 ];
 export function Login() {
   const auth = useAuth();
@@ -327,6 +330,7 @@ export function AdminApp() {
         <Route path="tickets/:id" element={<TicketDetail />} />
         <Route path="withdrawals" element={<Withdrawals />} />
         <Route path="pricing-rules" element={<Pricing />} />
+        <Route path="vouchers" element={<Vouchers />} />
         <Route
           path="*"
           element={
