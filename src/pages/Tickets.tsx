@@ -98,7 +98,7 @@ export function Tickets() {
       <Heading
         title="Hỗ trợ"
         subtitle="Hội thoại CSKH hai chiều; ticket tự chuyển trạng thái khi khách phản hồi."
-        actions={<Refresh loading={query.isFetching} onClick={() => void query.refetch()} />}
+        actions={<Refresh loading={query.isFetching} disabled={!!search.error} onClick={() => void query.refetch()} />}
       />
       <Panel>
         <div className="support-list-controls filters">
@@ -118,7 +118,7 @@ export function Tickets() {
           <Button onClick={filters.reset}>Xóa bộ lọc</Button>
         </div>
         {search.error && <Alert type="warning" showIcon title={search.error} />}
-        <QueryError error={query.error} retry={() => void query.refetch()} />
+        <QueryError error={search.error ? null : query.error} retry={() => void query.refetch()} />
         <Table<TicketSummary>
           columns={columns}
           dataSource={rows}

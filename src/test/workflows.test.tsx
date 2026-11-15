@@ -487,7 +487,7 @@ describe("Admin pages", () => {
     await user.type(screen.getByLabelText("Từ ngày"), "2026-10-24");
     await user.type(screen.getByLabelText("Đến ngày"), "2026-10-01");
     expect(
-      await screen.findByText("Đến ngày phải cùng ngày hoặc sau Từ ngày."),
+      await screen.findByText("Ngày bắt đầu phải trước hoặc bằng ngày kết thúc."),
     ).toBeInTheDocument();
   });
   it("requires a separate confirmation before forcing the last active price off", async () => {

@@ -58,6 +58,17 @@ it.each(["/tickets", "/withdrawals"])("blocks invalid dates without sending a li
   expect(reads.some(url=>url.pathname===`/api/admin${path}`)).toBe(false);
 });
 
+it.each(["/rides", "/withdrawals", "/tickets"])("blocks future dates, including manual refresh, and recovers after clearing: %s", async path => {
+  const { user } = setup(`${path}?from=3123-03-12`);
+  expect(await screen.findByText("Ngày tạo không được sau hôm nay (giờ Việt Nam).")).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Làm mới" })).toBeDisabled();
+  await user.click(screen.getByRole("button", { name: "Làm mới" }));
+  expect(reads.some(url => url.pathname === `/api/admin${path}`)).toBe(false);
+  await user.click(screen.getByRole("button", { name: "Xóa bộ lọc" }));
+  await waitFor(() => expect(reads.some(url => url.pathname === `/api/admin${path}`)).toBe(true));
+  expect(screen.queryByText("Ngày tạo không được sau hôm nay (giờ Việt Nam).")).not.toBeInTheDocument();
+});
+
 it("resets the page on page-size changes and preserves other URL filters", async () => {
   function Controls() {
     const filters = useFilters();

@@ -42,9 +42,11 @@ export function Heading({
 }
 export function Refresh({
   loading,
+  disabled,
   onClick,
 }: {
   loading?: boolean;
+  disabled?: boolean;
   onClick: () => void;
 }) {
   return (
@@ -52,6 +54,7 @@ export function Refresh({
       aria-label="Làm mới"
       icon={<ReloadOutlined aria-hidden />}
       loading={loading}
+      disabled={disabled}
       onClick={onClick}
     >
       Làm mới

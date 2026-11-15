@@ -32,6 +32,7 @@ import {
   activeStatuses,
   assignableStatuses,
   cancellableStatuses,
+  currentDateVN,
   date,
   label,
   money,
@@ -53,7 +54,6 @@ import {
 } from "../components/common";
 import { RideTable } from "../components/RideTable";
 import type { AdminRatingItem, ChatMessage, Driver, MessagePage, RideDetail } from "../types";
-const currentDateVN = () => new Date(Date.now() + 7 * 3600000).toISOString().slice(0, 10);
 
 export function Rides() {
   const screens = Grid.useBreakpoint();
@@ -89,6 +89,7 @@ export function Rides() {
         actions={
           <Refresh
             loading={query.isFetching}
+            disabled={!!range.error}
             onClick={() => void query.refetch()}
           />
         }
@@ -100,15 +101,16 @@ export function Rides() {
         </FilterField>
         {screens.xs ? <>
           <FilterField label="Từ ngày tạo · Giờ Việt Nam">
-            <Input type="date" aria-label="Từ ngày tạo chuyến" value={from} disabled={!supported} onChange={event => f.update({ from: event.target.value })} />
+            <Input type="date" aria-label="Từ ngày tạo chuyến" value={from} max={today} status={range.error ? "error" : undefined} aria-invalid={!!range.error} disabled={!supported} onChange={event => f.update({ from: event.target.value })} />
           </FilterField>
           <FilterField label="Đến ngày tạo · Giờ Việt Nam">
-            <Input type="date" aria-label="Đến ngày tạo chuyến" value={to} min={from || undefined} disabled={!supported} onChange={event => f.update({ to: event.target.value })} />
+            <Input type="date" aria-label="Đến ngày tạo chuyến" value={to} min={from && !rideDateRange(from, "").error ? from : undefined} max={today} status={range.error ? "error" : undefined} aria-invalid={!!range.error} disabled={!supported} onChange={event => f.update({ to: event.target.value })} />
           </FilterField>
         </> : <FilterField label="Ngày tạo chuyến · Giờ Việt Nam">
           <label className="sr-only" htmlFor="ride-created-from">Từ ngày tạo chuyến</label>
           <label className="sr-only" htmlFor="ride-created-to">Đến ngày tạo chuyến</label>
           <DatePicker.RangePicker id={{start:"ride-created-from",end:"ride-created-to"}} format="DD/MM/YYYY" disabled={!supported}
+            maxDate={dayjs(today)} status={range.error ? "error" : undefined}
             allowEmpty={[true,true]}
             value={!range.error && (from || to) ? [from ? dayjs(from) : null, to ? dayjs(to) : null] : null}
             presets={[{ label: "Hôm nay", value: [dayjs(today), dayjs(today)] }]}
@@ -162,7 +164,7 @@ export function Rides() {
       {!capabilities.isPending && !supported && <Alert className="query-error" type="info" showIcon title="Bộ lọc tên, số điện thoại và ngày chưa sẵn sàng. Bạn vẫn có thể lọc trạng thái hoặc mở theo mã chuyến."
         description={hasAdvanced ? "Xóa bộ lọc nâng cao để xem danh sách; hệ thống chưa thể áp dụng các điều kiện này." : undefined}
         action={<Button size="small" onClick={() => void capabilities.refetch()}>Kiểm tra lại</Button>} />}
-      <QueryError error={query.error} retry={() => void query.refetch()} />
+      <QueryError error={range.error ? null : query.error} retry={() => void query.refetch()} />
       <Panel>
         <RideTable
           data={range.error || (hasAdvanced && !supported) ? undefined : query.data}
