@@ -1,6 +1,7 @@
 import { returnPath, returnLabel } from "../lib/navigation";
 import dayjs from "dayjs";
 import { FilterField } from "../components/FilterField";
+import { CreationDateInput } from "../components/CreationDateInput";
 import { useEffect, useRef, useState } from "react";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
@@ -101,10 +102,10 @@ export function Rides() {
         </FilterField>
         {screens.xs ? <>
           <FilterField label="Từ ngày tạo · Giờ Việt Nam">
-            <Input type="date" aria-label="Từ ngày tạo chuyến" value={from} max={today} status={range.error ? "error" : undefined} aria-invalid={!!range.error} disabled={!supported} onChange={event => f.update({ from: event.target.value })} />
+            <CreationDateInput label="Từ ngày tạo chuyến" value={from} max={today} invalid={!!range.error} disabled={!supported} onChange={from => f.update({ from })} />
           </FilterField>
           <FilterField label="Đến ngày tạo · Giờ Việt Nam">
-            <Input type="date" aria-label="Đến ngày tạo chuyến" value={to} min={from && !rideDateRange(from, "").error ? from : undefined} max={today} status={range.error ? "error" : undefined} aria-invalid={!!range.error} disabled={!supported} onChange={event => f.update({ to: event.target.value })} />
+            <CreationDateInput label="Đến ngày tạo chuyến" value={to} min={from} max={today} invalid={!!range.error} disabled={!supported} onChange={to => f.update({ to })} />
           </FilterField>
         </> : <FilterField label="Ngày tạo chuyến · Giờ Việt Nam">
           <label className="sr-only" htmlFor="ride-created-from">Từ ngày tạo chuyến</label>

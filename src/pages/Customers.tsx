@@ -1,4 +1,5 @@
 import { FilterField } from "../components/FilterField";
+import { CreationDateInput } from "../components/CreationDateInput";
 import { returnPath, returnLabel } from "../lib/navigation";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -21,7 +22,7 @@ import { ArrowLeftOutlined } from "@ant-design/icons";
 import { api } from "../lib/api";
 import { SearchDateFields, listSearch } from "../components/SearchDateFields";
 import { useAction, useFilters } from "../lib/hooks";
-import { currentDateVN, rideDateRange, date, label, money, percentage, rideLabels, text } from "../lib/format";
+import { rideDateRange, date, label, money, percentage, rideLabels, text } from "../lib/format";
 import {
   DataTable,
   Heading,
@@ -283,7 +284,6 @@ function CustomerRides({ id }: { id: number }) {
   const status = f.read("rideStatus");
   const dateError = rideDateRange(from, to).error;
   const validDates = !dateError;
-  const today = currentDateVN();
   const query = useQuery({
     queryKey: ["admin", "customer-rides", id, f.page, f.size, status, from, to],
     queryFn: () => api.customerRides(id, { ...f.params, status, from, to }),
@@ -304,22 +304,22 @@ function CustomerRides({ id }: { id: number }) {
           onChange={(rideStatus) => f.update({ rideStatus })}
         /></FilterField>
         <FilterField label="Từ ngày" htmlFor="customer-rides-from">
-          <Input
+          <CreationDateInput
             id="customer-rides-from"
-            type="date"
-            max={today}
+            label="Từ ngày"
             value={from}
-            onChange={(e) => f.update({ from: e.target.value })}
+            invalid={!validDates}
+            onChange={from => f.update({ from })}
           />
         </FilterField>
         <FilterField label="Đến ngày" htmlFor="customer-rides-to">
-          <Input
+          <CreationDateInput
             id="customer-rides-to"
-            type="date"
-            min={from && !rideDateRange(from, "").error ? from : undefined}
-            max={today}
+            label="Đến ngày"
+            min={from}
             value={to}
-            onChange={(e) => f.update({ to: e.target.value })}
+            invalid={!validDates}
+            onChange={to => f.update({ to })}
           />
         </FilterField>
         <Button onClick={()=>f.update({from:undefined,to:undefined,rideStatus:undefined})}>Xóa bộ lọc</Button>
