@@ -484,8 +484,10 @@ describe("Admin pages", () => {
     const { user } = renderPage("/customers/21?tab=wallet");
     expect(await screen.findByText("Thanh toán chuyến")).toBeInTheDocument();
     await user.click(screen.getByRole("tab", { name: "Chuyến đi" }));
-    await user.type(screen.getByLabelText("Từ ngày"), "2026-10-24");
-    await user.type(screen.getByLabelText("Đến ngày"), "2026-10-01");
+    await user.type(screen.getByLabelText("Đến ngày"), "01/10/2026");
+    await user.keyboard("{Enter}");
+    await user.type(screen.getByLabelText("Từ ngày"), "24/10/2026");
+    await user.keyboard("{Enter}");
     expect(
       await screen.findByText("Ngày bắt đầu phải trước hoặc bằng ngày kết thúc."),
     ).toBeInTheDocument();
