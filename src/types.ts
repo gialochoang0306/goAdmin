@@ -42,7 +42,7 @@ export type AdminVoucher = { id:number; code:string|null; campaignTitle?:string|
   active?: boolean; ownerCustomerId:number|null; discountType:string; value:number; maxDiscount:number|null; minimumOrderAmount:number; usageLimit:number|null; validFrom:string; validTo:string; allowedPaymentMethod:string|null; description:string; campaignClaimCount:number; campaignUsedCount:number;
   campaignHeldCount?: number;
   campaignCancelledCount?: number;
-  campaignCancelledAmount?: number; campaignBudgetLimit:number|null; campaignHeldAmount:number; campaignSpentAmount:number; campaignReleasedAmount:number };
+  campaignCancelledAmount?: number; campaignBudgetLimit:number|null; campaignHeldAmount:number; campaignSpentAmount:number; campaignReleasedAmount:number; systemReserveAmount?: number | null };
 export type PromoBudget = { budgetLimit:number; heldAmount:number; spentAmount:number; issuanceReserved:number; availableAmount:number };
 export type RideStatus =
   | "PENDING"
@@ -301,4 +301,23 @@ export type BudgetLedgerItem = {
   rideId?: number | null;
   note?: string | null;
   createdAt: string;
+};
+
+export type AdminRatingItem = {
+  id: number;
+  rideId: number;
+  direction: "CUSTOMER_TO_DRIVER" | "DRIVER_TO_CUSTOMER" | string;
+  raterId: number;
+  raterName: string | null;
+  rateeId: number;
+  rateeName: string | null;
+  stars: number;
+  comment: string | null;
+  tags: string[];
+  tip: number;
+  createdAt: string;
+  hidden: boolean;
+  hiddenAt: string | null;
+  hiddenBy: number | null;
+  hiddenReason: string | null;
 };

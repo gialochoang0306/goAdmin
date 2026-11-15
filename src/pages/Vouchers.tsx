@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { QueryError } from "../components/common";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Alert,
@@ -886,6 +887,7 @@ export default function Vouchers() {
                   <TeamOutlined style={{ marginRight: 6 }} />
                   Danh sách tài khoản đã nhận voucher ({claimants.data?.length ?? activeDetail.campaignClaimCount})
                 </Typography.Text>
+                <QueryError error={claimants.error} retry={() => void claimants.refetch()} />
                 <Table<CampaignClaimant>
                   rowKey="voucherId"
                   size="small"
