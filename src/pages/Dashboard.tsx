@@ -28,6 +28,11 @@ export default function Dashboard() {
     queryFn: () => api.dashboard(period),
     refetchInterval: 30_000,
   });
+  const promoBudget = useQuery({
+    queryKey: ["admin", "dashboard", "promo-budget"],
+    queryFn: () => api.promoBudget(),
+    refetchInterval: 30_000,
+  });
   const withdrawals = useQuery({
     queryKey: ["admin", "withdrawals", "dashboard", withdrawalPage],
     queryFn: () => api.withdrawals({ status: "PENDING", page: withdrawalPage, size: 5 }),
@@ -93,7 +98,7 @@ export default function Dashboard() {
       icon: <FlagOutlined />,
     },
   ];
-  const all = [finance, withdrawals, active, noDriver, documents, flagged, recent, pendingAccounts];
+  const all = [finance, promoBudget, withdrawals, active, noDriver, documents, flagged, recent, pendingAccounts];
   const updatedAt = Math.max(...all.map(query => query.dataUpdatedAt));
   return (
     <>
@@ -108,7 +113,7 @@ export default function Dashboard() {
         }
       />
       <UpdatedAt value={updatedAt} fetching={all.some(query => query.isFetching)} />
-      <DashboardFinance query={finance} period={period} onPeriodChange={setPeriod} />
+      <DashboardFinance query={finance} promoBudget={promoBudget.data} period={period} onPeriodChange={setPeriod} />
       <div className="dashboard-section-heading">
         <h3>Theo dõi vận hành</h3>
       </div>

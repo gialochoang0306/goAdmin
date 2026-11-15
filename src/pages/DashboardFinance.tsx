@@ -1,13 +1,14 @@
 import { lazy, Suspense, type ReactNode } from "react";
 import type { UseQueryResult } from "@tanstack/react-query";
 import { Card, Empty, Segmented } from "antd";
+import { Link } from "react-router-dom";
 import {
-  BarChartOutlined, CarOutlined, CreditCardOutlined, DollarCircleOutlined,
-  GiftOutlined, RiseOutlined, TeamOutlined, WalletOutlined,
+  BarChartOutlined, CarOutlined, DollarCircleOutlined,
+  GiftOutlined, RiseOutlined, TeamOutlined, WalletOutlined, CreditCardOutlined,
 } from "@ant-design/icons";
 import { Loading, QueryError } from "../components/common";
 import { date, money, percentage } from "../lib/format";
-import type { DashboardPeriod, DashboardSummary } from "../types";
+import type { DashboardPeriod, DashboardSummary, PromoBudget } from "../types";
 
 const count = new Intl.NumberFormat("vi-VN");
 const DailyBars = lazy(() => import("./DashboardCharts").then(({ DailyBars }) => ({ default: DailyBars })));
@@ -81,8 +82,9 @@ function FinanceCharts({ data, period, loading }: { data?: DashboardSummary; per
   );
 }
 
-export function DashboardFinance({ query, period, onPeriodChange }: {
+export function DashboardFinance({ query, promoBudget, period, onPeriodChange }: {
   query: UseQueryResult<DashboardSummary>;
+  promoBudget?: PromoBudget;
   period: DashboardPeriod;
   onPeriodChange: (period: DashboardPeriod) => void;
 }) {
@@ -112,7 +114,27 @@ export function DashboardFinance({ query, period, onPeriodChange }: {
         <div className="dashboard-kpi-grid">
           <Metric label="Tổng giá trị giao dịch (GMV)" value={money(data?.gmv)} detail="Cước chuyến hoàn thành trước voucher" icon={<BarChartOutlined />} />
           <Metric label="Doanh thu nền tảng" value={money(data?.revenue)} detail="Chiết khấu đã ghi sổ" icon={<DollarCircleOutlined />} tone="revenue" />
-          <Metric label="Chi phí khuyến mãi" value={money(data?.promoCost)} detail="Giá trị voucher của chuyến hoàn thành" icon={<GiftOutlined />} tone="promo" />
+          <Metric
+            label="Chi phí khuyến mãi"
+            value={money(promoBudget ? promoBudget.budgetLimit : data?.promoCost)}
+            icon={<GiftOutlined />}
+            tone="promo"
+            detail={
+              promoBudget ? (
+                <>
+                  <span>
+                    Tổng quỹ chiến dịch · Còn lại: <strong>{money(promoBudget.availableAmount)}</strong>
+                  </span>
+                  <span className="dashboard-trend">
+                    Đã chi: <strong>{money(promoBudget.spentAmount)}</strong> ·{" "}
+                    <Link to="/vouchers">Quản lý quỹ</Link>
+                  </span>
+                </>
+              ) : (
+                "Tổng quỹ chiến dịch voucher"
+              )
+            }
+          />
           <Metric label="Lợi nhuận gộp" value={money(data?.grossProfit)} detail="Doanh thu trừ giá trị voucher" icon={<RiseOutlined />} tone="profit" />
           <Metric label="Tổng số chuyến đi" value={data ? count.format(data.tripCount) : "—"} icon={<CarOutlined />} detail={
             <>
