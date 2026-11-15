@@ -33,7 +33,7 @@
 :root .ant-table { background: var(--md-sys-color-surface-container); border-radius: var(--md-sys-shape-corner-md); }
 :root .ant-table-thead > tr > th { background: var(--md-sys-color-surface-container-highest) !important; color: var(--md-sys-color-on-surface-variant) !important; font-weight: 500 !important; }
 :root .ant-table-tbody > tr > td { border-color: var(--md-sys-color-outline-variant); padding-block: 16px; }
-:root .ant-table-cell-fix-left, :root .ant-table-cell-fix-right { background: var(--md-sys-color-surface-container) !important; }
+:root .ant-table-tbody > tr > .ant-table-cell-fix { background-color: var(--md-sys-color-surface-container) !important; }
 
 /* 3. Core components. */
 :root .ant-btn {
@@ -164,7 +164,7 @@
 :root :is(.ant-menu-item, .ant-select-item-option, .ant-dropdown-menu-item, .ant-pagination-item, .stat-card) {
   background-image: linear-gradient(color-mix(in srgb, var(--md-local-content) var(--md-local-state), transparent), color-mix(in srgb, var(--md-local-content) var(--md-local-state), transparent)) !important;
 }
-:root .ant-table-tbody > tr > td { background-image: linear-gradient(color-mix(in srgb, var(--md-sys-color-on-surface) var(--md-local-state), transparent), color-mix(in srgb, var(--md-sys-color-on-surface) var(--md-local-state), transparent)); }
+:root .ant-table-tbody > tr > td { background-image: linear-gradient(color-mix(in srgb, var(--md-sys-color-on-surface) var(--md-local-state), transparent), color-mix(in srgb, var(--md-sys-color-on-surface) var(--md-local-state), transparent)) !important; }
 @media (hover: hover) {
   :root :is(.ant-menu-item, .ant-select-item-option, .ant-dropdown-menu-item, .ant-pagination-item, .ant-table-row, .stat-card):hover { --md-local-state: var(--md-sys-state-hover-opacity); }
 }
