@@ -89,6 +89,7 @@ export const percentage = (value: number | null | undefined) =>
   value == null || !Number.isFinite(value)
     ? "Chưa có dữ liệu"
     : new Intl.NumberFormat("vi-VN", { style: "percent", maximumFractionDigits: 1 }).format(value);
+export const currentDateVN = () => new Date(Date.now() + 7 * 3600000).toISOString().slice(0, 10);
 export function rideDateRange(from: string, to: string): { createdFrom?: string; createdTo?: string; error?: string } {
   const parse = (value: string) => {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return NaN;
@@ -98,6 +99,8 @@ export function rideDateRange(from: string, to: string): { createdFrom?: string;
   const start = from ? parse(from) : undefined;
   const end = to ? parse(to) : undefined;
   if ((start !== undefined && !Number.isFinite(start)) || (end !== undefined && !Number.isFinite(end))) return { error: "Ngày lọc không hợp lệ. Chọn lại khoảng ngày." };
+  const today = currentDateVN();
+  if (from > today || to > today) return { error: "Ngày tạo không được sau hôm nay (giờ Việt Nam)." };
   if (start !== undefined && end !== undefined && start > end) return { error: "Ngày bắt đầu phải trước hoặc bằng ngày kết thúc." };
   return { ...(start === undefined ? {} : { createdFrom: new Date(start).toISOString() }), ...(end === undefined ? {} : { createdTo: new Date(end + 86400000).toISOString() }) };
 }
