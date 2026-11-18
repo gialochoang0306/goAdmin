@@ -8,7 +8,6 @@ import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import {
   Alert,
   App,
-  Card,
   Rate,
   Tag,
   Button,
@@ -355,14 +354,11 @@ function RideRatings({ id }: { id: number }) {
           {items.map((item) => {
             const isCustomerToDriver = item.direction === "CUSTOMER_TO_DRIVER";
             return (
-              <Card
+              <article
                 key={item.id}
-                size="small"
-                style={{
-                  borderRadius: 14,
-                  opacity: item.hidden ? 0.78 : 1,
-                }}
-                title={
+                className={`rating-item${item.hidden ? " is-hidden" : ""}`}
+              >
+                <div className="document-header" style={{ marginBottom: 10 }}>
                   <Space wrap>
                     <Tag color={isCustomerToDriver ? "blue" : "purple"}>
                       {isCustomerToDriver ? "Khách hàng → Tài xế" : "Tài xế → Khách hàng"}
@@ -376,9 +372,7 @@ function RideRatings({ id }: { id: number }) {
                       <Tag color="green">Đang hiển thị</Tag>
                     )}
                   </Space>
-                }
-                extra={
-                  item.hidden ? (
+                  {item.hidden ? (
                     <Button
                       size="small"
                       loading={visibilityMutation.isPending}
@@ -399,9 +393,8 @@ function RideRatings({ id }: { id: number }) {
                     >
                       Ẩn đánh giá
                     </Button>
-                  )
-                }
-              >
+                  )}
+                </div>
                 <Space orientation="vertical" size={8} style={{ width: "100%" }}>
                   <Space wrap>
                     <Rate disabled value={item.stars} />
@@ -430,7 +423,7 @@ function RideRatings({ id }: { id: number }) {
                     />
                   )}
                 </Space>
-              </Card>
+              </article>
             );
           })}
         </Space>
@@ -467,14 +460,20 @@ function RideRatings({ id }: { id: number }) {
           Nội dung đánh giá sẽ bị ẩn khỏi trang hồ sơ công khai của{" "}
           <strong>{hideTarget?.rateeName || `#${hideTarget?.rateeId}`}</strong>.
         </Typography.Paragraph>
-        <Input.TextArea
-          rows={3}
-          maxLength={500}
-          showCount
-          placeholder="Nhập lý do ẩn (ví dụ: Ngôn từ xúc phạm, spam, sai sự thật...)"
-          value={hideReason}
-          onChange={(e) => setHideReason(e.target.value)}
-        />
+        <div className="ticket-composer-field">
+          <label className="filter-label" htmlFor="hide-rating-reason">
+            Lý do ẩn đánh giá (tùy chọn)
+          </label>
+          <Input.TextArea
+            id="hide-rating-reason"
+            rows={3}
+            maxLength={500}
+            showCount
+            placeholder="Nhập lý do ẩn (ví dụ: Ngôn từ xúc phạm, spam, sai sự thật...)"
+            value={hideReason}
+            onChange={(e) => setHideReason(e.target.value)}
+          />
+        </div>
       </Modal>
     </Panel>
   );
@@ -570,6 +569,8 @@ function AssignDriver({
       open
       title={`Gán tài xế · Chuyến #${ride.id}`}
       width={800}
+      closable={!assignment.isPending}
+      keyboard={!assignment.isPending}
       onCancel={() => {
         if (!assignment.isPending) onClose();
       }}
@@ -1023,6 +1024,9 @@ export function RideDetailPage() {
       <Modal
         title={`Hủy chuyến #${id}`}
         open={cancel}
+        closable={!cancellation.isPending}
+        keyboard={!cancellation.isPending}
+        mask={{ closable: !cancellation.isPending }}
         onCancel={() => {
           if (!cancellation.isPending) setCancel(false);
         }}
