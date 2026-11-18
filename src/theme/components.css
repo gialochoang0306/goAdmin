@@ -5,6 +5,18 @@
   border-radius: var(--md-sys-shape-corner-md);
   background: var(--md-sys-color-surface-container) !important;
 }
+:root :is(.ant-card, .ant-drawer) .document-card,
+:root .rating-item {
+  border: 1px solid var(--md-sys-color-outline-variant) !important;
+  border-radius: var(--md-sys-shape-corner-md);
+  background: var(--md-sys-color-surface-container-low) !important;
+}
+:root .rating-item {
+  padding: 16px;
+}
+:root .rating-item.is-hidden {
+  border-style: dashed !important;
+}
 :root :is(.ant-modal-container, .ant-modal-content, .ant-modal-header, .ant-popover-container, .ant-popover-inner, .ant-select-dropdown, .ant-dropdown-menu, .ant-picker-dropdown .ant-picker-panel-container) {
   background: var(--md-sys-color-surface-variant);
   color: var(--md-sys-color-on-surface);
@@ -16,11 +28,11 @@
   background: var(--md-sys-color-surface-container-low) !important;
 }
 :root :is(.desktop-sidebar, .topbar, .ant-card-head, .ant-drawer-header) { border-color: var(--md-sys-color-transparent); }
-:root .topbar { min-height: 80px; height: 80px !important; }
+:root .topbar { min-height: 64px; height: 64px !important; }
 :root .ant-card-head { padding: 0 24px; }
 :root .ant-card-body { padding: 24px; }
 :root .ant-card-head-title { font-size: 16px; font-weight: 500; }
-:root .ant-menu .ant-menu-item { height: 56px !important; line-height: 56px !important; border-radius: var(--md-sys-shape-corner-full) !important; }
+:root .ant-menu .ant-menu-item { height: 46px !important; line-height: 46px !important; border-radius: var(--md-sys-shape-corner-full) !important; }
 :root .ant-menu-light .ant-menu-item-selected { background: var(--md-sys-color-secondary-container) !important; color: var(--md-sys-color-on-secondary-container) !important; font-weight: 500; }
 :root .ant-menu-item-selected :is(.anticon, .ant-menu-title-content) { color: inherit !important; }
 :root .ant-menu-item::after { border: 0; }
@@ -28,12 +40,15 @@
 :root .brand-name { color: var(--md-sys-color-primary); }
 :root .brand-icon { border: 0; border-radius: var(--md-sys-shape-corner-md); }
 :root .stat-icon { border-radius: var(--md-sys-shape-corner-full); color: var(--md-sys-color-on-primary-container); }
-:root :is(.ticket-chat, .chat-list) { background: var(--app-color-chat-surface); }
+:root :is(.ticket-chat, .chat-list) { background: var(--app-color-chat-surface); border-radius: var(--md-sys-shape-corner-md); padding: 14px; }
 :root :is(.ticket-bubble, .chat-message) { background: var(--app-color-chat-user-container); color: var(--md-sys-color-on-surface); border: 0; }
+:root .ticket-bubble.admin { background: var(--md-sys-color-primary); color: var(--md-sys-color-on-primary); }
+:root .ticket-bubble.admin .ant-typography { color: inherit; }
+:root .chat-message.driver { background: var(--md-sys-color-primary-container); color: var(--md-sys-color-on-primary-container); }
 :root .ant-table { background: var(--md-sys-color-surface-container); border-radius: var(--md-sys-shape-corner-md); }
 :root .ant-table-thead > tr > th { background: var(--md-sys-color-surface-container-highest) !important; color: var(--md-sys-color-on-surface-variant) !important; font-weight: 500 !important; }
-:root .ant-table-tbody > tr > td { border-color: var(--md-sys-color-outline-variant); padding-block: 16px; }
-:root .ant-table-tbody > tr > .ant-table-cell-fix { background-color: var(--md-sys-color-surface-container) !important; }
+:root .ant-table-tbody > tr > td { border-color: var(--md-sys-color-outline-variant); padding-block: 14px; }
+:root .ant-table-tbody > tr > :is(.ant-table-cell-fix, .ant-table-cell-fix-left, .ant-table-cell-fix-right) { background-color: var(--md-sys-color-surface-container) !important; }
 
 /* 3. Core components. */
 :root .ant-btn {
@@ -58,6 +73,21 @@
   border-color: var(--md-sys-color-transparent) !important;
 }
 :root :is(.ant-btn-text, .ant-btn-link) { border-color: var(--md-sys-color-transparent) !important; }
+:root .ant-btn.ant-btn-sm {
+  min-height: 32px;
+  height: 32px;
+  padding-inline: 14px;
+  font-size: 13px;
+}
+:root .ant-btn.ant-btn-link {
+  min-height: 28px;
+  height: auto;
+  padding-inline: 6px;
+  border-radius: var(--md-sys-shape-corner-xs) !important;
+}
+@media (pointer: coarse) {
+  :root .ant-btn.ant-btn-sm { min-height: 40px; height: 40px; }
+}
 :root .ant-btn-dangerous { --md-local-content: var(--md-sys-color-error); border-color: var(--md-sys-color-error); }
 :root .ant-btn-primary.ant-btn-dangerous { --md-local-container: var(--md-sys-color-error); --md-local-content: var(--md-sys-color-on-error); }
 :root .ant-btn-icon-only { width: 40px; min-width: 40px; padding-inline: 0; }
@@ -135,11 +165,13 @@
 :root .ant-pagination-item { border-radius: var(--md-sys-shape-corner-full); }
 :root .ant-pagination-item-active { background: var(--md-sys-color-secondary-container); border-color: var(--md-sys-color-transparent); }
 :root .ant-pagination-item-active a { color: var(--md-sys-color-on-secondary-container); }
-:root .ant-tag { display: inline-flex; align-items: center; min-height: 32px; height: 32px; line-height: 20px; font-size: 14px; font-weight: 500; border: 0; border-radius: var(--md-sys-shape-corner-sm) !important; padding: 0 12px; background: var(--md-sys-color-surface-container-highest); color: var(--md-sys-color-on-surface-variant); }
-:root :is(.ant-tag-green, .ant-tag-success) { background: var(--md-sys-color-success-container); color: var(--md-sys-color-on-success-container); }
-:root :is(.ant-tag-red, .ant-tag-error) { background: var(--md-sys-color-error-container); color: var(--md-sys-color-on-error-container); }
-:root :is(.ant-tag-gold, .ant-tag-orange, .ant-tag-warning) { background: var(--md-sys-color-warning-container); color: var(--md-sys-color-on-warning-container); }
-:root :is(.ant-tag-blue, .ant-tag-processing) { background: var(--md-sys-color-info-container); color: var(--md-sys-color-on-info-container); }
+:root .ant-tag { display: inline-flex; align-items: center; min-height: 28px; height: auto; padding: 4px 10px; line-height: 18px; font-size: 13px; font-weight: 500; border: 0; border-radius: var(--md-sys-shape-corner-sm) !important; background: var(--md-sys-color-surface-container-highest); color: var(--md-sys-color-on-surface-variant); }
+:root .ant-tag:is(.ant-tag-green, .ant-tag-success) { background: var(--md-sys-color-success-container) !important; color: var(--md-sys-color-on-success-container) !important; }
+:root .ant-tag:is(.ant-tag-red, .ant-tag-error) { background: var(--md-sys-color-error-container) !important; color: var(--md-sys-color-on-error-container) !important; }
+:root .ant-tag:is(.ant-tag-gold, .ant-tag-orange, .ant-tag-warning) { background: var(--md-sys-color-warning-container) !important; color: var(--md-sys-color-on-warning-container) !important; }
+:root .ant-tag:is(.ant-tag-blue, .ant-tag-processing) { background: var(--md-sys-color-info-container) !important; color: var(--md-sys-color-on-info-container) !important; }
+:root .ant-tag.ant-tag-purple { background: var(--md-sys-color-tertiary-container) !important; color: var(--md-sys-color-on-tertiary-container) !important; }
+:root .ant-tag.ant-tag-cyan { background: var(--md-sys-color-secondary-container) !important; color: var(--md-sys-color-on-secondary-container) !important; }
 :root .ant-alert { border: 0; border-radius: var(--md-sys-shape-corner-md); }
 :root .ant-alert-error { background: var(--md-sys-color-error-container); color: var(--md-sys-color-on-error-container); }
 :root .ant-alert-warning { background: var(--md-sys-color-warning-container); color: var(--md-sys-color-on-warning-container); }
@@ -182,16 +214,22 @@
   :root .login-card { padding: 24px; }
   :root .ant-modal-container, :root .ant-modal-content { padding: 20px; }
 }
-@media (prefers-reduced-motion: reduce) { :root * { transition: none !important; } }
+@media (prefers-reduced-motion: reduce) { :root * { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; scroll-behavior: auto !important; } }
 
-/* Ant Design 6 compact search markup and preset tags need explicit semantic roles. */
+/* Ant Design 6 compact search markup and topbar controls. */
 :root input.ant-input, :root .ant-input-affix-wrapper:not(.ant-input-textarea-affix-wrapper), :root .ant-input-number,
 :root .ant-select-single, :root .ant-picker { height: var(--md-sys-size-field-height); }
 :root .ant-input-affix-wrapper > input.ant-input { height: auto !important; }
-:root .ant-tag:is(.ant-tag-green, .ant-tag-success) { background: var(--md-sys-color-success-container) !important; color: var(--md-sys-color-on-success-container) !important; }
-:root .ant-tag:is(.ant-tag-red, .ant-tag-error) { background: var(--md-sys-color-error-container) !important; color: var(--md-sys-color-on-error-container) !important; }
-:root .ant-tag:is(.ant-tag-gold, .ant-tag-orange, .ant-tag-warning) { background: var(--md-sys-color-warning-container) !important; color: var(--md-sys-color-on-warning-container) !important; }
-:root .ant-tag:is(.ant-tag-blue, .ant-tag-processing) { background: var(--md-sys-color-info-container) !important; color: var(--md-sys-color-on-info-container) !important; }
+:root .ant-select.theme-switcher {
+  height: 40px !important;
+  min-height: 40px !important;
+  border: 1px solid var(--md-sys-color-outline) !important;
+  border-radius: var(--md-sys-shape-corner-full) !important;
+  background: var(--md-sys-color-transparent) !important;
+  padding-inline: 14px;
+  font-size: 14px;
+}
+:root .ant-select.theme-switcher .ant-select-selector { min-height: 38px !important; }
 
 
 /* UI and code typography share centrally declared, self-hosted variable fonts. */
@@ -205,6 +243,7 @@
 
 
 /* Search actions remain separate controls; preserve Input.Search onSearch/Enter. */
+:root .ant-input-search { min-width: 240px; }
 :root .ant-input-search.ant-space-compact,
 :root .ant-input-search .ant-input-wrapper.ant-input-group {
   display: flex;

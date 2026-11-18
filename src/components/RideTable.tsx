@@ -8,10 +8,12 @@ export function RideTable({
   data,
   loading,
   onPage,
+  onReset,
 }: {
   data?: Page<Ride>;
   loading?: boolean;
   onPage?: (page: number, size: number) => void;
+  onReset?: () => void;
 }) {
   const location = useLocation();
   const columns: ColumnsType<Ride> = [
@@ -89,6 +91,7 @@ export function RideTable({
       columns={columns}
       loading={loading}
       onPage={onPage}
+      onReset={onReset}
       scroll={970}
       mobileColumns={[columns[0], columns[1], columns[3], columns[4], columns[5]]}
     />

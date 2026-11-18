@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQueries, useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
-import { Alert, Button, Card, Typography } from "antd";
+import { Alert, Button, Card, Empty, Typography } from "antd";
 import {
   ArrowRightOutlined,
   CarOutlined,
@@ -197,9 +197,7 @@ export default function Dashboard() {
           </div>
         ))}
         {documents.data?.content.length === 0 && (
-          <Typography.Text type="secondary">
-            Không có giấy tờ đang chờ duyệt.
-          </Typography.Text>
+          <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="Không có giấy tờ đang chờ duyệt." />
         )}
       </Panel>
       <div className="dashboard-section-heading">

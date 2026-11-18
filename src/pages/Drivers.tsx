@@ -93,8 +93,8 @@ export function Drivers() {
       dataIndex: "flagged",
       render: (v) => (v ? <Tag color="gold">Có đánh dấu</Tag> : "Không"),
     },
-    { title: "Tổng chuyến", dataIndex: "totalTrips" },
-    { title: "Đánh giá", dataIndex: "averageRating", render: text },
+    { title: "Tổng chuyến", dataIndex: "totalTrips", align: "right" },
+    { title: "Đánh giá", dataIndex: "averageRating", render: text, align: "right" },
     { title: "Số dư thu nhập", dataIndex: "incomeBalance", render: money, align: "right" },
     { title: "Ngày tạo", dataIndex: "createdAt", render: date },
   ];
@@ -204,7 +204,7 @@ export function Documents() {
       title: "Giấy tờ",
       render: (_, row) => (
         <>
-          <Typography.Paragraph>{row.documents.length} giấy tờ</Typography.Paragraph>
+          <div style={{ marginBottom: 6, fontWeight: 500 }}>{row.documents.length} giấy tờ</div>
           <Space size={[0, 8]} wrap>
             {row.documents.map(doc => <Tag key={doc.id}>{label(doc.documentType)}</Tag>)}
           </Space>
@@ -227,15 +227,21 @@ export function Documents() {
   ];
   return (
     <>
-      {verificationEnabled && <Link to="/driver-documents/verification">Xác minh hồ sơ từ ứng dụng tài xế</Link>}
       <Heading
         title="Duyệt hồ sơ tài xế"
         subtitle="Mỗi tài xế một hồ sơ. Kiểm tra giấy tờ, kỹ năng và duyệt tài khoản trong cùng cửa sổ."
         actions={
-          <Refresh
-            loading={query.isFetching}
-            onClick={() => void query.refetch()}
-          />
+          <>
+            {verificationEnabled && (
+              <Link to="/driver-documents/verification">
+                <Button>Xác minh hồ sơ từ ứng dụng tài xế</Button>
+              </Link>
+            )}
+            <Refresh
+              loading={query.isFetching}
+              onClick={() => void query.refetch()}
+            />
+          </>
         }
       />
       <div className="filters">

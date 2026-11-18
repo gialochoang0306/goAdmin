@@ -44,12 +44,12 @@ function FinanceCharts({ data, period, loading }: { data?: DashboardSummary; per
         <div className="dashboard-chart-caption">
           <span>Theo ngày hoàn thành · VND</span>
           <div className="dashboard-chart-key">
-            <span><i className="dashboard-key-gmv" /> GMV</span>
-            <span><i className="dashboard-key-revenue" /> Doanh thu</span>
+            <span><i className="dashboard-key-gmv" aria-hidden="true" /> GMV</span>
+            <span><i className="dashboard-key-revenue" aria-hidden="true" /> Doanh thu</span>
           </div>
         </div>
         <div className="dashboard-bar-chart">
-          {loading ? <Loading /> : !data || !paymentTotal ? noData : (
+          {loading ? <Loading /> : !data || !paymentTotal || !data.daily.length ? noData : (
             <Suspense fallback={<Loading />}>
               <DailyBars points={data.daily} />
             </Suspense>
@@ -69,7 +69,7 @@ function FinanceCharts({ data, period, loading }: { data?: DashboardSummary; per
             <ul className="dashboard-payment-key">
               {payments.map(({ name, value, fill }) => (
                 <li key={name}>
-                  <span><i style={{ backgroundColor: fill }} /> {name}</span>
+                  <span><i style={{ backgroundColor: fill }} aria-hidden="true" /> {name}</span>
                   <span className="dashboard-payment-count">{count.format(value)} chuyến</span>
                   <strong>{percentage(value / paymentTotal)}</strong>
                 </li>
@@ -133,7 +133,7 @@ export function DashboardFinance({ query, promoBudget, period, onPeriodChange }:
               )
             }
           />
-          <Metric label="Lợi nhuận gộp" value={money(data?.grossProfit)} detail="Doanh thu trừ giá trị voucher" icon={<RiseOutlined />} tone="profit" />
+          <Metric label="Lợi nhuận gộp" value={money(data?.grossProfit)} detail="Doanh thu trừ giá trị voucher" icon={<RiseOutlined />} tone={data && data.grossProfit < 0 ? "negative" : "profit"} />
           <Metric label="Tổng số chuyến đi" value={data ? count.format(data.tripCount) : "—"} icon={<CarOutlined />} detail={
             <>
               <span>Mọi trạng thái · theo ngày đặt</span>

@@ -212,3 +212,36 @@ it("renders locked identity and side-by-side approved baseline for re-verificati
   expect(screen.getByText("A1")).toBeVisible();
   expect(screen.getByText("A1, B")).toBeVisible();
 });
+
+it("shows old-snapshot warning when viewing prior submission and styles reject as danger", async () => {
+  vi.mocked(verificationFetch).mockImplementation(async (path) => {
+    if (path.startsWith("review-queue")) return { items: [detail], hasMore: false };
+    if (path.includes("?snapshot=3")) {
+      return {
+        ...detail,
+        submissions: [
+          { revision: 4, submittedAt: "2026-01-02T03:00:00Z" },
+          { revision: 3, submittedAt: "2026-01-01T03:00:00Z" },
+        ],
+        document: { ...detail.document, revision: 3, submittedAt: "2026-01-01T03:00:00Z" },
+      };
+    }
+    return {
+      ...detail,
+      submissions: [
+        { revision: 4, submittedAt: "2026-01-02T03:00:00Z" },
+        { revision: 3, submittedAt: "2026-01-01T03:00:00Z" },
+      ],
+    };
+  });
+  const user = mount();
+  await user.click(await screen.findByRole("button", { name: id }));
+  await user.click(await screen.findByRole("combobox", { name: "Quyết định" }));
+  await user.click(screen.getByText("Từ chối", { selector: ".ant-select-item-option-content" }));
+  expect(screen.getByRole("button", { name: "Lưu quyết định" })).toHaveClass("ant-btn-dangerous");
+
+  await user.click(screen.getByRole("combobox", { name: "Bản nộp" }));
+  await user.click(screen.getByText(/Bản 3 ·/, { selector: ".ant-select-item-option-content" }));
+  expect(await screen.findByText(/Đang xem bản nộp cũ \(Bản 3\)/)).toBeVisible();
+  expect(screen.queryByRole("button", { name: "Lưu quyết định" })).not.toBeInTheDocument();
+});

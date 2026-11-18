@@ -1,29 +1,3 @@
-:root {
-  --dashboard-blue: #2457c6;
-  --dashboard-blue-light: #8db8fa;
-  --dashboard-wallet-bg: #eef4ff;
-  --dashboard-wallet-border: #d9e5fc;
-  --dashboard-accent-bg: #eaf1ff;
-  --dashboard-positive: #12704f;
-  --dashboard-positive-bg: #e8f5ed;
-  --dashboard-promo: #934b16;
-  --dashboard-promo-bg: #fff1e2;
-  --dashboard-negative: #a62038;
-}
-
-:root[data-theme="dark"] {
-  --dashboard-blue: #5b8afa;
-  --dashboard-blue-light: #a9c9ff;
-  --dashboard-wallet-bg: #19263c;
-  --dashboard-wallet-border: #34486b;
-  --dashboard-accent-bg: #233759;
-  --dashboard-positive: #88d6b2;
-  --dashboard-positive-bg: #203a32;
-  --dashboard-promo: #f4c28b;
-  --dashboard-promo-bg: #422f22;
-  --dashboard-negative: #f5a9b8;
-}
-
 .dashboard-section { margin-bottom: 22px; }
 
 .dashboard-section-heading {
@@ -39,7 +13,7 @@
 .dashboard-panel h3 {
   margin: 0;
   color: var(--text);
-  font-size: 17px;
+  font-size: 16px;
   font-weight: 650;
   line-height: 1.4;
 }
@@ -68,8 +42,8 @@
 .dashboard-panel {
   min-width: 0;
   border-color: var(--border);
-  border-radius: 12px;
-  box-shadow: 0 2px 8px #10182806;
+  border-radius: var(--md-sys-shape-corner-md);
+  box-shadow: none;
 }
 
 .dashboard-metric .ant-card-body { padding: 15px; }
@@ -99,14 +73,16 @@
 
 .dashboard-metric[data-tone="revenue"] { border-color: var(--dashboard-wallet-border); }
 .dashboard-metric[data-tone="revenue"] .dashboard-metric-value { color: var(--dashboard-blue); }
-.dashboard-metric[data-tone="promo"] .dashboard-metric-icon { color: var(--dashboard-promo); background: var(--dashboard-promo-bg); }
-.dashboard-metric[data-tone="profit"] .dashboard-metric-icon { color: var(--dashboard-positive); background: var(--dashboard-positive-bg); }
+.dashboard-metric[data-tone="promo"] .dashboard-metric-icon { color: var(--md-sys-color-on-warning-container); background: var(--md-sys-color-warning-container); }
+.dashboard-metric[data-tone="profit"] .dashboard-metric-icon { color: var(--md-sys-color-on-success-container); background: var(--md-sys-color-success-container); }
+.dashboard-metric[data-tone="negative"] .dashboard-metric-icon { color: var(--md-sys-color-on-error-container); background: var(--md-sys-color-error-container); }
+.dashboard-metric[data-tone="negative"] .dashboard-metric-value { color: var(--md-sys-color-error); }
 
 .dashboard-metric-value,
 .dashboard-wallet-total strong {
   margin: 6px 0 3px;
   color: var(--text);
-  font-size: clamp(19px, 1.7vw, 28px);
+  font-size: clamp(18px, 1.7vw, 28px);
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   line-height: 1.22;
@@ -115,13 +91,13 @@
 
 .dashboard-metric-detail { color: var(--muted); font-size: 12px; line-height: 1.45; }
 .dashboard-trend { display: block; margin-top: 4px; }
-.dashboard-trend[data-direction="up"] strong { color: var(--dashboard-positive); }
-.dashboard-trend[data-direction="down"] strong { color: var(--dashboard-negative); }
+.dashboard-trend[data-direction="up"] strong { color: var(--md-sys-color-success); }
+.dashboard-trend[data-direction="down"] strong { color: var(--md-sys-color-error); }
 
 .dashboard-wallets {
   padding: 16px;
   border: 1px solid var(--dashboard-wallet-border);
-  border-radius: 14px;
+  border-radius: var(--md-sys-shape-corner-lg);
   background: var(--dashboard-wallet-bg);
 }
 
@@ -151,13 +127,13 @@
 .dashboard-chart-key span,
 .dashboard-payment-key li > span:first-child { display: flex; align-items: center; gap: 7px; }
 .dashboard-chart-key i,
-.dashboard-payment-key i { width: 10px; height: 10px; border-radius: 3px; flex: none; }
+.dashboard-payment-key i { width: 10px; height: 10px; border-radius: var(--md-sys-shape-corner-xs); flex: none; }
 .dashboard-key-gmv { background: var(--dashboard-blue-light); }
 .dashboard-key-revenue { background: var(--dashboard-blue); }
 .dashboard-bar-chart { min-height: 252px; display: grid; align-items: center; min-width: 0; }
 .dashboard-donut { position: relative; min-height: 160px; }
 .dashboard-donut-label { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; pointer-events: none; }
-.dashboard-donut-label strong { font-size: 23px; line-height: 1.2; }
+.dashboard-donut-label strong { font-size: 22px; line-height: 1.2; }
 .dashboard-donut-label span { color: var(--muted); font-size: 12px; }
 .dashboard-payment-key { display: grid; gap: 5px; list-style: none; padding: 0; margin: 0; font-size: 13px; }
 .dashboard-payment-key li { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(46px, auto); gap: 8px; align-items: center; padding-block: 3px; }

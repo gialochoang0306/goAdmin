@@ -14,11 +14,12 @@ export const rideLabels: Record<RideStatus, string> = {
   CANCELLED: "Đã hủy",
   NO_DRIVER_FOUND: "Chưa tìm được tài xế",
   EXPIRED: "Hết hạn",
+  FAILED_SYSTEM: "Lỗi hệ thống",
 };
 export const activeStatuses = Object.keys(rideLabels)
   .filter(
     (s) =>
-      !["COMPLETED", "CANCELLED", "NO_DRIVER_FOUND", "EXPIRED"].includes(s),
+      !["COMPLETED", "CANCELLED", "NO_DRIVER_FOUND", "EXPIRED", "FAILED_SYSTEM"].includes(s),
   )
   .join(",");
 export const cancellableStatuses = new Set([
@@ -74,6 +75,7 @@ export const labels: Record<string, string> = {
   DRIVER_LICENSE_BACK: "Mặt sau giấy phép lái xe",
   DEPOSIT: "Nạp tiền",
   TOP_UP: "Nạp ví",
+  PAYMENT: "Thanh toán",
   TRIP_PAYMENT: "Thanh toán chuyến",
   RIDE_PAYMENT: "Thanh toán chuyến",
   TRIP_EARNING: "Thu nhập chuyến",

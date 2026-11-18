@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { createMemoryRouter, RouterProvider } from "react-router-dom";
@@ -27,6 +27,14 @@ vi.mock("../auth", () => ({
   }),
 }));
 
+const activeClients: QueryClient[] = [];
+
+afterEach(() => {
+  while (activeClients.length) {
+    activeClients.pop()?.clear();
+  }
+});
+
 function renderPage(path: string) {
   const router = createMemoryRouter([{ path: "*", element: <AdminApp /> }], { initialEntries: [path] });
   const client = new QueryClient({
@@ -35,6 +43,7 @@ function renderPage(path: string) {
       mutations: { retry: false },
     },
   });
+  activeClients.push(client);
   render(
     <ConfigProvider locale={viVN} theme={{ token: { motion: false } }}>
       <AntApp>
@@ -342,38 +351,40 @@ describe("GoAdmin post-merge integration & security regressions", () => {
 
   it("validates voucher dates, uppercases code, and opens campaign claimants & ledger", async () => {
     const { user } = renderPage("/vouchers");
-    expect(await screen.findByText("TET2026", {}, { timeout: 10_000 })).toBeInTheDocument();
+    const main = await screen.findByRole("main");
+    expect(await within(main).findByText("TET2026", {}, { timeout: 10_000 })).toBeInTheDocument();
 
-    fireEvent.change(screen.getByLabelText("Tên chiến dịch / Khẩu hiệu thông báo"), { target: { value: "Chiến dịch mới" } });
-    fireEvent.change(screen.getByLabelText("Mã khuyến mãi"), { target: { value: "sale50" } });
-    fireEvent.change(screen.getByLabelText("Mức giảm (%)"), { target: { value: "20" } });
-    fireEvent.change(screen.getByLabelText("Giảm tối đa (đ)"), { target: { value: "50000" } });
-    fireEvent.change(screen.getByLabelText("Tổng suất nhận"), { target: { value: "10" } });
-    fireEvent.change(screen.getByLabelText(/Quỹ chiến dịch/), { target: { value: "500000" } });
-    fireEvent.change(screen.getByLabelText("Mô tả chi tiết điều kiện & nội dung thông báo"), { target: { value: "Áp dụng toàn quốc" } });
+    fireEvent.change(within(main).getByLabelText("Tên chiến dịch / Khẩu hiệu thông báo"), { target: { value: "Chiến dịch mới" } });
+    fireEvent.change(within(main).getByLabelText("Mã khuyến mãi"), { target: { value: "sale50" } });
+    fireEvent.change(within(main).getByLabelText("Mức giảm (%)"), { target: { value: "20" } });
+    fireEvent.change(within(main).getByLabelText("Giảm tối đa (đ)"), { target: { value: "50000" } });
+    fireEvent.change(within(main).getByLabelText("Tổng suất nhận"), { target: { value: "10" } });
+    fireEvent.change(within(main).getByLabelText(/Quỹ chiến dịch/), { target: { value: "500000" } });
+    fireEvent.change(within(main).getByLabelText("Mô tả chi tiết điều kiện & nội dung thông báo"), { target: { value: "Áp dụng toàn quốc" } });
 
-    fireEvent.change(screen.getByLabelText("Thời gian bắt đầu"), { target: { value: "2026-12-10T10:00" } });
-    fireEvent.change(screen.getByLabelText("Thời gian kết thúc"), { target: { value: "2026-12-09T10:00" } });
-    await user.click(screen.getByRole("button", { name: "Phát hành chiến dịch mới" }));
+    fireEvent.change(within(main).getByLabelText("Thời gian bắt đầu"), { target: { value: "2026-12-10T10:00" } });
+    fireEvent.change(within(main).getByLabelText("Thời gian kết thúc"), { target: { value: "2026-12-09T10:00" } });
+    const submitBtn = within(main).getByText("Phát hành chiến dịch mới").closest("button")!;
+    await user.click(submitBtn);
 
-    expect(await screen.findByText("Thời gian kết thúc phải sau thời gian bắt đầu", {}, { timeout: 10_000 })).toBeInTheDocument();
+    expect(await within(main).findByText("Thời gian kết thúc phải sau thời gian bắt đầu", {}, { timeout: 10_000 })).toBeInTheDocument();
     expect(writes.filter((w) => w.path === "/api/admin/vouchers")).toHaveLength(0);
 
-    fireEvent.change(screen.getByLabelText("Thời gian kết thúc"), { target: { value: "2026-12-20T10:00" } });
-    await user.click(screen.getByRole("button", { name: "Phát hành chiến dịch mới" }));
+    fireEvent.change(within(main).getByLabelText("Thời gian kết thúc"), { target: { value: "2026-12-20T10:00" } });
+    await user.click(submitBtn);
 
     await waitFor(() =>
       expect(writes.some((w) => w.path === "/api/admin/vouchers" && w.body.code === "SALE50")).toBe(true),
     );
 
-    await user.click(screen.getByRole("button", { name: /Lịch sử biến động quỹ/ }));
+    await user.click(within(main).getByText(/Lịch sử biến động quỹ/).closest("button")!);
     const ledgerDialog = await screen.findByRole("dialog", { name: /Sổ cái biến động quỹ/ }, { timeout: 10_000 });
     expect(within(ledgerDialog).getByText("Thiết lập tổng quỹ")).toBeInTheDocument();
     const ledgerCloseButtons = within(ledgerDialog).getAllByRole("button", { name: /^Đóng$/ });
     await user.click(ledgerCloseButtons[ledgerCloseButtons.length - 1]);
 
-    const detailButtons = screen.getAllByRole("button", { name: /Chi tiết/ });
-    await user.click(detailButtons[detailButtons.length - 1]);
+    const detailLabels = within(main).getAllByText(/^Chi tiết$/);
+    await user.click(detailLabels[detailLabels.length - 1].closest("button")!);
     expect(await screen.findByText("Nguyễn Văn A", {}, { timeout: 10_000 })).toBeInTheDocument();
   });
 

@@ -84,8 +84,8 @@ export function Customers() {
       dataIndex: "isFlagged",
       render: (v) => (v ? <Tag color="gold">Có đánh dấu</Tag> : "Không"),
     },
-    { title: "Tổng chuyến", dataIndex: "totalTrips" },
-    { title: "Tỷ lệ hủy 30 ngày", dataIndex: "cancelRate30d", render: percentage },
+    { title: "Tổng chuyến", dataIndex: "totalTrips", align: "right" },
+    { title: "Tỷ lệ hủy 30 ngày", dataIndex: "cancelRate30d", render: percentage, align: "right" },
     { title: "Số dư ví", dataIndex: "walletBalance", render: money, align: "right" },
     { title: "Ngày tạo", dataIndex: "createdAt", render: date },
   ];
@@ -174,6 +174,9 @@ function CustomerStatus({
     <Modal
       open
       title="Đổi trạng thái khách hàng"
+      closable={!mutation.isPending}
+      keyboard={!mutation.isPending}
+      mask={{ closable: !mutation.isPending }}
       onCancel={() => {
         if (!mutation.isPending) onClose();
       }}
@@ -243,6 +246,9 @@ function CustomerFlag({
     <Modal
       open
       title="Đánh dấu khách hàng"
+      closable={!mutation.isPending}
+      keyboard={!mutation.isPending}
+      mask={{ closable: !mutation.isPending }}
       onCancel={() => {
         if (!mutation.isPending) onClose();
       }}

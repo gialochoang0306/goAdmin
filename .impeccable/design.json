@@ -1,0 +1,172 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-18T21:18:00+07:00",
+  "title": "Design System: GoAdmin (PtitGo Web Admin)",
+  "extensions": {
+    "colorMeta": {
+      "crimson-primary": {
+        "role": "primary",
+        "displayName": "Deep PtitGo Crimson",
+        "canonical": "#8f3d4b",
+        "tonalRamp": ["#3b0716", "#561d2a", "#723340", "#8f3d4b", "#b95b6a", "#e48797", "#ffb2bf", "#ffdadf"]
+      },
+      "slate-secondary": {
+        "role": "secondary",
+        "displayName": "Graphite Slate",
+        "canonical": "#444746",
+        "tonalRamp": ["#1f1f1f", "#303231", "#333537", "#444746", "#747775", "#8e918f", "#c4c7c5", "#e3e9f0"]
+      },
+      "amber-tertiary": {
+        "role": "tertiary",
+        "displayName": "Warm Bronze Accent",
+        "canonical": "#795831",
+        "tonalRamp": ["#2b1700", "#452b0c", "#5f411f", "#795831", "#a37b4d", "#cc9f6e", "#ecbf8f", "#ffddb6"]
+      },
+      "surface-canvas-light": {
+        "role": "neutral",
+        "displayName": "Ice Slate Canvas",
+        "canonical": "#f0f4f9",
+        "tonalRamp": ["#1f1f1f", "#444746", "#747775", "#c4c7c5", "#e3e3e3", "#e9eef4", "#f0f4f9", "#ffffff"]
+      },
+      "surface-canvas-dark": {
+        "role": "neutral",
+        "displayName": "Obsidian Slate Dark",
+        "canonical": "#131314",
+        "tonalRamp": ["#131314", "#18191a", "#1e1f20", "#242527", "#282a2c", "#333537", "#8e918f", "#e3e3e3"]
+      },
+      "dashboard-blue": {
+        "role": "accent",
+        "displayName": "Ledger Cobalt Blue",
+        "canonical": "#2457c6",
+        "tonalRamp": ["#19263c", "#233759", "#2457c6", "#3b6ee0", "#5b8afa", "#8db8fa", "#d9e5fc", "#eef4ff"]
+      }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "KPI Metric Display", "purpose": "Hero financial numbers and KPI totals using tabular-nums." },
+      "headline": { "displayName": "Page Title", "purpose": "Primary H2 page headings rendered in Heading." },
+      "brand": { "displayName": "Sidebar Brand", "purpose": "PtitGo wordmark in sidebar header and responsive subheadings." },
+      "section": { "displayName": "Section Sub-anchor", "purpose": "Donut center counts and visual stat container headers." },
+      "title": { "displayName": "Panel & Card Title", "purpose": "Section headers on cards, chart panels, and detail descriptions." },
+      "subhead": { "displayName": "Detail Subhead", "purpose": "Detail panel subsection headings." },
+      "body": { "displayName": "Admin Body", "purpose": "Table rows, detail key-value descriptions, and chat transcripts." },
+      "label": { "displayName": "Control & Filter Label", "purpose": "Buttons, navigation items, tabs, and FilterField captions." },
+      "code": { "displayName": "Technical Identifier", "purpose": "Full UUID application IDs, verification codes, and small button text." },
+      "caption": { "displayName": "Meta & Table Secondary", "purpose": "Supporting metric copy, table subtext, and chat timestamps." },
+      "overline": { "displayName": "Eyebrow & Footer Note", "purpose": "Tracked eyebrow captions and sidebar workspace note." }
+    },
+    "shadows": [
+      {
+        "name": "none-tonal",
+        "value": "none",
+        "purpose": "Flat MD3 + Ant Design setup; all depth uses surface tone steps and 1px hairline borders where functional."
+      }
+    ],
+    "motion": [
+      {
+        "name": "duration-short",
+        "value": "150ms cubic-bezier(.2, 0, 0, 1)",
+        "purpose": "Button opacity and subtle control state transitions; disabled under prefers-reduced-motion."
+      }
+    ],
+    "breakpoints": [
+      { "name": "xs", "value": "576px" },
+      { "name": "md", "value": "768px" },
+      { "name": "lg", "value": "992px" },
+      { "name": "xl", "value": "1200px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Primary admin CTA (e.g. confirm approval, create campaign, assign driver).",
+      "html": "<button class=\"ds-btn-primary\" type=\"button\">Xác nhận duyệt</button>",
+      "css": ".ds-btn-primary { display: inline-flex; align-items: center; justify-content: center; height: 40px; padding: 0 24px; border-radius: 9999px; border: 0; font-family: var(--md-sys-typescale-font-family); font-size: 14px; font-weight: 500; background: var(--md-sys-color-primary); color: var(--md-sys-color-on-primary); cursor: pointer; transition: opacity 150ms cubic-bezier(.2, 0, 0, 1); } .ds-btn-primary:hover { opacity: 0.92; } .ds-btn-primary:focus-visible { outline: 2px solid var(--md-sys-color-primary); outline-offset: 2px; }"
+    },
+    {
+      "name": "Default Outlined Button",
+      "kind": "button",
+      "refersTo": "button-default",
+      "description": "Secondary action button (refresh, reset filters, cancel modal).",
+      "html": "<button class=\"ds-btn-default\" type=\"button\">Làm mới</button>",
+      "css": ".ds-btn-default { display: inline-flex; align-items: center; justify-content: center; height: 40px; padding: 0 24px; border-radius: 9999px; border: 1px solid var(--md-sys-color-outline); font-family: var(--md-sys-typescale-font-family); font-size: 14px; font-weight: 500; background: transparent; color: var(--md-sys-color-primary); cursor: pointer; transition: background 150ms cubic-bezier(.2, 0, 0, 1); } .ds-btn-default:hover { background: color-mix(in srgb, var(--md-sys-color-primary) 8%, transparent); } .ds-btn-default:focus-visible { outline: 2px solid var(--md-sys-color-primary); outline-offset: 2px; }"
+    },
+    {
+      "name": "Danger Action Button",
+      "kind": "button",
+      "refersTo": "button-danger",
+      "description": "Destructive or high-risk rejection/revocation CTA.",
+      "html": "<button class=\"ds-btn-danger\" type=\"button\">Từ chối hồ sơ</button>",
+      "css": ".ds-btn-danger { display: inline-flex; align-items: center; justify-content: center; height: 40px; padding: 0 24px; border-radius: 9999px; border: 0; font-family: var(--md-sys-typescale-font-family); font-size: 14px; font-weight: 500; background: var(--md-sys-color-error); color: var(--md-sys-color-on-error); cursor: pointer; transition: opacity 150ms cubic-bezier(.2, 0, 0, 1); } .ds-btn-danger:hover { opacity: 0.92; } .ds-btn-danger:focus-visible { outline: 2px solid var(--md-sys-color-error); outline-offset: 2px; }"
+    },
+    {
+      "name": "Admin Panel Card",
+      "kind": "card",
+      "refersTo": "card-panel",
+      "description": "Flat tonal panel container housing tables, descriptions, or review sections.",
+      "html": "<section class=\"ds-panel\"><header class=\"ds-panel-head\">Hiệu quả kinh doanh</header><div class=\"ds-panel-body\">Nội dung đối soát vận hành theo ngày Việt Nam.</div></section>",
+      "css": ".ds-panel { background: var(--md-sys-color-surface-container); color: var(--md-sys-color-on-surface); border-radius: 12px; padding: 24px; font-family: var(--md-sys-typescale-font-family); } .ds-panel-head { font-size: 16px; font-weight: 500; margin-bottom: 12px; } .ds-panel-body { font-size: 14px; color: var(--md-sys-color-on-surface-variant); }"
+    },
+    {
+      "name": "Filter Search Input",
+      "kind": "input",
+      "refersTo": "input-field",
+      "description": "40px outlined filter control used inside the horizontal .filters strip above tables.",
+      "html": "<input class=\"ds-filter-input\" type=\"search\" aria-label=\"Tìm chuyến\" placeholder=\"Tên hoặc số điện thoại\" />",
+      "css": ".ds-filter-input { height: 40px; min-width: 240px; padding: 0 12px; border-radius: 12px; border: 1px solid var(--md-sys-color-outline); background: var(--md-sys-color-surface-container-low); color: var(--md-sys-color-on-surface); font-family: var(--md-sys-typescale-font-family); font-size: 14px; } .ds-filter-input:focus-visible { outline: 2px solid var(--md-sys-color-primary); outline-offset: 1px; border-color: var(--md-sys-color-primary); }"
+    },
+    {
+      "name": "Sidebar Navigation Item",
+      "kind": "nav",
+      "refersTo": "nav-item-active",
+      "description": "46px compact sidebar menu item fitting all 9 modules at 1280x720 without scrolling.",
+      "html": "<nav class=\"ds-nav\"><a class=\"ds-nav-item is-active\" href=\"#dashboard\">Tổng quan</a><a class=\"ds-nav-item\" href=\"#rides\">Chuyến đi</a></nav>",
+      "css": ".ds-nav { display: grid; gap: 4px; width: 212px; padding: 8px; background: var(--md-sys-color-surface-container-low); } .ds-nav-item { display: flex; align-items: center; height: 46px; padding: 0 16px; border-radius: 9999px; font-family: var(--md-sys-typescale-font-family); font-size: 14px; font-weight: 500; text-decoration: none; color: var(--md-sys-color-on-surface-variant); } .ds-nav-item:hover { background: color-mix(in srgb, var(--md-sys-color-on-surface) 8%, transparent); } .ds-nav-item.is-active { background: var(--md-sys-color-secondary-container); color: var(--md-sys-color-on-secondary-container); } .ds-nav-item:focus-visible { outline: 2px solid var(--md-sys-color-primary); outline-offset: 2px; }"
+    },
+    {
+      "name": "Status Tag",
+      "kind": "chip",
+      "description": "Semantic status tag with accessible container and ink contrast across light and dark modes.",
+      "html": "<span class=\"ds-tag ds-tag-success\">Hoàn thành</span>",
+      "css": ".ds-tag { display: inline-flex; align-items: center; padding: 2px 10px; border-radius: 9999px; font-family: var(--md-sys-typescale-font-family); font-size: 12px; font-weight: 500; } .ds-tag-success { background: var(--md-sys-color-success-container); color: var(--md-sys-color-on-success-container); }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Operational Clarity Ledger",
+    "overview": "GoAdmin là cổng điều hành nội bộ của hệ sinh thái lái xe hộ PtitGo, kết hợp thư viện Ant Design 6 với hệ thống biến ngữ nghĩa Material Design 3 tại src/theme/theme.css và lớp component rules tập trung tại src/theme/components.css. Giao diện ưu tiên khả năng quét dữ liệu nhanh, mật độ bảng cân đối, tách biệt rạch ròi các hành động tài chính/kiểm duyệt rủi ro và tính nhất quán tuyệt đối giữa Light Mode và Dark Mode.",
+    "keyCharacteristics": [
+      "Một nguồn token duy nhất trong src/theme/theme.css; mọi component và màn hình tiêu thụ biến --md-sys-*, --app-color-*, --dashboard-* thay vì màu hex rời rạc.",
+      "Phân tầng độ sâu phẳng bằng chênh lệch tonal (boxShadow: none toàn hệ thống) thay vì bóng đổ nặng.",
+      "Dữ liệu tài chính, số lượt, khoảng cách và tỷ lệ sử dụng tabular-nums và căn phải nhất quán trong bảng.",
+      "Ngôn ngữ điều khiển Ant Design 6 đồng bộ Light/Dark/System qua public/theme-init.js trước khi React mount."
+    ],
+    "rules": [
+      {
+        "name": "The Single Source of Palette Rule",
+        "body": "Mọi mã màu thô chỉ được khai báo trong src/theme/theme.css; không đặt màu hex hay gradient trang trí trực tiếp trong component hoặc trang con.",
+        "section": "colors"
+      },
+      {
+        "name": "The Numeric Alignment Rule",
+        "body": "Mọi cột số lượng, tiền tệ VND (money()), tỷ lệ phần trăm và thời lượng trong bảng phải dùng align: \"right\" kèm .ant-table-cell-align-right (font-variant-numeric: tabular-nums) để các hàng đối chiếu thẳng cột dọc.",
+        "section": "typography"
+      },
+      {
+        "name": "The Flat-Tonal Surface Rule",
+        "body": "Không thêm box-shadow trang trí hoặc lồng <Card> mặc định bên trong <Card>/<Panel>; dùng khối tonal nội tuyến với viền 1px --md-sys-color-outline-variant khi cần phân tách cụm đánh giá hay giấy tờ.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do sử dụng đúng semantic tokens (--md-sys-color-*, --dashboard-*) và formatter chuẩn (money(), date(), dateFilter(), label()) trên mọi màn hình.",
+      "Do giữ nút hành động hủy/từ chối/thu hồi ở trạng thái danger và khóa thao tác đóng Modal/Drawer hoặc bấm gửi lại trong khi mutation isPending.",
+      "Do giữ chuyển động tôn trọng @media (prefers-reduced-motion: reduce) qua quy tắc tập trung trong src/theme/components.css."
+    ],
+    "donts": [
+      "Don't gắn onReset tạo nút \"Xóa bộ lọc\" trùng lặp bên trong <DataTable> trên các trang đã có sẵn \"Xóa bộ lọc\" trong thanh .filters.",
+      "Don't tự tạo shadow nổi, gradient trang trí, <Card> lồng trong <Card>, hoặc màu hex cứng ngoài src/theme/theme.css.",
+      "Don't che hoặc bỏ qua dấu hiệu sai lệch bản nộp eKYC, lợi nhuận âm (grossProfit < 0), hay thiếu dữ liệu bằng giá trị 0 đ giả tạo."
+    ]
+  }
+}

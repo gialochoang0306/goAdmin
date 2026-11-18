@@ -77,8 +77,8 @@ export function FaceComparisonPanel({ detail, onWarnings }: {
     }
   }
 
-  return <section aria-label="Đối chiếu khuôn mặt">
-    <Space orientation="vertical">
+  return <section aria-label="Đối chiếu khuôn mặt" className="verification-decision-box">
+    <Space orientation="vertical" style={{ width: "100%" }}>
       <Descriptions size="small" column={1} items={[
         { key: "face", label: "Đối chiếu khuôn mặt", children: result?.mode === "EXPERIMENTAL"
           ? "Thử nghiệm · Chưa có ngưỡng kết luận" : "Chưa đánh giá" },

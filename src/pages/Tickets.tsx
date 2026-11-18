@@ -8,17 +8,15 @@ import {
   Empty,
   Image,
   Input,
-  Pagination,
   Select,
-  Table,
   Tag,
   Typography,
 } from "antd";
 import type { TableColumnsType } from "antd";
-import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
+import { Link, useLocation, useParams } from "react-router-dom";
 import { SearchDateFields, listSearch } from "../components/SearchDateFields";
 import { FilterField } from "../components/FilterField";
-import { Heading, InvalidRecord, Loading, Panel, Photo, QueryError, Refresh } from "../components/common";
+import { DataTable, Heading, InvalidRecord, Loading, Panel, Photo, QueryError, Refresh } from "../components/common";
 import { api, errorMessage } from "../lib/api";
 import { uploadSupportImage } from "../lib/upload";
 import { date, label, safeImage } from "../lib/format";
@@ -53,7 +51,6 @@ function TicketStatusTag({ status }: { status: TicketStatus }) {
 
 export function Tickets() {
   const filters = useFilters();
-  const page = filters.page;
   const rawStatus = filters.read("status");
   const status = rawStatus ? rawStatus as TicketStatus : undefined;
   const search = listSearch(filters);
@@ -61,25 +58,28 @@ export function Tickets() {
   const category = filters.read("category");
   const params = { ...filters.params, ...search.params, ownerRole, category };
   const query = useQuery({
-    queryKey: [...listKey, page, status, params],
-    queryFn: () => api.tickets(page, status, params),
+    queryKey: [...listKey, filters.page, status, params],
+    queryFn: () => api.tickets(filters.page, status, params),
     enabled: !search.error,
     refetchInterval: 15000,
     refetchOnWindowFocus: "always",
   });
-  const navigate = useNavigate();
   const location = useLocation();
   const columns: TableColumnsType<TicketSummary> = [
     {
       title: "Ticket",
       key: "code",
+      width: 110,
       render: (_, ticket) => (
-        <Link to={{ pathname: `/tickets/${ticket.id}`, search: location.search }} onClick={event => event.stopPropagation()}>{ticket.code}</Link>
+        <Link to={{ pathname: `/tickets/${ticket.id}`, search: location.search }}>
+          {ticket.code}
+        </Link>
       ),
     },
     {
       title: "Người tạo",
       key: "owner",
+      width: 210,
       render: (_, ticket) => (
         <div>
           <div>{ticket.ownerName ?? "—"}</div>
@@ -87,12 +87,11 @@ export function Tickets() {
         </div>
       ),
     },
-    { title: "Vai trò", key: "role", render: (_, ticket) => label(ticket.ownerRole) },
-    { title: "Chủ đề", key: "category", render: (_, ticket) => categories[ticket.category] ?? ticket.category },
-    { title: "Trạng thái", key: "status", render: (_, ticket) => <TicketStatusTag status={ticket.status} /> },
-    { title: "Cập nhật", key: "updatedAt", render: (_, ticket) => date(ticket.updatedAt) },
+    { title: "Vai trò", key: "role", width: 120, render: (_, ticket) => label(ticket.ownerRole) },
+    { title: "Chủ đề", key: "category", width: 140, render: (_, ticket) => categories[ticket.category] ?? ticket.category },
+    { title: "Trạng thái", key: "status", width: 150, render: (_, ticket) => <TicketStatusTag status={ticket.status} /> },
+    { title: "Cập nhật", key: "updatedAt", width: 150, render: (_, ticket) => date(ticket.updatedAt) },
   ];
-  const rows = search.error ? [] : query.data?.content ?? [];
   return (
     <>
       <Heading
@@ -100,51 +99,32 @@ export function Tickets() {
         subtitle="Hội thoại CSKH hai chiều; ticket tự chuyển trạng thái khi khách phản hồi."
         actions={<Refresh loading={query.isFetching} disabled={!!search.error} onClick={() => void query.refetch()} />}
       />
-      <Panel>
-        <div className="support-list-controls filters">
-          <SearchDateFields filters={filters} label="Tìm yêu cầu hỗ trợ" placeholder="Mã HT-, mã chuyến, tên hoặc SĐT" />
-          <FilterField label="Vai trò người gửi"><Select aria-label="Vai trò người gửi" allowClear placeholder="Tất cả vai trò" value={ownerRole || undefined}
-            options={[{value:"CUSTOMER",label:"Khách hàng"},{value:"DRIVER",label:"Tài xế"}]} onChange={ownerRole => filters.update({ownerRole})} /></FilterField>
-          <FilterField label="Chủ đề hỗ trợ"><Select aria-label="Chủ đề hỗ trợ" allowClear placeholder="Tất cả chủ đề" value={category || undefined}
-            options={Object.entries(categories).map(([value,label])=>({value,label}))} onChange={category => filters.update({category})} /></FilterField>
-          <FilterField label="Trạng thái">
-            <Select
-              aria-label="Lọc trạng thái ticket"
-              options={[{ value: "", label: "Tất cả trạng thái" }, ...statusOptions]}
-              value={status ?? ""}
-              onChange={value => filters.update({ status: value })}
-            />
-          </FilterField>
-          <Button onClick={filters.reset}>Xóa bộ lọc</Button>
-        </div>
-        {search.error && <Alert type="warning" showIcon title={search.error} />}
-        <QueryError error={search.error ? null : query.error} retry={() => void query.refetch()} />
-        <Table<TicketSummary>
-          columns={columns}
-          dataSource={rows}
-          rowKey="id"
-          loading={query.isFetching}
-          pagination={false}
-          scroll={{ x: 840 }}
-          onRow={ticket => ({ onClick: () => navigate({ pathname: `/tickets/${ticket.id}`, search: location.search }) })}
-          locale={{
-            emptyText: (
-              <Empty
-                image={Empty.PRESENTED_IMAGE_SIMPLE}
-                description={query.isPending ? "Đang tải dữ liệu…" : query.isError ? "Chưa tải được dữ liệu" : "Không có ticket phù hợp"}
-              />
-            ),
-          }}
-        />
-        <div className="support-pagination">
-          <Pagination
-            current={page + 1}
-            pageSize={filters.size}
-            total={search.error ? 0 : query.data?.totalElements ?? 0}
-            showSizeChanger pageSizeOptions={[20, 50, 100]}
-            onChange={(next, size) => filters.update({ page: size !== filters.size ? 0 : next - 1, size }, false)}
+      <div className="filters">
+        <SearchDateFields filters={filters} label="Tìm yêu cầu hỗ trợ" placeholder="Mã HT-, mã chuyến, tên hoặc SĐT" />
+        <FilterField label="Vai trò người gửi"><Select aria-label="Vai trò người gửi" allowClear placeholder="Tất cả vai trò" value={ownerRole || undefined}
+          options={[{value:"CUSTOMER",label:"Khách hàng"},{value:"DRIVER",label:"Tài xế"}]} onChange={ownerRole => filters.update({ownerRole})} /></FilterField>
+        <FilterField label="Chủ đề hỗ trợ"><Select aria-label="Chủ đề hỗ trợ" allowClear placeholder="Tất cả chủ đề" value={category || undefined}
+          options={Object.entries(categories).map(([value,label])=>({value,label}))} onChange={category => filters.update({category})} /></FilterField>
+        <FilterField label="Trạng thái">
+          <Select
+            aria-label="Lọc trạng thái ticket"
+            options={[{ value: "", label: "Tất cả trạng thái" }, ...statusOptions]}
+            value={status ?? ""}
+            onChange={value => filters.update({ status: value })}
           />
-        </div>
+        </FilterField>
+        <Button className="filter-reset" onClick={filters.reset}>Xóa bộ lọc</Button>
+      </div>
+      {search.error && <Alert className="query-error" type="warning" showIcon title={search.error} />}
+      <QueryError error={search.error ? null : query.error} retry={() => void query.refetch()} />
+      <Panel>
+        <DataTable<TicketSummary>
+          data={search.error ? undefined : query.data}
+          columns={columns}
+          loading={!search.error && query.isFetching}
+          onPage={(page, size) => filters.update({ page, size }, false)}
+          scroll={880}
+        />
       </Panel>
     </>
   );
@@ -185,6 +165,9 @@ export function TicketDetailPage() {
     setImageFile(file);
     setImagePreview(file ? URL.createObjectURL(file) : null);
   };
+  useEffect(() => () => {
+    if (imagePreview) URL.revokeObjectURL(imagePreview);
+  }, [imagePreview]);
 
   const send = useMutation({
     mutationFn: async () => {
@@ -277,22 +260,34 @@ export function TicketDetailPage() {
                 </div>
               ) : <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="Chưa có tin nhắn" />}
               <div className="ticket-composer">
-                <Select
-                  aria-label="Cập nhật trạng thái ticket"
-                  options={statusOptions}
-                  value={status ?? ticket.status}
-                  onChange={(value: TicketStatus) => setStatus(value)}
-                  style={{ maxWidth: 240 }}
-                />
-                <Input.TextArea
-                  aria-label="Nội dung phản hồi"
-                  value={reply}
-                  onChange={event => setReply(event.target.value)}
-                  placeholder="Nhập câu trả lời cho người dùng…"
-                  autoSize={{ minRows: 3, maxRows: 8 }}
-                  maxLength={4000}
-                  showCount
-                />
+                <div className="ticket-composer-field">
+                  <label className="filter-label" htmlFor="ticket-status-select">
+                    Trạng thái sau phản hồi
+                  </label>
+                  <Select
+                    id="ticket-status-select"
+                    aria-label="Cập nhật trạng thái ticket"
+                    options={statusOptions}
+                    value={status ?? ticket.status}
+                    onChange={(value: TicketStatus) => setStatus(value)}
+                    style={{ maxWidth: 240 }}
+                  />
+                </div>
+                <div className="ticket-composer-field">
+                  <label className="filter-label" htmlFor="ticket-reply-input">
+                    Nội dung phản hồi
+                  </label>
+                  <Input.TextArea
+                    id="ticket-reply-input"
+                    aria-label="Nội dung phản hồi"
+                    value={reply}
+                    onChange={event => setReply(event.target.value)}
+                    placeholder="Nhập câu trả lời cho người dùng…"
+                    autoSize={{ minRows: 3, maxRows: 8 }}
+                    maxLength={4000}
+                    showCount
+                  />
+                </div>
                 {imagePreview ? (
                   <div className="ticket-image-preview">
                     <Image src={imagePreview} alt="Ảnh sẽ gửi" width={72} />

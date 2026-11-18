@@ -83,8 +83,10 @@ export function WithdrawalReviewDialog({ target, query, onClose, onCompleted }: 
         ) : (
           <>
             <Alert type="info" showIcon title="Tiền đã giữ sẽ được hoàn về ví tiền mặt của tài xế khi từ chối." />
-            <label htmlFor="withdrawal-reason">Lý do từ chối (bắt buộc)</label>
-            <Input.TextArea id="withdrawal-reason" value={reason} maxLength={500} showCount rows={3} disabled={save.isPending} onChange={event => setReason(event.target.value)} placeholder="Ví dụ: Số tài khoản ngân hàng không hợp lệ" />
+            <div className="ticket-composer-field">
+              <label className="filter-label" htmlFor="withdrawal-reason">Lý do từ chối (bắt buộc)</label>
+              <Input.TextArea id="withdrawal-reason" value={reason} maxLength={500} showCount rows={3} disabled={save.isPending} onChange={event => setReason(event.target.value)} placeholder="Ví dụ: Số tài khoản ngân hàng không hợp lệ" />
+            </div>
           </>
         )}
       </Space>

@@ -70,6 +70,13 @@
   --app-color-chat-surface: var(--md-sys-color-surface-container-lowest);
   --app-color-chat-user-container: var(--md-sys-color-surface-container-high);
 
+  /* Data-viz blue roles for Dashboard charts and wallet emphasis. */
+  --dashboard-blue: #2457c6;
+  --dashboard-blue-light: #8db8fa;
+  --dashboard-wallet-bg: #eef4ff;
+  --dashboard-wallet-border: #d9e5fc;
+  --dashboard-accent-bg: #eaf1ff;
+
   /* Compatibility aliases preserve existing classes and markup. */
   --page: var(--md-sys-color-surface);
   --surface: var(--md-sys-color-surface-container-low);
@@ -132,4 +139,10 @@
   --md-sys-color-info: #9ecaff;
   --md-sys-color-info-container: #004776;
   --md-sys-color-on-info-container: #d0e4ff;
+
+  --dashboard-blue: #5b8afa;
+  --dashboard-blue-light: #a9c9ff;
+  --dashboard-wallet-bg: #19263c;
+  --dashboard-wallet-border: #34486b;
+  --dashboard-accent-bg: #233759;
 }

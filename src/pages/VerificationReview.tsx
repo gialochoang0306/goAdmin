@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Alert, Button, Checkbox, Descriptions, Drawer, Image, Input, Select, Space, Table, Tag } from "antd";
+import { Alert, Button, Checkbox, Descriptions, Drawer, Image, Input, Select, Space, Table, Tag, Typography } from "antd";
 import { Link } from "react-router-dom";
-import { Heading, Loading, QueryError, Refresh } from "../components/common";
+import { Heading, Loading, Panel, QueryError, Refresh } from "../components/common";
+import { FilterField } from "../components/FilterField";
 import { date } from "../lib/format";
 import { errorMessage, request, verificationEnabled, verificationFetch } from "../lib/api";
 import { LicensePolicyPreview, type ApprovalCapabilityReview } from "./LicensePolicyPreview";
@@ -46,9 +47,10 @@ function PrivateImage({ id, slot, revision }: { id: string; slot: string; revisi
   </Space>;
 }
 
-function Review({ detail, snapshot, setSnapshot, onChanged }: {
+function Review({ detail, snapshot, setSnapshot, onChanged, onPendingChange }: {
   detail: ReviewDetail; snapshot?: number; setSnapshot: (value?: number) => void;
   onChanged: () => void;
+  onPendingChange: (pending: boolean) => void;
 }) {
   const [action, setAction] = useState<Decision>();
   const [capabilityReview, setCapabilityReview] = useState<ApprovalCapabilityReview>();
@@ -80,10 +82,14 @@ function Review({ detail, snapshot, setSnapshot, onChanged }: {
     mutationFn: (body: object) => verificationFetch("applications/" + detail.id + "/decision", { body }),
     onSuccess: () => onChanged(),
   });
+  useEffect(() => {
+    onPendingChange(decision.isPending);
+    return () => onPendingChange(false);
+  }, [decision.isPending, onPendingChange]);
   const needsReason = action === "REJECTED" || action === "NEEDS_MORE_INFO" || action === "REVOKED";
   return <Space orientation="vertical" size="large" style={{ width: "100%" }}>
     <Descriptions size="small" column={1} items={[
-      { key: "status", label: "Trạng thái", children: states[detail.status] },
+      { key: "status", label: "Trạng thái", children: <Tag color={detail.status === "APPROVED" ? "green" : detail.status === "REJECTED" || detail.status === "REVOKED" ? "red" : "gold"}>{states[detail.status] ?? detail.status}</Tag> },
       { key: "revision", label: "Bản nộp đang xem", children: doc.revision },
       { key: "submitted", label: "Thời gian nộp", children: date(doc.submittedAt) },
       ...(detail.identityLocked ? [
@@ -95,9 +101,18 @@ function Review({ detail, snapshot, setSnapshot, onChanged }: {
     ]} />
     {detail.identityHold && <Alert type="error" title="Hồ sơ đang bị tạm giữ để kiểm tra danh tính"
       description={detail.identityHoldReason || "Phát hiện dấu hiệu mâu thuẫn danh tính hoặc trùng giấy tờ."} />}
-    <Select aria-label="Bản nộp" value={snapshot ?? detail.submissionRevision} style={{ minWidth: 230 }}
-      options={detail.submissions.map(item => ({ value: item.revision, label: "Bản " + item.revision + " · " + date(item.submittedAt) }))}
-      onChange={value => setSnapshot(value === detail.submissionRevision ? undefined : value)} />
+    <FilterField label="Phiên bản hồ sơ đang xem">
+      <Select aria-label="Bản nộp" value={snapshot ?? detail.submissionRevision} style={{ minWidth: 260 }}
+        options={detail.submissions.map(item => ({ value: item.revision, label: "Bản " + item.revision + " · " + date(item.submittedAt) }))}
+        onChange={value => setSnapshot(value === detail.submissionRevision ? undefined : value)} />
+    </FilterField>
+    {!current && (
+      <Alert
+        type="info"
+        showIcon
+        title={`Đang xem bản nộp cũ (Bản ${doc.revision}). Chuyển về bản mới nhất (Bản ${detail.submissionRevision}) để ra quyết định.`}
+      />
+    )}
     {doc.warningAcknowledgement?.codes.length ? <span>
       Tài xế đã xác nhận xem cảnh báo ở revision {doc.warningAcknowledgement.revision}.
     </span> : null}
@@ -128,27 +143,29 @@ function Review({ detail, snapshot, setSnapshot, onChanged }: {
             && <Tag color="blue">Đã sửa từ bản trước</Tag>}
         </> },
       ]} />
-    <Space wrap size="large" align="start">
+    <div className="verification-capture-grid">
       {Object.entries(captures).map(([slot, label]) => {
         const capture = doc.captures[slot];
         if (!capture) return null;
         const result = doc.proposals[slot]?.result;
-        return <section key={slot} aria-label={label}>
-          <h3>{label}</h3>
+        return <section key={slot} aria-label={label} className="verification-capture-card">
+          <h4>{label}</h4>
           <PrivateImage id={detail.id} slot={slot} revision={doc.revision} />
-          <div>{capture.quality ? capture.quality.width + " × " + capture.quality.height + " px" : "Chưa có số đo chất lượng"}</div>
+          <Typography.Text type="secondary" className="muted">
+            {capture.quality ? capture.quality.width + " × " + capture.quality.height + " px" : "Chưa có số đo chất lượng"}
+          </Typography.Text>
           {warnings?.filter(warning => warning.evidenceSource === "FACE_COMPARISON" && warning.slot === slot)
             .map(warning => <Alert key={warning.code} type={warning.severity === "INFO" ? "info" : "warning"}
               title={warning.humanReadableMessage} description={<>{warning.recommendedAction} <Tag>{warning.code}</Tag></>} />)}
-          {capture.quality?.warnings.map(code => <div key={code}>{warningText(code)}</div>)}
+          {capture.quality?.warnings.map(code => <Tag key={code} color="gold">{warningText(code)}</Tag>)}
           {result ? [...new Set([
             result.qrStatus, result.ocrStatus, ...result.warnings,
             ...Object.values(result.fieldStatuses ?? {}).filter(code => code !== "READ"),
           ])].map(code =>
-            <div key={code}>{warningText(code)}</div>) : <div>Chưa có lượt trích xuất cho ảnh này.</div>}
+            <Typography.Text key={code} type="secondary" className="muted">{warningText(code)}</Typography.Text>) : <Typography.Text type="secondary" className="muted">Chưa có lượt trích xuất cho ảnh này.</Typography.Text>}
         </section>;
       })}
-    </Space>
+    </div>
     {detail.approvedDocument && detail.approvedSubmissionRevision != null && detail.approvedSubmissionRevision !== doc.revision
       && Object.keys(detail.approvedDocument.captures ?? {}).length > 0 && (
       <details><summary>Ảnh bản đã duyệt trước đó (Bản {detail.approvedSubmissionRevision})</summary>
@@ -191,7 +208,9 @@ function Review({ detail, snapshot, setSnapshot, onChanged }: {
         ].filter(Boolean).join(", ")}</div> : null}
       </li>)}</ul>
     </details>
-    {available.length > 0 && <form onSubmit={event => {
+    {available.length > 0 && <section className="verification-decision-box" aria-label="Quyết định xét duyệt">
+      <h4>Quyết định xét duyệt</h4>
+      <form onSubmit={event => {
       event.preventDefault();
       if (!action || !available.includes(action) || decision.isPending) return;
       if (!reviewed) { setMessage("Xác nhận đã xem bản nộp hiện tại."); return; }
@@ -212,21 +231,30 @@ function Review({ detail, snapshot, setSnapshot, onChanged }: {
       });
     }}>
       <Space orientation="vertical" style={{ width: "100%" }}>
-        <Select aria-label="Quyết định" placeholder="Chọn quyết định" value={action} style={{ width: "100%" }}
-          options={available.map(value => ({ value, label: labels[value] }))} onChange={setAction} />
+        <FilterField label="Quyết định">
+          <Select aria-label="Quyết định" placeholder="Chọn quyết định" value={action} style={{ width: "100%" }}
+            options={available.map(value => ({ value, label: labels[value] }))} onChange={setAction} />
+        </FilterField>
         {action === "NEEDS_MORE_INFO" && <>
-          <Select mode="multiple" aria-label="Ảnh cần bổ sung" placeholder="Ảnh cần bổ sung" style={{ width: "100%" }}
-            options={Object.entries(captures).map(([value, label]) => ({ value, label }))} onChange={setCaptureTargets} />
-          <Select mode="multiple" aria-label="Trường cần sửa" placeholder="Trường cần sửa" style={{ width: "100%" }}
-            options={Object.entries(fields).map(([value, label]) => ({ value, label }))} onChange={setFieldTargets} />
+          <FilterField label="Ảnh cần bổ sung">
+            <Select mode="multiple" aria-label="Ảnh cần bổ sung" placeholder="Ảnh cần bổ sung" style={{ width: "100%" }}
+              options={Object.entries(captures).map(([value, label]) => ({ value, label }))} onChange={setCaptureTargets} />
+          </FilterField>
+          <FilterField label="Trường cần sửa">
+            <Select mode="multiple" aria-label="Trường cần sửa" placeholder="Trường cần sửa" style={{ width: "100%" }}
+              options={Object.entries(fields).map(([value, label]) => ({ value, label }))} onChange={setFieldTargets} />
+          </FilterField>
         </>}
-        {needsReason && <Input.TextArea aria-label="Lý do" placeholder="Lý do cụ thể gửi tài xế"
-          maxLength={500} showCount value={reason} onChange={event => setReason(event.target.value)} />}
+        {needsReason && <FilterField label="Lý do">
+          <Input.TextArea aria-label="Lý do" placeholder="Lý do cụ thể gửi tài xế"
+            maxLength={500} showCount value={reason} onChange={event => setReason(event.target.value)} />
+        </FilterField>}
         <Checkbox checked={reviewed} onChange={event => setReviewed(event.target.checked)}>Tôi đã xem bản nộp hiện tại</Checkbox>
         {(message || decision.error) && <Alert type="error" title={message || errorMessage(decision.error)} />}
-        <Button type="primary" htmlType="submit" loading={decision.isPending} disabled={!action || !available.includes(action)}>Lưu quyết định</Button>
+        <Button type="primary" danger={action === "REJECTED" || action === "REVOKED"} htmlType="submit" loading={decision.isPending} disabled={!action || !available.includes(action)}>Lưu quyết định</Button>
       </Space>
-    </form>}
+    </form>
+    </section>}
   </Space>;
 }
 
@@ -236,6 +264,7 @@ export default function VerificationReview() {
   const [id, setId] = useState<string>();
   const [snapshot, setSnapshot] = useState<number>();
   const [notice, setNotice] = useState("");
+  const [decisionPending, setDecisionPending] = useState(false);
   const search = filters.read("application_id");
   const status = filters.read("status");
   const params = new URLSearchParams({ limit: String(filters.size), offset: String(filters.size * filters.page) });
@@ -255,40 +284,49 @@ export default function VerificationReview() {
   });
   return <>
     <Heading title="Xác minh hồ sơ tài xế" subtitle="Đối chiếu hồ sơ nộp từ ứng dụng tài xế."
-      actions={<Space><Link to="/driver-documents">Hồ sơ hiện có</Link>
+      actions={<Space>
+        <Link to="/driver-documents"><Button>Hồ sơ hiện có</Button></Link>
         <Refresh loading={queue.isFetching || detail.isFetching} onClick={() => {
           void queue.refetch(); if (id) void detail.refetch();
         }} /></Space>} />
     {!verificationEnabled ? <Alert type="info" title="Chưa cấu hình máy chủ eKYC." /> : <>
-      <Space wrap>
-        <Input.Search aria-label="Mã hồ sơ" placeholder="Mã hồ sơ đầy đủ" defaultValue={search}
-          maxLength={36} enterButton="Tìm" onSearch={value => filters.update({ application_id: value.trim() })} />
-        <Select aria-label="Trạng thái hồ sơ" placeholder="Tất cả trạng thái" allowClear value={status || undefined}
-          options={statuses} style={{ minWidth: 170 }} onChange={value => filters.update({ status: value })} />
-      </Space>
-      {!canSearch && <Alert type="warning" title="Nhập mã hồ sơ UUID đầy đủ." />}
-      {notice && <Alert type="success" title={notice} closable onClose={() => setNotice("")} />}
+      <div className="filters">
+        <FilterField label="Tìm theo mã hồ sơ" search>
+          <Input.Search key={search} aria-label="Mã hồ sơ" placeholder="Mã hồ sơ UUID đầy đủ" defaultValue={search}
+            maxLength={36} enterButton="Tìm" onSearch={value => filters.update({ application_id: value.trim() })} />
+        </FilterField>
+        <FilterField label="Trạng thái hồ sơ">
+          <Select aria-label="Trạng thái hồ sơ" placeholder="Tất cả trạng thái" allowClear value={status || undefined}
+            options={statuses} style={{ minWidth: 190 }} onChange={value => filters.update({ status: value })} />
+        </FilterField>
+        <Button className="filter-reset" onClick={filters.reset}>Xóa bộ lọc</Button>
+      </div>
+      {!canSearch && <Alert className="query-error" type="warning" showIcon title="Nhập mã hồ sơ UUID đầy đủ." />}
+      {notice && <Alert className="query-error" type="success" showIcon title={notice} closable onClose={() => setNotice("")} />}
       <QueryError error={queue.error} retry={() => void queue.refetch()} />
-      <Table<QueueItem> rowKey="id" loading={queue.isFetching} pagination={false} scroll={{ x: 760 }}
-        dataSource={canSearch ? queue.data?.items ?? [] : []} columns={[
-          { title: "Mã hồ sơ", dataIndex: "id", render: (value, row) => <Button type="link" onClick={() => {
-            setId(row.id); setSnapshot(undefined); setNotice("");
-          }}>{value}</Button> },
-          { title: "Trạng thái", dataIndex: "status", render: value => states[value] },
-          { title: "Thời gian nộp", dataIndex: "submittedAt", render: date },
-          { title: "Lần bổ sung", dataIndex: "resubmissionCount" },
-          { title: "Cảnh báo", dataIndex: "warningCount", render: value => value ? <Tag color="orange">{value}</Tag> : "0" },
-        ]} />
-      <Space><Button disabled={!filters.page} onClick={() => filters.update({ page: filters.page - 1 }, false)}>Trang trước</Button>
-        <span>Trang {filters.page + 1}</span>
-        <Button disabled={!canSearch || !queue.data?.hasMore} onClick={() => filters.update({ page: filters.page + 1 }, false)}>Trang sau</Button>
-      </Space>
+      <Panel>
+        <Table<QueueItem> rowKey="id" loading={queue.isFetching} pagination={false} scroll={{ x: 760 }}
+          dataSource={canSearch ? queue.data?.items ?? [] : []} columns={[
+            { title: "Mã hồ sơ", dataIndex: "id", render: (value, row) => <Button type="link" onClick={() => {
+              setId(row.id); setSnapshot(undefined); setNotice("");
+            }}><code>{value}</code></Button> },
+            { title: "Trạng thái", dataIndex: "status", render: value => <Tag color={value === "APPROVED" ? "green" : value === "REJECTED" || value === "REVOKED" ? "red" : "gold"}>{states[value] ?? value}</Tag> },
+            { title: "Thời gian nộp", dataIndex: "submittedAt", render: date },
+            { title: "Lần bổ sung", dataIndex: "resubmissionCount", align: "right" },
+            { title: "Cảnh báo", dataIndex: "warningCount", align: "right", render: value => value ? <Tag color="orange">{value}</Tag> : "0" },
+          ]} />
+        <div className="verification-pagination">
+          <Button size="small" disabled={!filters.page} onClick={() => filters.update({ page: filters.page - 1 }, false)}>Trang trước</Button>
+          <Typography.Text type="secondary">Trang {filters.page + 1}</Typography.Text>
+          <Button size="small" disabled={!canSearch || !queue.data?.hasMore} onClick={() => filters.update({ page: filters.page + 1 }, false)}>Trang sau</Button>
+        </div>
+      </Panel>
     </>}
-    <Drawer title="Chi tiết xác minh tài xế" open={!!id} onClose={() => setId(undefined)} size="large" destroyOnHidden>
+    <Drawer title="Chi tiết xác minh tài xế" open={!!id} closable={!decisionPending} keyboard={!decisionPending} mask={{ closable: !decisionPending }} onClose={() => { if (!decisionPending) setId(undefined); }} size="large" destroyOnHidden>
       {detail.isFetching ? <Loading /> : <QueryError error={detail.error} retry={() => void detail.refetch()} />}
       {id && detail.data && !detail.isFetching && !detail.error && <Review
         key={id + ":" + detail.data.revision + ":" + detail.data.document.revision}
-        detail={detail.data} snapshot={snapshot} setSnapshot={setSnapshot} onChanged={() => {
+        detail={detail.data} snapshot={snapshot} setSnapshot={setSnapshot} onPendingChange={setDecisionPending} onChanged={() => {
           setNotice("Đã lưu quyết định.");
           void client.invalidateQueries({ queryKey: queueKey });
         }} />}
