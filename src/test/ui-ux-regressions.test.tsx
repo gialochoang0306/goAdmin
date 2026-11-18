@@ -51,9 +51,11 @@ function renderPage(path: string) {
 }
 
 let voucherPostCalls = 0;
+let resolveBudgetPut: (() => void) | undefined;
 
 beforeEach(() => {
   voucherPostCalls = 0;
+  resolveBudgetPut = undefined;
   configureAuth(async () => "fake-token", () => {});
   vi.stubGlobal(
     "fetch",
@@ -161,21 +163,18 @@ beforeEach(() => {
       if (u.pathname === "/api/admin/vouchers/budget") {
         if (method === "PUT") {
           voucherPostCalls += 1;
-          return new Promise((resolve) =>
-            setTimeout(
-              () =>
-                resolve(
-                  ok({
-                    budgetLimit: 12_000_000,
-                    heldAmount: 0,
-                    spentAmount: 0,
-                    issuanceReserved: 0,
-                    availableAmount: 12_000_000,
-                  }),
-                ),
-              80,
-            ),
-          );
+          return new Promise<Response>((resolve) => {
+            resolveBudgetPut = () =>
+              resolve(
+                ok({
+                  budgetLimit: 12_000_000,
+                  heldAmount: 0,
+                  spentAmount: 0,
+                  issuanceReserved: 0,
+                  availableAmount: 12_000_000,
+                }),
+              );
+          });
         }
         return ok({
           budgetLimit: 10_000_000,
@@ -312,8 +311,11 @@ describe("GoAdmin UI/UX regressions", () => {
 
     const saveBtn = screen.getByRole("button", { name: "Lưu tổng quỹ" });
     await user.click(saveBtn);
-    await user.click(saveBtn);
     await waitFor(() => expect(voucherPostCalls).toBe(1));
+    await user.click(saveBtn);
+    expect(voucherPostCalls).toBe(1);
+    resolveBudgetPut?.();
+    await waitFor(() => expect(saveBtn).not.toHaveClass("ant-btn-loading"));
   });
 
   it("renders Tickets DataTable reset control and accessible reply composer labels", async () => {
