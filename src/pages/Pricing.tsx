@@ -16,7 +16,7 @@ import {
 } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import { PlusOutlined } from "@ant-design/icons";
-import { api, ApiError, errorMessage } from "../lib/api";
+import { api, ApiError, errorMessage, request } from "../lib/api";
 import { date, label, money, pricingError } from "../lib/format";
 import { useAction, useFilters } from "../lib/hooks";
 import {
@@ -29,6 +29,16 @@ import {
 } from "../components/common";
 import type { Pricing, PricingInput } from "../types";
 
+function usePricingVehicleOptions() {
+  const query = useQuery({
+    queryKey: ["vehicleCatalog"], staleTime: 300_000,
+    queryFn: () => request<{ bookingTypes: Record<string, string> }>("/api/vehicle-catalog"),
+  });
+  return query.data?.bookingTypes
+    ? Object.entries(query.data.bookingTypes).map(([value, title]) => ({ value, label: title }))
+    : ["CAR", "MOTORCYCLE"].map(value => ({ value, label: label(value) }));
+}
+
 function PricingForm({
   rule,
   onClose,
@@ -36,6 +46,7 @@ function PricingForm({
   rule?: Pricing;
   onClose: () => void;
 }) {
+  const vehicleOptions = usePricingVehicleOptions();
   const [form] = Form.useForm<PricingInput>();
   const [validation, setValidation] = useState<string | null>(null);
   const mutation = useAction(
@@ -113,10 +124,7 @@ function PricingForm({
         >
           <Select
             disabled={!!rule}
-            options={["CAR", "MOTORCYCLE"].map((value) => ({
-              value,
-              label: label(value),
-            }))}
+            options={vehicleOptions}
           />
         </Form.Item>
         <Typography.Title level={5}>Giá dịch vụ</Typography.Title>
@@ -192,6 +200,7 @@ function PricingForm({
 }
 
 export default function PricingPage() {
+  const vehicleOptions = usePricingVehicleOptions();
   const f = useFilters();
   const { modal, message } = App.useApp();
   const [editing, setEditing] = useState<Pricing | "new">();
@@ -344,10 +353,7 @@ export default function PricingPage() {
           allowClear
           value={vehicleType || undefined}
           onChange={(vehicleType) => f.update({ vehicleType })}
-          options={["CAR", "MOTORCYCLE"].map((value) => ({
-            value,
-            label: label(value),
-          }))}
+          options={vehicleOptions}
         /></FilterField>
         <FilterField label="Trạng thái bảng giá"><Select
           aria-label="Trạng thái bảng giá"

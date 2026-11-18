@@ -336,15 +336,17 @@ function AssignDriver({
           page,
           size: 20,
         });
+        const eligible = new Set(await api.assignableDriverIds(ride.id, results.content.map(driver => driver.id)));
         return {
-          rows: results.content.map((driver) => ({ id: driver.id, driver })),
+          rows: results.content.filter(driver => eligible.has(driver.id)).map(driver => ({ id: driver.id, driver })),
           total: results.totalElements,
         };
       }
       const nearby = (
         await api.nearby(ride.pickup.lng!, ride.pickup.lat!, radius)
       ).slice(0, 20);
-      const rows = await mapConcurrent(nearby, async (entry) => {
+      const eligible = new Set(await api.assignableDriverIds(ride.id, nearby.map(entry => entry.driverId)));
+      const rows = await mapConcurrent(nearby.filter(entry => eligible.has(entry.driverId)), async (entry) => {
         try {
           const detail = await client.fetchQuery({
             queryKey: ["admin", "driver", entry.driverId],
