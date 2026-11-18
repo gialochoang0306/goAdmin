@@ -58,6 +58,34 @@ it.each(["/tickets", "/withdrawals"])("blocks invalid dates without sending a li
   expect(reads.some(url=>url.pathname===`/api/admin${path}`)).toBe(false);
 });
 
+it.each(["/rides", "/withdrawals", "/tickets"])("blocks future dates, including manual refresh, and recovers after clearing: %s", async path => {
+  const { user } = setup(`${path}?from=3123-03-12`);
+  expect(await screen.findByText("Ngày tạo không được sau hôm nay (giờ Việt Nam).")).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Làm mới" })).toBeDisabled();
+  await user.click(screen.getByRole("button", { name: "Làm mới" }));
+  expect(reads.some(url => url.pathname === `/api/admin${path}`)).toBe(false);
+  await user.click(screen.getByRole("button", { name: "Xóa bộ lọc" }));
+  await waitFor(() => expect(reads.some(url => url.pathname === `/api/admin${path}`)).toBe(true));
+  expect(screen.queryByText("Ngày tạo không được sau hôm nay (giờ Việt Nam).")).not.toBeInTheDocument();
+});
+
+it.each(["/withdrawals", "/tickets"])("keeps a typed year intact and applies only a completed date: %s", async path => {
+  const { user, router } = setup(path);
+  const label = path === "/withdrawals" ? "Tìm yêu cầu rút tiền" : "Tìm yêu cầu hỗ trợ";
+  const input = await screen.findByLabelText(`${label} · Đến ngày`);
+  await waitFor(() => expect(reads.some(url => url.pathname === `/api/admin${path}`)).toBe(true));
+  const before = reads.filter(url => url.pathname === `/api/admin${path}`).length;
+  await user.type(input, "12/11/202");
+  expect(input).toHaveValue("12/11/202");
+  expect(new URLSearchParams(router.state.location.search).has("to")).toBe(false);
+  expect(reads.filter(url => url.pathname === `/api/admin${path}`)).toHaveLength(before);
+  await user.type(input, "6");
+  expect(input).toHaveValue("12/11/2026");
+  await user.keyboard("{Enter}");
+  await waitFor(() => expect(new URLSearchParams(router.state.location.search).get("to")).toBe("2026-11-12"));
+  await waitFor(() => expect(reads.some(url => url.searchParams.get("createdTo") === "2026-11-12T17:00:00.000Z")).toBe(true));
+});
+
 it("resets the page on page-size changes and preserves other URL filters", async () => {
   function Controls() {
     const filters = useFilters();

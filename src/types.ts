@@ -38,6 +38,12 @@ export type DashboardSummary = {
   wallets: { driverCash: number; customer: number; driverCredit: number; pendingWithdrawals: number };
   anomalies: DashboardAnomaly[];
 };
+export type AdminVoucher = { id:number; code:string|null; campaignTitle?:string|null; source:string;
+  active?: boolean; ownerCustomerId:number|null; discountType:string; value:number; maxDiscount:number|null; minimumOrderAmount:number; usageLimit:number|null; validFrom:string; validTo:string; allowedPaymentMethod:string|null; description:string; campaignClaimCount:number; campaignUsedCount:number;
+  campaignHeldCount?: number;
+  campaignCancelledCount?: number;
+  campaignCancelledAmount?: number; campaignBudgetLimit:number|null; campaignHeldAmount:number; campaignSpentAmount:number; campaignReleasedAmount:number; systemReserveAmount?: number | null };
+export type PromoBudget = { budgetLimit:number; heldAmount:number; spentAmount:number; issuanceReserved:number; availableAmount:number };
 export type RideStatus =
   | "PENDING"
   | "SEARCHING"
@@ -271,3 +277,47 @@ export type TicketDetail = {
   messages: TicketMessage[];
 };
 export type SendTicketMessage = { body: string; status: TicketStatus; imageUrl?: string };
+
+export type CampaignClaimant = {
+  voucherId: number;
+  customerId: number;
+  fullName: string;
+  phone: string;
+  claimedAt: string;
+  status: "CLAIMED" | "HELD" | "USED" | "EXPIRED";
+  rideId?: number | null;
+  discountAmount?: number | null;
+};
+
+export type BudgetLedgerItem = {
+  id: number;
+  action: string;
+  amount: number;
+  campaignId?: number | null;
+  campaignCode?: string | null;
+  voucherId?: number | null;
+  voucherLabel?: string | null;
+  customerName?: string | null;
+  rideId?: number | null;
+  note?: string | null;
+  createdAt: string;
+};
+
+export type AdminRatingItem = {
+  id: number;
+  rideId: number;
+  direction: "CUSTOMER_TO_DRIVER" | "DRIVER_TO_CUSTOMER" | string;
+  raterId: number;
+  raterName: string | null;
+  rateeId: number;
+  rateeName: string | null;
+  stars: number;
+  comment: string | null;
+  tags: string[];
+  tip: number;
+  createdAt: string;
+  hidden: boolean;
+  hiddenAt: string | null;
+  hiddenBy: number | null;
+  hiddenReason: string | null;
+};

@@ -1,12 +1,16 @@
 import { returnPath, returnLabel } from "../lib/navigation";
 import dayjs from "dayjs";
 import { FilterField } from "../components/FilterField";
+import { CreationDateInput } from "../components/CreationDateInput";
 import { useEffect, useRef, useState } from "react";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import {
   Alert,
   App,
+  Card,
+  Rate,
+  Tag,
   Button,
   Descriptions,
   DatePicker,
@@ -29,6 +33,7 @@ import {
   activeStatuses,
   assignableStatuses,
   cancellableStatuses,
+  currentDateVN,
   date,
   label,
   money,
@@ -49,8 +54,7 @@ import {
   UpdatedAt,
 } from "../components/common";
 import { RideTable } from "../components/RideTable";
-import type { ChatMessage, Driver, MessagePage, RideDetail } from "../types";
-const currentDateVN = () => new Date(Date.now() + 7 * 3600000).toISOString().slice(0, 10);
+import type { AdminRatingItem, ChatMessage, Driver, MessagePage, RideDetail } from "../types";
 
 export function Rides() {
   const screens = Grid.useBreakpoint();
@@ -86,6 +90,7 @@ export function Rides() {
         actions={
           <Refresh
             loading={query.isFetching}
+            disabled={!!range.error}
             onClick={() => void query.refetch()}
           />
         }
@@ -97,15 +102,16 @@ export function Rides() {
         </FilterField>
         {screens.xs ? <>
           <FilterField label="Từ ngày tạo · Giờ Việt Nam">
-            <Input type="date" aria-label="Từ ngày tạo chuyến" value={from} disabled={!supported} onChange={event => f.update({ from: event.target.value })} />
+            <CreationDateInput label="Từ ngày tạo chuyến" value={from} max={today} invalid={!!range.error} disabled={!supported} onChange={from => f.update({ from })} />
           </FilterField>
           <FilterField label="Đến ngày tạo · Giờ Việt Nam">
-            <Input type="date" aria-label="Đến ngày tạo chuyến" value={to} min={from || undefined} disabled={!supported} onChange={event => f.update({ to: event.target.value })} />
+            <CreationDateInput label="Đến ngày tạo chuyến" value={to} min={from} max={today} invalid={!!range.error} disabled={!supported} onChange={to => f.update({ to })} />
           </FilterField>
         </> : <FilterField label="Ngày tạo chuyến · Giờ Việt Nam">
           <label className="sr-only" htmlFor="ride-created-from">Từ ngày tạo chuyến</label>
           <label className="sr-only" htmlFor="ride-created-to">Đến ngày tạo chuyến</label>
           <DatePicker.RangePicker id={{start:"ride-created-from",end:"ride-created-to"}} format="DD/MM/YYYY" disabled={!supported}
+            maxDate={dayjs(today)} status={range.error ? "error" : undefined}
             allowEmpty={[true,true]}
             value={!range.error && (from || to) ? [from ? dayjs(from) : null, to ? dayjs(to) : null] : null}
             presets={[{ label: "Hôm nay", value: [dayjs(today), dayjs(today)] }]}
@@ -159,7 +165,7 @@ export function Rides() {
       {!capabilities.isPending && !supported && <Alert className="query-error" type="info" showIcon title="Bộ lọc tên, số điện thoại và ngày chưa sẵn sàng. Bạn vẫn có thể lọc trạng thái hoặc mở theo mã chuyến."
         description={hasAdvanced ? "Xóa bộ lọc nâng cao để xem danh sách; hệ thống chưa thể áp dụng các điều kiện này." : undefined}
         action={<Button size="small" onClick={() => void capabilities.refetch()}>Kiểm tra lại</Button>} />}
-      <QueryError error={query.error} retry={() => void query.refetch()} />
+      <QueryError error={range.error ? null : query.error} retry={() => void query.refetch()} />
       <Panel>
         <RideTable
           data={range.error || (hasAdvanced && !supported) ? undefined : query.data}
@@ -296,6 +302,174 @@ function RideChat({ id }: { id: number }) {
           image={Empty.PRESENTED_IMAGE_SIMPLE}
         />
       )}
+    </Panel>
+  );
+}
+
+function RideRatings({ id }: { id: number }) {
+  const client = useQueryClient();
+  const { message } = App.useApp();
+  const [hideTarget, setHideTarget] = useState<AdminRatingItem | null>(null);
+  const [hideReason, setHideReason] = useState("");
+
+  const ratingsQuery = useQuery({
+    queryKey: ["admin", "ride-ratings", id],
+    queryFn: () => api.rideRatings(id),
+  });
+
+  const visibilityMutation = useMutation({
+    mutationFn: ({ ratingId, hidden, reason }: { ratingId: number; hidden: boolean; reason?: string }) =>
+      api.setRatingVisibility(ratingId, hidden, reason),
+    onSuccess: async (_, vars) => {
+      await client.invalidateQueries({ queryKey: ["admin", "ride-ratings", id] });
+      setHideTarget(null);
+      setHideReason("");
+      void message.success(vars.hidden ? "Đã ẩn đánh giá vi phạm." : "Đã hiển thị lại đánh giá.");
+    },
+    onError: (err) => {
+      void message.error(errorMessage(err));
+    },
+  });
+
+  const items = ratingsQuery.data?.content ?? [];
+
+  return (
+    <Panel
+      title={`Đánh giá 2 chiều (${items.length}/2)`}
+      extra={
+        <Refresh
+          loading={ratingsQuery.isFetching}
+          onClick={() => void ratingsQuery.refetch()}
+        />
+      }
+    >
+      <Typography.Paragraph type="secondary">
+        Kiểm tra, rà soát nhận xét giữa khách hàng và tài xế. Đánh giá bị ẩn sẽ không hiển thị công khai nhưng vẫn giữ nguyên trong điểm trung bình.
+      </Typography.Paragraph>
+      <QueryError error={ratingsQuery.error} retry={() => void ratingsQuery.refetch()} />
+
+      {ratingsQuery.isPending ? (
+        <Loading />
+      ) : items.length ? (
+        <Space direction="vertical" size={14} style={{ width: "100%" }}>
+          {items.map((item) => {
+            const isCustomerToDriver = item.direction === "CUSTOMER_TO_DRIVER";
+            return (
+              <Card
+                key={item.id}
+                size="small"
+                style={{
+                  borderRadius: 14,
+                  opacity: item.hidden ? 0.78 : 1,
+                }}
+                title={
+                  <Space wrap>
+                    <Tag color={isCustomerToDriver ? "blue" : "purple"}>
+                      {isCustomerToDriver ? "Khách hàng → Tài xế" : "Tài xế → Khách hàng"}
+                    </Tag>
+                    <Typography.Text strong>
+                      {item.raterName || `#${item.raterId}`} → {item.rateeName || `#${item.rateeId}`}
+                    </Typography.Text>
+                    {item.hidden ? (
+                      <Tag color="red">Đã ẩn vi phạm</Tag>
+                    ) : (
+                      <Tag color="green">Đang hiển thị</Tag>
+                    )}
+                  </Space>
+                }
+                extra={
+                  item.hidden ? (
+                    <Button
+                      size="small"
+                      loading={visibilityMutation.isPending}
+                      onClick={() => visibilityMutation.mutate({ ratingId: item.id, hidden: false })}
+                    >
+                      Hiện lại
+                    </Button>
+                  ) : (
+                    <Button
+                      size="small"
+                      danger
+                      onClick={() => {
+                        setHideTarget(item);
+                        setHideReason("");
+                      }}
+                    >
+                      Ẩn đánh giá
+                    </Button>
+                  )
+                }
+              >
+                <Space direction="vertical" size={8} style={{ width: "100%" }}>
+                  <Space wrap>
+                    <Rate disabled value={item.stars} />
+                    <Typography.Text strong>{item.stars}/5 sao</Typography.Text>
+                    <Typography.Text type="secondary">· {date(item.createdAt)}</Typography.Text>
+                  </Space>
+
+                  {item.tags?.length > 0 && (
+                    <Space wrap size={[6, 6]}>
+                      {item.tags.map((tag) => (
+                        <Tag key={tag}>{tag}</Tag>
+                      ))}
+                    </Space>
+                  )}
+
+                  <Typography.Paragraph style={{ marginBottom: 0 }}>
+                    {item.comment ? item.comment : <Typography.Text type="secondary">Không có bình luận chi tiết.</Typography.Text>}
+                  </Typography.Paragraph>
+
+                  {item.hidden && (
+                    <Alert
+                      type="warning"
+                      showIcon
+                      message={`Đã ẩn lúc ${date(item.hiddenAt)}${item.hiddenBy ? ` bởi Admin #${item.hiddenBy}` : ""}`}
+                      description={item.hiddenReason ? `Lý do: ${item.hiddenReason}` : "Không ghi chú lý do."}
+                    />
+                  )}
+                </Space>
+              </Card>
+            );
+          })}
+        </Space>
+      ) : (
+        <Empty
+          description="Chuyến đi này chưa có đánh giá nào từ khách hàng hoặc tài xế"
+          image={Empty.PRESENTED_IMAGE_SIMPLE}
+        />
+      )}
+
+      <Modal
+        open={hideTarget !== null}
+        title="Ẩn đánh giá vi phạm"
+        okText="Xác nhận ẩn"
+        cancelText="Hủy"
+        okButtonProps={{ danger: true, loading: visibilityMutation.isPending }}
+        onCancel={() => {
+          if (!visibilityMutation.isPending) setHideTarget(null);
+        }}
+        onOk={() => {
+          if (!hideTarget) return;
+          visibilityMutation.mutate({
+            ratingId: hideTarget.id,
+            hidden: true,
+            reason: hideReason,
+          });
+        }}
+      >
+        <Typography.Paragraph>
+          Nội dung đánh giá sẽ bị ẩn khỏi trang hồ sơ công khai của{" "}
+          <strong>{hideTarget?.rateeName || `#${hideTarget?.rateeId}`}</strong>.
+        </Typography.Paragraph>
+        <Input.TextArea
+          rows={3}
+          maxLength={500}
+          showCount
+          placeholder="Nhập lý do ẩn (ví dụ: Ngôn từ xúc phạm, spam, sai sự thật...)"
+          value={hideReason}
+          onChange={(e) => setHideReason(e.target.value)}
+        />
+      </Modal>
     </Panel>
   );
 }
@@ -629,7 +803,7 @@ export function RideDetailPage() {
       <QueryError error={query.error} retry={() => void query.refetch()} />
       <Tabs
         activeKey={
-          ["overview", "handover", "chat"].includes(f.read("tab", "overview"))
+          ["overview", "handover", "chat", "ratings"].includes(f.read("tab", "overview"))
             ? f.read("tab", "overview")
             : "overview"
         }
@@ -832,7 +1006,7 @@ export function RideDetailPage() {
               </Panel>
             ),
           },
-          { key: "chat", label: "Hội thoại", children: <RideChat id={id} /> },
+          { key: "chat", label: "Hội thoại", children: <RideChat id={id} /> }, { key: "ratings", label: "Đánh giá", children: <RideRatings id={id} /> },
         ]}
       />
       {assign && <AssignDriver ride={ride} onClose={() => setAssign(false)} />}

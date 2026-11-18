@@ -57,6 +57,7 @@ Phiên Firebase chỉ giữ trong tab hiện tại. Đăng nhập gọi `/api/au
 - Hàng chờ duyệt gom theo mã tài xế: mỗi tài xế một dòng, tổng kết quả và phân trang tính theo hồ sơ. Cửa sổ “Xem và duyệt” có toàn bộ giấy tờ hiện hành, xác minh kỹ năng và quyết định tài khoản. Biểu mẫu từng giấy tờ mở ngay trong cửa sổ; quyết định tài khoản luôn nằm ở phần dưới cố định. Các nút duyệt trên trang chi tiết tài xế cũng mở cùng cửa sổ này.
 - Duyệt giấy tờ không tự động duyệt tài khoản. Hồ sơ có giấy tờ đã nộp và tài khoản còn `PENDING` vẫn xuất hiện trong hàng chờ, kể cả khi đã xét duyệt hết giấy tờ. Backend quyết định giấy tờ nào bắt buộc; nếu chưa đủ, lỗi hiển thị ngay cạnh quyết định tài khoản. Khi đang lưu, cửa sổ khóa các thao tác ghi khác và nút đóng để tránh gửi trùng.
 - Khách hàng: hồ sơ, trạng thái, đánh dấu, lịch sử chuyến và giao dịch ví.
+- Voucher & quỹ khuyến mãi: xem hạn mức, số tiền đang giữ/đã chi/khả dụng, cập nhật hạn mức và phát hành voucher có giới hạn lượt cùng mức giảm tối đa. Voucher chào mừng và voucher mốc do backend tự cấp theo chính sách.
 - Bảng giá: tạo/sửa, kích hoạt, tắt và xác nhận riêng khi tắt cưỡng chế bảng giá cuối cùng.
 - Kết nối 23 endpoint `/api/admin`, API tìm tài xế gần vị trí và các API xác thực.
 
@@ -64,7 +65,7 @@ Bộ lọc, phân trang và tab được lưu trên URL. Dashboard/chuyến cậ
 
 API hàng chờ hiện phân trang theo giấy tờ. Frontend đọc hết các trang khớp bộ lọc (tối đa 100 giấy tờ mỗi lần), rồi gom và phân trang theo tài xế để một hồ sơ không bị tách qua nhiều trang. Bộ lọc `PENDING` bổ sung các tài khoản chờ duyệt đã nộp giấy tờ; tối đa bốn yêu cầu đọc chi tiết đồng thời. Khi hàng chờ lớn, nên bổ sung API hồ sơ duyệt theo tài xế tại backend để giảm số lần tải. Số “Giấy tờ chờ duyệt” ở tổng quan vẫn đếm giấy tờ.
 
-Chưa bao gồm báo cáo doanh thu, bản đồ, quản lý voucher, quản lý tài khoản quản trị hoặc hosting.
+Chưa bao gồm báo cáo doanh thu, bản đồ, quản lý tài khoản quản trị hoặc hosting.
 
 ## Kiểm tra và build
 

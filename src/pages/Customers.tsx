@@ -1,4 +1,5 @@
 import { FilterField } from "../components/FilterField";
+import { CreationDateInput } from "../components/CreationDateInput";
 import { returnPath, returnLabel } from "../lib/navigation";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -281,7 +282,8 @@ function CustomerRides({ id }: { id: number }) {
   const from = f.read("from");
   const to = f.read("to");
   const status = f.read("rideStatus");
-  const validDates = !rideDateRange(from, to).error;
+  const dateError = rideDateRange(from, to).error;
+  const validDates = !dateError;
   const query = useQuery({
     queryKey: ["admin", "customer-rides", id, f.page, f.size, status, from, to],
     queryFn: () => api.customerRides(id, { ...f.params, status, from, to }),
@@ -302,25 +304,28 @@ function CustomerRides({ id }: { id: number }) {
           onChange={(rideStatus) => f.update({ rideStatus })}
         /></FilterField>
         <FilterField label="Từ ngày" htmlFor="customer-rides-from">
-          <Input
+          <CreationDateInput
             id="customer-rides-from"
-            type="date"
+            label="Từ ngày"
             value={from}
-            onChange={(e) => f.update({ from: e.target.value })}
+            invalid={!validDates}
+            onChange={from => f.update({ from })}
           />
         </FilterField>
         <FilterField label="Đến ngày" htmlFor="customer-rides-to">
-          <Input
+          <CreationDateInput
             id="customer-rides-to"
-            type="date"
-            min={from || undefined}
+            label="Đến ngày"
+            min={from}
             value={to}
-            onChange={(e) => f.update({ to: e.target.value })}
+            invalid={!validDates}
+            onChange={to => f.update({ to })}
           />
         </FilterField>
         <Button onClick={()=>f.update({from:undefined,to:undefined,rideStatus:undefined})}>Xóa bộ lọc</Button>
         <Refresh
           loading={query.isFetching}
+          disabled={!validDates}
           onClick={() => {
             if (validDates) void query.refetch();
           }}
@@ -330,10 +335,10 @@ function CustomerRides({ id }: { id: number }) {
         <Alert
           className="toolbar-note"
           type="error"
-          title="Đến ngày phải cùng ngày hoặc sau Từ ngày."
+          title={dateError}
         />
       )}
-      <QueryError error={query.error} retry={() => void query.refetch()} />
+      <QueryError error={validDates ? query.error : null} retry={() => void query.refetch()} />
       <Panel>
         <RideTable
           data={validDates ? query.data : undefined}
@@ -386,11 +391,12 @@ function CustomerWallet({ id }: { id: number }) {
         <Button onClick={()=>f.update({walletq:undefined,walletfrom:undefined,walletto:undefined,walletType:undefined,walletStatus:undefined})}>Xóa bộ lọc</Button>
         <Refresh
           loading={query.isFetching}
+          disabled={!!search.error}
           onClick={() => void query.refetch()}
         />
       </div>
       {search.error && <Alert type="warning" showIcon title={search.error} />}
-      <QueryError error={query.error} retry={() => void query.refetch()} />
+      <QueryError error={search.error ? null : query.error} retry={() => void query.refetch()} />
       <Panel>
         <DataTable
           data={search.error ? undefined : query.data}
