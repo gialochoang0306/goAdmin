@@ -49,10 +49,10 @@ input {
 .sidebar-brand small {
   display: block;
   color: var(--muted);
-  font-size: 9px;
-  letter-spacing: 1.5px;
+  font-size: 11px;
+  letter-spacing: 1.2px;
   font-weight: 500;
-  margin-top: 7px;
+  margin-top: 5px;
 }
 .brand-icon {
   background: var(--md-sys-color-brand-artwork-surface);
@@ -253,9 +253,10 @@ input {
   color: var(--brand);
 }
 .stat-value {
-  font-size: 32px;
+  font-size: 28px;
   font-weight: 650;
-  line-height: 1.7;
+  line-height: 1.4;
+  margin-top: 6px;
   color: var(--text);
 }
 .stat-bottom {
@@ -363,7 +364,7 @@ input {
   margin-bottom: 10px;
 }
 .login-card h1.ant-typography {
-  font-size: 26px;
+  font-size: 28px;
   margin: 0 0 8px;
 }
 .login-card .ant-form {
@@ -474,7 +475,7 @@ input {
   flex-shrink: 0;
   width: 188px;
   height: 132px;
-  border-radius: 10px;
+  border-radius: var(--md-sys-shape-corner-sm);
   overflow: hidden;
   background: var(--surface);
   display: flex;
@@ -490,7 +491,7 @@ input {
   margin-bottom: 6px;
 }
 .document-title {
-  font-size: 17px;
+  font-size: 16px;
   font-weight: 700;
   color: var(--text);
 }
@@ -554,7 +555,7 @@ input {
 }
 .customer-summary strong {
   display: block;
-  font-size: 20px;
+  font-size: 18px;
   margin-top: 4px;
 }
 .ant-tabs-content-holder {
@@ -636,7 +637,7 @@ input {
     min-height: 36px;
   }
   .stat-value {
-    font-size: 27px;
+    font-size: 24px;
   }
   .stat-icon {
     font-size: 15px;

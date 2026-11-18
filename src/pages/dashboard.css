@@ -13,7 +13,7 @@
 .dashboard-panel h3 {
   margin: 0;
   color: var(--text);
-  font-size: 17px;
+  font-size: 16px;
   font-weight: 650;
   line-height: 1.4;
 }
@@ -82,7 +82,7 @@
 .dashboard-wallet-total strong {
   margin: 6px 0 3px;
   color: var(--text);
-  font-size: clamp(19px, 1.7vw, 28px);
+  font-size: clamp(18px, 1.7vw, 28px);
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   line-height: 1.22;
@@ -97,7 +97,7 @@
 .dashboard-wallets {
   padding: 16px;
   border: 1px solid var(--dashboard-wallet-border);
-  border-radius: 14px;
+  border-radius: var(--md-sys-shape-corner-lg);
   background: var(--dashboard-wallet-bg);
 }
 
@@ -127,13 +127,13 @@
 .dashboard-chart-key span,
 .dashboard-payment-key li > span:first-child { display: flex; align-items: center; gap: 7px; }
 .dashboard-chart-key i,
-.dashboard-payment-key i { width: 10px; height: 10px; border-radius: 3px; flex: none; }
+.dashboard-payment-key i { width: 10px; height: 10px; border-radius: var(--md-sys-shape-corner-xs); flex: none; }
 .dashboard-key-gmv { background: var(--dashboard-blue-light); }
 .dashboard-key-revenue { background: var(--dashboard-blue); }
 .dashboard-bar-chart { min-height: 252px; display: grid; align-items: center; min-width: 0; }
 .dashboard-donut { position: relative; min-height: 160px; }
 .dashboard-donut-label { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; pointer-events: none; }
-.dashboard-donut-label strong { font-size: 23px; line-height: 1.2; }
+.dashboard-donut-label strong { font-size: 22px; line-height: 1.2; }
 .dashboard-donut-label span { color: var(--muted); font-size: 12px; }
 .dashboard-payment-key { display: grid; gap: 5px; list-style: none; padding: 0; margin: 0; font-size: 13px; }
 .dashboard-payment-key li { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(46px, auto); gap: 8px; align-items: center; padding-block: 3px; }
