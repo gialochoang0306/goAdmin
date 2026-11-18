@@ -57,7 +57,8 @@ export type RideStatus =
   | "COMPLETED"
   | "CANCELLED"
   | "NO_DRIVER_FOUND"
-  | "EXPIRED";
+  | "EXPIRED"
+  | "FAILED_SYSTEM";
 export type Ride = {
   id: number;
   pickupAddress: string | null;

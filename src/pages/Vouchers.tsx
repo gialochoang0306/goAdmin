@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { Heading, QueryError, Refresh } from "../components/common";
+import { Heading, Panel, QueryError, Refresh } from "../components/common";
+import { date, money } from "../lib/format";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Alert,
@@ -45,7 +46,7 @@ const formatVndInput = (value?: string | number) => {
 const parseVndInput = (value?: string) => Number(value?.replace(/\./g, "") || 0);
 const formatDots = (value?: number | string) =>
   Number(value ?? 0).toLocaleString("vi-VN");
-const formatMoney = (value?: number | null) => `${formatDots(value ?? 0)}đ`;
+const formatMoney = (value?: number | null) => money(value);
 
 const isCampaignExpired = (row: AdminVoucher) =>
   Date.now() > new Date(row.validTo).getTime();
@@ -263,14 +264,14 @@ export default function Vouchers() {
         >
           <Row gutter={[16, 16]}>
             <Col xs={12} sm={8} lg={5}>
-              <Statistic title="Tổng quỹ chiến dịch" value={fund.budgetLimit} formatter={formatDots} suffix="đ" />
+              <Statistic title="Tổng quỹ chiến dịch" value={fund.budgetLimit} formatter={formatDots} suffix="₫" />
             </Col>
             <Col xs={24} sm={12} lg={7}>
               <Statistic
                 title="Đang giữ cho chiến dịch & ưu đãi"
                 value={fund.issuanceReserved}
                 formatter={formatDots}
-                suffix="đ"
+                suffix="₫"
               />
               <div className="voucher-budget-sub">
                 <div>• Quỹ chiến dịch đang chạy: <strong>{formatMoney(activeCampaignSurplus)}</strong></div>
@@ -281,17 +282,17 @@ export default function Vouchers() {
               </div>
             </Col>
             <Col xs={12} sm={8} lg={4}>
-              <Statistic title="Đang giữ chuyến" value={fund.heldAmount} formatter={formatDots} suffix="đ" />
+              <Statistic title="Đang giữ chuyến" value={fund.heldAmount} formatter={formatDots} suffix="₫" />
             </Col>
             <Col xs={12} sm={8} lg={4}>
-              <Statistic title="Đã chi thực tế" value={fund.spentAmount} formatter={formatDots} suffix="đ" />
+              <Statistic title="Đã chi thực tế" value={fund.spentAmount} formatter={formatDots} suffix="₫" />
             </Col>
             <Col xs={12} sm={8} lg={4}>
               <Statistic
                 title="Quỹ tổng khả dụng"
                 value={fund.availableAmount}
                 formatter={formatDots}
-                suffix="đ"
+                suffix="₫"
                 styles={{ content: { color: "var(--md-sys-color-success)" } }}
               />
             </Col>
@@ -302,7 +303,7 @@ export default function Vouchers() {
             layout="inline"
             className="voucher-budget-form"
             initialValues={{ budgetLimit: fund.budgetLimit }}
-            onFinish={(values) => setBudget.mutate(values)}
+            onFinish={(values) => { if (!setBudget.isPending) setBudget.mutate(values); }}
           >
             <Form.Item
               name="budgetLimit"
@@ -337,7 +338,7 @@ export default function Vouchers() {
         <Form
           form={voucherForm}
           layout="vertical"
-          onFinish={(values) => createVoucher.mutate(values)}
+          onFinish={(values) => { if (!createVoucher.isPending) createVoucher.mutate(values); }}
         >
           <Row gutter={16}>
             <Col xs={24} md={14}>
@@ -535,13 +536,13 @@ export default function Vouchers() {
         </Form>
       </Card>
 
-      <Card title="Lịch sử & danh sách chiến dịch khuyến mãi">
+      <Panel title="Lịch sử & danh sách chiến dịch khuyến mãi">
         <QueryError error={vouchers.error} retry={() => void vouchers.refetch()} />
         <Table
           rowKey="id"
           loading={vouchers.isLoading}
           dataSource={rows}
-          pagination={{ pageSize: 10 }}
+          pagination={{ pageSize: 10, showTotal: (total) => `${total} chiến dịch` }}
           scroll={{ x: "max-content" }}
           onRow={(record) => ({
             onClick: () => setSelectedCampaign(record),
@@ -622,7 +623,7 @@ export default function Vouchers() {
               dataIndex: "campaignReleasedAmount",
               align: "right",
               width: 145,
-              render: (value: number) => (value > 0 ? formatMoney(value) : "0đ"),
+              render: (value: number) => formatMoney(value ?? 0),
             },
             {
               title: "Thao tác",
@@ -644,12 +645,13 @@ export default function Vouchers() {
             },
           ]}
         />
-      </Card>
+      </Panel>
 
       <Modal
         open={ledgerOpen}
         onCancel={() => setLedgerOpen(false)}
         title="Sổ cái biến động quỹ khuyến mãi (50 giao dịch gần nhất)"
+        styles={{ body: { maxHeight: "72vh", overflowY: "auto" } }}
         footer={[
           <Button key="close" type="primary" onClick={() => setLedgerOpen(false)}>
             Đóng
@@ -671,7 +673,7 @@ export default function Vouchers() {
               title: "Thời gian",
               dataIndex: "createdAt",
               width: 155,
-              render: (val: string) => new Date(val).toLocaleString("vi-VN"),
+              render: (val: string) => date(val),
             },
             {
               title: "Loại biến động",
@@ -783,6 +785,7 @@ export default function Vouchers() {
         }
         width={780}
         centered
+        styles={{ body: { maxHeight: "72vh", overflowY: "auto" } }}
       >
         {activeDetail && (
           <Space orientation="vertical" size={16} style={{ width: "100%", marginTop: 8 }}>
@@ -875,8 +878,7 @@ export default function Vouchers() {
                   {formatMoney(activeDetail.minimumOrderAmount)}
                 </Descriptions.Item>
                 <Descriptions.Item label="Thời gian hiệu lực" span={{ xs: 1, sm: 2 }}>
-                  {new Date(activeDetail.validFrom).toLocaleString("vi-VN")} –{" "}
-                  {new Date(activeDetail.validTo).toLocaleString("vi-VN")}
+                  {date(activeDetail.validFrom)} – {date(activeDetail.validTo)}
                 </Descriptions.Item>
               </Descriptions>
             </div>
@@ -902,14 +904,16 @@ export default function Vouchers() {
                       render: (_, item) => (
                         <div>
                           <Typography.Text strong>{item.fullName}</Typography.Text>
-                          <div style={{ fontSize: 12, opacity: 0.65 }}>ID #{item.customerId} · {item.phone}</div>
+                          <Typography.Text type="secondary" className="muted" style={{ display: "block" }}>
+                            ID #{item.customerId} · {item.phone}
+                          </Typography.Text>
                         </div>
                       ),
                     },
                     {
                       title: "Thời điểm nhận",
                       dataIndex: "claimedAt",
-                      render: (val: string) => new Date(val).toLocaleString("vi-VN"),
+                      render: (val: string) => date(val),
                     },
                     {
                       title: "Trạng thái",

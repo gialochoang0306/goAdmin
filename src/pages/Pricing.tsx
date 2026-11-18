@@ -66,6 +66,9 @@ function PricingForm({
       open
       title={rule ? `Sửa bảng giá #${rule.id}` : "Tạo bảng giá"}
       width={650}
+      closable={!mutation.isPending}
+      keyboard={!mutation.isPending}
+      mask={{ closable: !mutation.isPending }}
       onCancel={() => {
         if (!mutation.isPending) onClose();
       }}
