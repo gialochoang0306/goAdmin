@@ -1,7 +1,8 @@
-import { Alert, Button, Checkbox, Input, Select, Space, Tag } from "antd";
+import { Alert, Button, Checkbox, Input, Select, Tag, Typography } from "antd";
 import { useMutation } from "@tanstack/react-query";
 import { useState } from "react";
 import { errorMessage, request } from "../lib/api";
+import { FilterField } from "../components/FilterField";
 
 export type ApprovalCapabilityReview = {
   policyVersion: string;
@@ -64,26 +65,30 @@ export function LicensePolicyPreview({ confirmed, onReviewChange }: {
     }),
   });
   const invalidate = () => { setSelected([]); preview.reset(); onReviewChange(undefined); };
-  return <section aria-label="Phạm vi GPLX theo nhóm xe">
-    <h3>Phạm vi GPLX theo nhóm xe</h3>
-    <p>Đối chiếu trực tiếp ngày cấp và hạn chế trên GPLX. Kết quả xem trước chỉ đánh giá phạm vi GPLX.</p>
-    <Space wrap>
-      <label htmlFor="license-preview-issued-on">Ngày cấp GPLX</label>
-      <Input id="license-preview-issued-on" type="date" value={date} disabled={preview.isPending}
-        onChange={event => { setDate(event.target.value); invalidate(); }} />
-      <label htmlFor="license-preview-restriction">Hạn chế GPLX</label>
-      <Select id="license-preview-restriction" value={restriction} disabled={preview.isPending}
-        onChange={value => { setRestriction(value); invalidate(); }}
-        options={[
-          { value: "UNKNOWN", label: "Chưa xác minh" },
-          { value: "VERIFIED_NONE", label: "Đã đối chiếu, không có hạn chế" },
-          { value: "AUTO_ONLY", label: "Chỉ lái xe số tự động" },
-          { value: "B.01", label: "B.01 · Chỉ lái ô tô hạng B số tự động" },
-          { value: "A.03", label: "A.03 · Giới hạn dưới 175 cm³ / 14 kW" },
-          { value: "OTHER", label: "Có hạn chế khác" },
-        ]} />
+  return <section aria-label="Phạm vi GPLX theo nhóm xe" className="verification-decision-box">
+    <h4>Phạm vi GPLX theo nhóm xe</h4>
+    <Typography.Paragraph type="secondary" style={{ marginBottom: 12 }}>
+      Đối chiếu trực tiếp ngày cấp và hạn chế trên GPLX. Kết quả xem trước chỉ đánh giá phạm vi GPLX.
+    </Typography.Paragraph>
+    <div className="filters" style={{ padding: 12, marginBottom: 12 }}>
+      <FilterField label="Ngày cấp GPLX" htmlFor="license-preview-issued-on">
+        <Input id="license-preview-issued-on" type="date" value={date} disabled={preview.isPending}
+          onChange={event => { setDate(event.target.value); invalidate(); }} />
+      </FilterField>
+      <FilterField label="Hạn chế GPLX" htmlFor="license-preview-restriction">
+        <Select id="license-preview-restriction" value={restriction} disabled={preview.isPending}
+          onChange={value => { setRestriction(value); invalidate(); }}
+          options={[
+            { value: "UNKNOWN", label: "Chưa xác minh" },
+            { value: "VERIFIED_NONE", label: "Đã đối chiếu, không có hạn chế" },
+            { value: "AUTO_ONLY", label: "Chỉ lái xe số tự động" },
+            { value: "B.01", label: "B.01 · Chỉ lái ô tô hạng B số tự động" },
+            { value: "A.03", label: "A.03 · Giới hạn dưới 175 cm³ / 14 kW" },
+            { value: "OTHER", label: "Có hạn chế khác" },
+          ]} />
+      </FilterField>
       <Button htmlType="button" loading={preview.isPending} onClick={() => { invalidate(); preview.mutate(); }}>Xem nhóm xe</Button>
-    </Space>
+    </div>
     <div role="status">
       {preview.error ? <Alert type="warning" title={errorMessage(preview.error)} /> : null}
       {preview.data?.length ? <>
