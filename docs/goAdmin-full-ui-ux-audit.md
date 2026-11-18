@@ -237,18 +237,25 @@ Toàn bộ lỗi **P0** (xử lý trạng thái `FAILED_SYSTEM` ở admin UI) v�
 
 ## 18. Verification & Regression Test Evidence
 
-Kết quả kiểm chứng chạy sau lần chỉnh sửa code và test cuối cùng (commit code/test `3f63dae`):
+Kết quả kiểm chứng ở giai đoạn audit chính (commit `3f63dae`, clean checkout `git worktree` ở `%TEMP%\goadmin-clean-check`) và sau vòng **Final Release Gate** (chuẩn hóa Impeccable setup, chuẩn hóa 12 advisory font-size/radius trong `src/layout.css` & `src/pages/dashboard.css`, tách `VoucherNotificationPreview` trong `src/pages/Vouchers.tsx`, dọn `QueryClient` & phạm vi query trong `src/test/admin-integration.test.tsx`, bổ sung `AGENTS.md`):
 
-1. **`pnpm.cmd lint`** (`eslint .`): **PASS** (exit 0).
-2. **`pnpm.cmd typecheck`** (`tsc --noEmit`): **PASS** (exit 0).
-3. **`pnpm.cmd test`** (`vitest run --configLoader runner`): **PASS — 12/12 test files, 107/107 tests passed, 0 skipped** (99 baseline + 8 test bổ sung trong `verification-review.test.tsx` và `ui-ux-regressions.test.tsx`).
-4. **`pnpm.cmd build`** (`tsc --noEmit && vite build --configLoader runner`): **PASS** (`3624 modules transformed`, built in `6.20s`).
-5. **`git diff --check`**: **PASS** (exit 0).
-6. **Clean-checkout verification (`git worktree add --detach %TEMP%\goadmin-clean-check HEAD` tại `3f63dae`):**
-   - `pnpm.cmd install --frozen-lockfile`: **PASS** (`452 packages`, `11.3s`).
-   - `pnpm.cmd lint`: **PASS** (exit 0).
-   - `pnpm.cmd typecheck`: **PASS** (exit 0).
-   - `pnpm.cmd build`: **PASS** (built in `7.05s`).
+1. **Impeccable setup & detector checks:**
+   - `impeccable doctor`: `No drift found. Every artifact matches what this version reads.` (`findings: []`, `platform: "web"`, `ruleRegistryAvailable: true`).
+   - `impeccable context`: Nhận diện `PRODUCT.md`, `DESIGN.md`, `platform: "web"`, không có cảnh báo.
+   - `impeccable detect --json src`: `[]` (**0** lỗi / **0** advisory sau khi chuẩn hóa `9px` -> `11px`, `17px` -> `16px`, `19px` -> `18px`, `20px` -> `18px`, `23px` -> `22px`, `26px`/`32px` -> `28px`, `27px` -> `24px`, `10px` -> `--md-sys-shape-corner-sm` `8px`, `14px` -> `--md-sys-shape-corner-lg` `16px`, `3px` -> `--md-sys-shape-corner-xs` `4px`).
+2. **Root-cause fix test timeout (`admin-integration.test.tsx:343`):**
+   - Đo timing từng bước cho thấy các lần gọi `screen.getByRole("button", { name })` không giới hạn phạm vi DOM trên trang `Vouchers` làm `dom-accessibility-api` + jsdom chạy `getComputedStyle` toàn cây (`~8.5–11s`/lần gọi). Sau khi tách `VoucherNotificationPreview`, dọn `QueryClient` trong `afterEach` và thu hẹp truy vấn trong `within(main)` với nút thực `.closest("button")` (giữ nguyên toàn bộ `userEvent` và assertions), ca test chạy ổn định trong `6.7s–8.9s` thay vì chạm ngưỡng `45000ms`:
+   - Chạy riêng `admin-integration.test.tsx` **3 lần liên tiếp**: **PASS 3/3** (`17.05s`, `19.87s`, `15.83s`; ca voucher `7,739ms`, `8,944ms`, `7,004ms`).
+3. **Final Gate Lint / Typecheck / Build / Diff (`HEAD` mới nhất):**
+   - `pnpm.cmd lint` (`eslint .`): **PASS** (exit 0).
+   - `pnpm.cmd typecheck` (`tsc --noEmit`): **PASS** (exit 0).
+   - `pnpm.cmd build` (`tsc --noEmit && vite build --configLoader runner`): **PASS** (`3624 modules transformed`, built in `7.15s`).
+   - `git diff --check`: **PASS** (exit 0).
+4. **Full Regression Suite (`pnpm.cmd test`) 2 lần liên tiếp sau mọi thay đổi code/test/CSS:**
+   - **Run 1:** **PASS — 12/12 test files, 107/107 tests passed, 0 skipped** (`358.28s`, ca voucher `6,775ms`).
+   - **Run 2:** **PASS — 12/12 test files, 107/107 tests passed, 0 skipped** (`348.38s`, ca voucher `6,770ms`).
+5. **Clean-checkout verification trước đó (`git worktree` tại `3f63dae`):**
+   - `pnpm.cmd install --frozen-lockfile` (`452 packages`, `11.3s`), `pnpm.cmd lint`, `pnpm.cmd typecheck`, `pnpm.cmd build` (`7.05s`): **PASS**.
 
 ---
 
