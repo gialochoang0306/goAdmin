@@ -25,6 +25,9 @@ import type {
   DashboardSummary,
   AdminVoucher,
   PromoBudget,
+  AdminRatingItem,
+  CampaignClaimant,
+  BudgetLedgerItem,
 } from "../types";
 
 export class ApiError extends Error {
@@ -161,19 +164,22 @@ export async function request<T>(
 const admin = "/api/admin";
 export const api = {
   rideRatings: (rideId: number) =>
-    request<Page<import("../types").AdminRatingItem>>(`${admin}/ratings?rideId=${rideId}&size=20`),
+    request<Page<AdminRatingItem>>(`${admin}/ratings?rideId=${rideId}&size=20`),
   setRatingVisibility: (ratingId: number, hidden: boolean, reason?: string) =>
-    request<import("../types").AdminRatingItem>(`${admin}/ratings/${ratingId}/visibility`, {
+    request<AdminRatingItem>(`${admin}/ratings/${ratingId}/visibility`, {
       method: "PUT",
       body: { hidden, reason: reason?.trim() || null },
     }),
   vouchers: () => request<AdminVoucher[]>(`${admin}/vouchers`),
-  voucherClaimants: (id: number) => request<import("../types").CampaignClaimant[]>(`${admin}/vouchers/${id}/claims`),
-setVoucherStatus: (id: number, active: boolean) => request<void>(`${admin}/vouchers/${id}/status`, { method: "PATCH", body: { active } }),
+  voucherClaimants: (id: number) => request<CampaignClaimant[]>(`${admin}/vouchers/${id}/claims`),
+  setVoucherStatus: (id: number, active: boolean) =>
+    request<void>(`${admin}/vouchers/${id}/status`, { method: "PATCH", body: { active } }),
   promoBudget: () => request<PromoBudget>(`${admin}/vouchers/budget`),
-  promoBudgetLedger: () => request<import("../types").BudgetLedgerItem[]>(`${admin}/vouchers/budget/ledger`),
-  setPromoBudget: (budgetLimit:number) => request<PromoBudget>(`${admin}/vouchers/budget`, { method:"PUT", body:{budgetLimit} }),
-  createVoucher: (body:Record<string,unknown>) => request<AdminVoucher>(`${admin}/vouchers`, { method:"POST", body }),
+  promoBudgetLedger: () => request<BudgetLedgerItem[]>(`${admin}/vouchers/budget/ledger`),
+  setPromoBudget: (budgetLimit: number) =>
+    request<PromoBudget>(`${admin}/vouchers/budget`, { method: "PUT", body: { budgetLimit } }),
+  createVoucher: (body: Record<string, unknown>) =>
+    request<AdminVoucher>(`${admin}/vouchers`, { method: "POST", body }),
   login: (idToken: string) =>
     request<Profile>("/api/auth/admin/login", {
       method: "POST",

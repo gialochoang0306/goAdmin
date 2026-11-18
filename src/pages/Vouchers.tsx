@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { QueryError } from "../components/common";
+import { useEffect, useState } from "react";
+import { Heading, QueryError, Refresh } from "../components/common";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Alert,
@@ -110,6 +110,12 @@ export default function Vouchers() {
   const rows: AdminVoucher[] = vouchers.data ?? [];
   const fund: PromoBudget | undefined = budget.data;
 
+  useEffect(() => {
+    if (fund) {
+      budgetForm.setFieldsValue({ budgetLimit: fund.budgetLimit });
+    }
+  }, [fund, budgetForm]);
+
   const activeDetail = selectedCampaign
     ? rows.find((r) => r.id === selectedCampaign.id) ?? selectedCampaign
     : null;
@@ -157,12 +163,24 @@ export default function Vouchers() {
   });
 
   const createVoucher = useMutation({
-    mutationFn: (values: Record<string, unknown>) =>
-      api.createVoucher({
+    mutationFn: (values: Record<string, unknown>) => {
+      const start = new Date(String(values.validFrom));
+      const end = new Date(String(values.validTo));
+      if (!Number.isFinite(start.getTime()) || !Number.isFinite(end.getTime())) {
+        throw new Error("Thời gian bắt đầu hoặc kết thúc không hợp lệ.");
+      }
+      if (end.getTime() <= start.getTime()) {
+        throw new Error("Thời gian kết thúc phải sau thời gian bắt đầu.");
+      }
+      return api.createVoucher({
         ...values,
-        validFrom: new Date(String(values.validFrom)).toISOString(),
-        validTo: new Date(String(values.validTo)).toISOString(),
-      }),
+        code: String(values.code ?? "").trim().toUpperCase(),
+        campaignTitle: String(values.campaignTitle ?? "").trim(),
+        description: String(values.description ?? "").trim(),
+        validFrom: start.toISOString(),
+        validTo: end.toISOString(),
+      });
+    },
     onSuccess: async () => {
       voucherForm.resetFields();
       await refresh();
@@ -220,24 +238,19 @@ export default function Vouchers() {
       : 0;
 
   return (
-    <Space className="voucher-page" direction="vertical" size="large" style={{ width: "100%" }}>
-      <div className="page-heading">
-        <div>
-          <Typography.Title level={2}>Quản lý khuyến mãi &amp; ngân sách</Typography.Title>
-          <Typography.Paragraph type="secondary">
-            Quản lý mức tổng toàn bộ cho các chiến dịch; bấm Chi tiết để dừng/tiếp tục chiến dịch do Admin phát hành và theo dõi khách hàng nhận mã.
-          </Typography.Paragraph>
-        </div>
-      </div>
+    <Space className="voucher-page" orientation="vertical" size="large" style={{ width: "100%" }}>
+      <Heading
+        title="Quản lý khuyến mãi & ngân sách"
+        subtitle="Quản lý mức tổng toàn bộ cho các chiến dịch; bấm Chi tiết để dừng hoặc tiếp tục chiến dịch do Admin phát hành và theo dõi khách hàng nhận mã."
+        actions={
+          <Refresh
+            loading={vouchers.isFetching || budget.isFetching}
+            onClick={() => void refresh()}
+          />
+        }
+      />
 
-      {budget.isError && (
-        <Alert
-          type="error"
-          showIcon
-          message="Không tải được quỹ khuyến mãi"
-          description={budget.error.message}
-        />
-      )}
+      <QueryError error={budget.error} retry={() => void budget.refetch()} />
       {fund && (
         <Card
           loading={budget.isLoading}
@@ -259,7 +272,7 @@ export default function Vouchers() {
                 formatter={formatDots}
                 suffix="đ"
               />
-              <div style={{ fontSize: 12, marginTop: 6, lineHeight: 1.5, opacity: 0.78 }}>
+              <div className="voucher-budget-sub">
                 <div>• Quỹ chiến dịch đang chạy: <strong>{formatMoney(activeCampaignSurplus)}</strong></div>
                 <div>
                   • Dự phòng ưu đãi chào mừng ({activeSystemVoucherCount} mã):{" "}
@@ -279,7 +292,7 @@ export default function Vouchers() {
                 value={fund.availableAmount}
                 formatter={formatDots}
                 suffix="đ"
-                valueStyle={{ color: "#73d13d" }}
+                styles={{ content: { color: "var(--md-sys-color-success)" } }}
               />
             </Col>
           </Row>
@@ -287,21 +300,24 @@ export default function Vouchers() {
           <Form<BudgetForm>
             form={budgetForm}
             layout="inline"
+            className="voucher-budget-form"
             initialValues={{ budgetLimit: fund.budgetLimit }}
             onFinish={(values) => setBudget.mutate(values)}
           >
             <Form.Item
               name="budgetLimit"
               label="Cập nhật tổng quỹ chiến dịch"
-              rules={[{ required: true, message: "Nhập tổng quỹ" }]}
+              rules={[
+                { required: true, message: "Nhập tổng quỹ" },
+                { type: "number", min: 0, message: "Tổng quỹ không được âm" },
+              ]}
             >
               <InputNumber
-                style={{ width: 220 }}
                 min={0}
                 step={1_000_000}
                 formatter={formatVndInput}
                 parser={parseVndInput}
-                addonAfter="đ"
+                suffix="đ"
               />
             </Form.Item>
             <Button type="primary" htmlType="submit" loading={setBudget.isPending}>
@@ -315,7 +331,7 @@ export default function Vouchers() {
         <Alert
           type="warning"
           showIcon
-          message={`Khi phát hành chiến dịch mới, chiến dịch công khai đang chạy sẽ tự động kết thúc và hoàn ${formatMoney(activeCampaignSurplus)} phần dư về quỹ tổng. Quỹ tối đa có thể cấp cho chiến dịch mới: ${formatMoney(maxAllocatableForNewCampaign)}.`}
+          title={`Khi phát hành chiến dịch mới, chiến dịch công khai đang chạy sẽ tự động kết thúc và hoàn ${formatMoney(activeCampaignSurplus)} phần dư về quỹ tổng. Quỹ tối đa có thể cấp cho chiến dịch mới: ${formatMoney(maxAllocatableForNewCampaign)}.`}
           style={{ marginBottom: 20 }}
         />
         <Form
@@ -334,8 +350,18 @@ export default function Vouchers() {
               </Form.Item>
             </Col>
             <Col xs={24} md={10}>
-              <Form.Item name="code" label="Mã khuyến mãi" rules={[{ required: true, message: "Nhập mã khuyến mãi" }]}>
-                <Input placeholder="DAILE20" style={{ textTransform: "uppercase" }} />
+              <Form.Item
+                name="code"
+                label="Mã khuyến mãi"
+                rules={[
+                  { required: true, whitespace: true, message: "Nhập mã khuyến mãi" },
+                  {
+                    pattern: /^[A-Za-z0-9_-]{3,50}$/,
+                    message: "Mã chỉ gồm 3–50 ký tự chữ, số, dấu gạch dưới hoặc gạch nối",
+                  },
+                ]}
+              >
+                <Input placeholder="DAILE20" maxLength={50} style={{ textTransform: "uppercase" }} />
               </Form.Item>
             </Col>
             <Col xs={24} md={12}>
@@ -357,9 +383,20 @@ export default function Vouchers() {
               <Form.Item
                 name="value"
                 label={selectedDiscountType === "PERCENT" ? "Mức giảm (%)" : "Số tiền giảm (đ)"}
-                rules={[{ required: true }]}
+                rules={[
+                  { required: true, message: "Nhập mức giảm" },
+                  ...(selectedDiscountType === "PERCENT"
+                    ? [{ type: "number" as const, min: 1, max: 100, message: "Mức giảm phần trăm từ 1% đến 100%" }]
+                    : [{ type: "number" as const, min: 1, message: "Số tiền giảm phải lớn hơn 0" }]),
+                ]}
               >
-                <InputNumber style={{ width: "100%" }} min={1} formatter={formatVndInput} parser={parseVndInput} />
+                <InputNumber
+                  style={{ width: "100%" }}
+                  min={1}
+                  max={selectedDiscountType === "PERCENT" ? 100 : undefined}
+                  formatter={formatVndInput}
+                  parser={parseVndInput}
+                />
               </Form.Item>
             </Col>
 
@@ -376,21 +413,32 @@ export default function Vouchers() {
               </Col>
             )}
             <Col xs={24} md={selectedDiscountType === "PERCENT" ? 6 : 8}>
-              <Form.Item name="usageLimit" label="Tổng suất nhận" rules={[{ required: true }]}>
-                <InputNumber style={{ width: "100%" }} min={1} />
+              <Form.Item name="usageLimit" label="Tổng suất nhận" rules={[{ required: true, message: "Nhập tổng suất nhận" }]}>
+                <InputNumber style={{ width: "100%" }} min={1} precision={0} />
               </Form.Item>
             </Col>
             <Col xs={24} md={selectedDiscountType === "PERCENT" ? 6 : 8}>
               <Form.Item
                 name="campaignBudgetLimit"
                 label={`Quỹ chiến dịch (≤ ${formatMoney(maxAllocatableForNewCampaign)})`}
+                dependencies={["discountType", "value", "maxDiscount"]}
                 rules={[
                   { required: true, message: "Nhập quỹ riêng của chiến dịch" },
                   {
                     validator: (_, val) => {
-                      if (val != null && val > maxAllocatableForNewCampaign) {
+                      if (val == null) return Promise.resolve();
+                      if (val > maxAllocatableForNewCampaign) {
                         return Promise.reject(
                           new Error(`Không được vượt quá ${formatMoney(maxAllocatableForNewCampaign)}`),
+                        );
+                      }
+                      const discountCap =
+                        selectedDiscountType === "FIXED"
+                          ? Number(voucherForm.getFieldValue("value") ?? 0)
+                          : Number(voucherForm.getFieldValue("maxDiscount") ?? 0);
+                      if (discountCap > 0 && val < discountCap) {
+                        return Promise.reject(
+                          new Error(`Quỹ chiến dịch phải >= mức giảm tối đa/lượt (${formatMoney(discountCap)})`),
                         );
                       }
                       return Promise.resolve();
@@ -408,12 +456,36 @@ export default function Vouchers() {
             </Col>
 
             <Col xs={24} md={12}>
-              <Form.Item name="validFrom" label="Thời gian bắt đầu" rules={[{ required: true }]}>
+              <Form.Item name="validFrom" label="Thời gian bắt đầu" rules={[{ required: true, message: "Chọn thời gian bắt đầu" }]}>
                 <Input type="datetime-local" />
               </Form.Item>
             </Col>
             <Col xs={24} md={12}>
-              <Form.Item name="validTo" label="Thời gian kết thúc" rules={[{ required: true }]}>
+              <Form.Item
+                name="validTo"
+                label="Thời gian kết thúc"
+                dependencies={["validFrom"]}
+                rules={[
+                  { required: true, message: "Chọn thời gian kết thúc" },
+                  {
+                    validator: (_, val) => {
+                      if (!val) return Promise.resolve();
+                      const end = new Date(String(val));
+                      if (!Number.isFinite(end.getTime())) {
+                        return Promise.reject(new Error("Thời gian kết thúc không hợp lệ"));
+                      }
+                      const fromVal = voucherForm.getFieldValue("validFrom");
+                      if (fromVal) {
+                        const start = new Date(String(fromVal));
+                        if (Number.isFinite(start.getTime()) && end.getTime() <= start.getTime()) {
+                          return Promise.reject(new Error("Thời gian kết thúc phải sau thời gian bắt đầu"));
+                        }
+                      }
+                      return Promise.resolve();
+                    },
+                  },
+                ]}
+              >
                 <Input type="datetime-local" />
               </Form.Item>
             </Col>
@@ -433,32 +505,24 @@ export default function Vouchers() {
               </Form.Item>
             </Col>
             <Col span={24}>
-              <div
-                style={{
-                  padding: "12px 16px",
-                  borderRadius: 12,
-                  background: "rgba(24, 144, 255, 0.08)",
-                  border: "1px dashed rgba(24, 144, 255, 0.45)",
-                  marginBottom: 16,
-                }}
-              >
+              <div className="voucher-preview-box">
                 <Space align="start" size={10}>
-                  <BellOutlined style={{ color: "#1677ff", fontSize: 18, marginTop: 3 }} />
+                  <BellOutlined className="voucher-preview-icon" />
                   <div>
-                    <Typography.Text type="secondary" style={{ fontSize: 12, display: "block" }}>
+                    <span className="voucher-preview-kicker">
                       Xem trước thông báo gửi tới App Khách hàng:
-                    </Typography.Text>
-                    <Typography.Text strong style={{ display: "block", fontSize: 14, marginTop: 2 }}>
+                    </span>
+                    <span className="voucher-preview-title">
                       {(previewTitle || "Tên chiến dịch / Khẩu hiệu")}{previewCode ? ` (${String(previewCode).toUpperCase()})` : ""}
-                    </Typography.Text>
-                    <Typography.Text type="secondary" style={{ fontSize: 13 }}>
+                    </span>
+                    <span className="voucher-preview-desc">
                       {previewValue
                         ? selectedDiscountType === "PERCENT"
                           ? `Giảm ${previewValue}%${previewMaxDiscount ? ` (tối đa ${formatMoney(previewMaxDiscount)})` : ""}`
                           : `Giảm ${formatMoney(previewValue)}`
                         : "Mức giảm giá"}{" "}
                       · Giới hạn {previewLimit || 0} suất. {previewDescription || "Nội dung mô tả chiến dịch sẽ hiển thị tại đây."}
-                    </Typography.Text>
+                    </span>
                   </div>
                 </Space>
               </div>
@@ -471,16 +535,8 @@ export default function Vouchers() {
         </Form>
       </Card>
 
-      <Card title="Lịch sử &amp; danh sách chiến dịch khuyến mãi">
-        {vouchers.isError && (
-          <Alert
-            type="error"
-            showIcon
-            message="Không tải được danh sách khuyến mãi"
-            description={vouchers.error.message}
-            style={{ marginBottom: 16 }}
-          />
-        )}
+      <Card title="Lịch sử & danh sách chiến dịch khuyến mãi">
+        <QueryError error={vouchers.error} retry={() => void vouchers.refetch()} />
         <Table
           rowKey="id"
           loading={vouchers.isLoading}
@@ -498,7 +554,7 @@ export default function Vouchers() {
               width: 240,
               render: (value: string | null, row: AdminVoucher) => (
                 <div>
-                  <Typography.Text strong style={{ color: "#ff7875", display: "block" }}>
+                  <Typography.Text strong className="voucher-code-label">
                     {value || "Ưu đãi chào mừng"}
                   </Typography.Text>
                   {row.campaignTitle && (
@@ -602,12 +658,14 @@ export default function Vouchers() {
         width={920}
         centered
       >
+        <QueryError error={ledger.error} retry={() => void ledger.refetch()} />
         <Table<BudgetLedgerItem>
           rowKey="id"
           size="small"
           loading={ledger.isLoading}
           dataSource={ledger.data ?? []}
           pagination={{ pageSize: 8 }}
+          scroll={{ x: "max-content" }}
           columns={[
             {
               title: "Thời gian",
@@ -632,7 +690,7 @@ export default function Vouchers() {
                 const info = ledgerActionMap[item.action] ?? { sign: "" };
                 const isPlus = info.sign === "+";
                 return (
-                  <Typography.Text strong style={{ color: isPlus ? "#73d13d" : undefined }}>
+                  <Typography.Text strong className={isPlus ? "voucher-positive-amount" : undefined}>
                     {info.sign}{formatMoney(item.amount)}
                   </Typography.Text>
                 );
@@ -713,7 +771,7 @@ export default function Vouchers() {
                   cancelText="Hủy"
                   onConfirm={() => toggleStatus.mutate({ id: activeDetail.id, active: true })}
                 >
-                  <Button type="primary" ghost icon={<PlayCircleOutlined />} loading={toggleStatus.isPending}>
+                  <Button type="primary" icon={<PlayCircleOutlined />} loading={toggleStatus.isPending}>
                     Tiếp tục chiến dịch
                   </Button>
                 </Popconfirm>
@@ -727,26 +785,19 @@ export default function Vouchers() {
         centered
       >
         {activeDetail && (
-          <Space direction="vertical" size={16} style={{ width: "100%", marginTop: 8 }}>
-            <div
-              style={{
-                padding: "12px 14px",
-                borderRadius: 10,
-                background: "rgba(24, 144, 255, 0.12)",
-                border: "1px solid rgba(24, 144, 255, 0.32)",
-              }}
-            >
+          <Space orientation="vertical" size={16} style={{ width: "100%", marginTop: 8 }}>
+            <div className="voucher-preview-box compact">
               <Space align="start" size={10}>
-                <BellOutlined style={{ color: "#40a9ff", marginTop: 3 }} />
+                <BellOutlined className="voucher-preview-icon" />
                 <div>
-                  <Typography.Text strong style={{ display: "block", marginBottom: 2 }}>
+                  <span className="voucher-preview-title">
                     {activeDetail.campaignTitle
                       ? `${activeDetail.campaignTitle}${activeDetail.code ? ` (${activeDetail.code})` : ""}`
                       : "Nội dung thông báo gửi khách hàng"}
-                  </Typography.Text>
-                  <Typography.Text type="secondary">
+                  </span>
+                  <span className="voucher-preview-desc">
                     {activeDetail.description || "Không có mô tả"}
-                  </Typography.Text>
+                  </span>
                 </div>
               </Space>
             </div>
@@ -757,95 +808,44 @@ export default function Vouchers() {
                   <WalletOutlined style={{ marginRight: 6 }} />
                   Đối soát ngân sách chiến dịch
                 </Typography.Text>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10 }}>
-                  <div
-                    style={{
-                      padding: "10px 12px",
-                      borderRadius: 10,
-                      background: "rgba(255, 255, 255, 0.03)",
-                      border: "1px solid rgba(255, 255, 255, 0.12)",
-                    }}
-                  >
-                    <Typography.Text type="secondary" style={{ fontSize: 12 }}>
-                      Quỹ phân bổ
-                    </Typography.Text>
-                    <div style={{ fontSize: 18, fontWeight: 700, marginTop: 4 }}>
-                      {formatMoney(detailBudgetLimit)}
-                    </div>
+                <div className="voucher-detail-budget-grid">
+                  <div className="voucher-detail-stat">
+                    <div className="voucher-detail-stat-label">Quỹ phân bổ</div>
+                    <div className="voucher-detail-stat-value">{formatMoney(detailBudgetLimit)}</div>
                   </div>
 
-                  <div
-                    style={{
-                      padding: "10px 12px",
-                      borderRadius: 10,
-                      background: "rgba(255, 255, 255, 0.03)",
-                      border: "1px solid rgba(255, 255, 255, 0.12)",
-                    }}
-                  >
-                    <Typography.Text type="secondary" style={{ fontSize: 12 }}>
-                      Đã chi thực tế
-                    </Typography.Text>
-                    <div style={{ fontSize: 18, fontWeight: 700, marginTop: 4 }}>
-                      {formatMoney(activeDetail.campaignSpentAmount)}
-                    </div>
+                  <div className="voucher-detail-stat">
+                    <div className="voucher-detail-stat-label">Đã chi thực tế</div>
+                    <div className="voucher-detail-stat-value">{formatMoney(activeDetail.campaignSpentAmount)}</div>
                   </div>
 
-                  <div
-                    style={{
-                      padding: "10px 12px",
-                      borderRadius: 10,
-                      background: "rgba(250, 173, 20, 0.08)",
-                      border: "1px solid rgba(250, 173, 20, 0.3)",
-                    }}
-                  >
-                    <Typography.Text type="secondary" style={{ fontSize: 12 }}>
-                      Hoàn về quỹ tổng
-                    </Typography.Text>
-                    <div style={{ fontSize: 18, fontWeight: 700, marginTop: 4, color: "#faad14" }}>
-                      {formatMoney(activeDetail.campaignReleasedAmount)}
-                    </div>
+                  <div className="voucher-detail-stat warning">
+                    <div className="voucher-detail-stat-label">Hoàn về quỹ tổng</div>
+                    <div className="voucher-detail-stat-value">{formatMoney(activeDetail.campaignReleasedAmount)}</div>
                   </div>
 
-                  <div
-                    style={{
-                      padding: "10px 12px",
-                      borderRadius: 10,
-                      background: "rgba(82, 196, 26, 0.08)",
-                      border: "1px solid rgba(82, 196, 26, 0.3)",
-                    }}
-                  >
-                    <Typography.Text type="secondary" style={{ fontSize: 12 }}>
-                      Còn lại khả dụng
-                    </Typography.Text>
-                    <div
-                      style={{
-                        fontSize: 18,
-                        fontWeight: 700,
-                        marginTop: 4,
-                        color: detailRemaining > 0 ? "#73d13d" : "#ff4d4f",
-                      }}
-                    >
-                      {formatMoney(detailRemaining)}
-                    </div>
+                  <div className={`voucher-detail-stat ${detailRemaining > 0 ? "success" : "danger"}`}>
+                    <div className="voucher-detail-stat-label">Còn lại khả dụng</div>
+                    <div className="voucher-detail-stat-value">{formatMoney(detailRemaining)}</div>
                   </div>
                 </div>
 
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginTop: 12 }}>
+                <div className="voucher-progress-grid">
                   <div>
-                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12 }}>
+                    <div className="voucher-progress-header">
                       <Typography.Text type="secondary">Tỷ lệ dùng ngân sách (chi + giữ)</Typography.Text>
                       <Typography.Text strong>{budgetUsedPercent}%</Typography.Text>
                     </div>
-                    <Progress percent={budgetUsedPercent} showInfo={false} size="small" strokeColor="#52c41a" />
+                    <Progress percent={budgetUsedPercent} showInfo={false} size="small" strokeColor="var(--md-sys-color-success)" />
                   </div>
                   <div>
-                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12 }}>
+                    <div className="voucher-progress-header">
                       <Typography.Text type="secondary">Tỷ lệ phát suất</Typography.Text>
                       <Typography.Text strong>
                         {activeDetail.campaignClaimCount}/{activeDetail.usageLimit ?? 0} suất ({claimPercent}%)
                       </Typography.Text>
                     </div>
-                    <Progress percent={claimPercent} showInfo={false} size="small" strokeColor="#1677ff" />
+                    <Progress percent={claimPercent} showInfo={false} size="small" strokeColor="var(--md-sys-color-primary)" />
                   </div>
                 </div>
               </div>
@@ -855,7 +855,7 @@ export default function Vouchers() {
               <Typography.Text strong style={{ display: "block", marginBottom: 8 }}>
                 Chi tiết trạng thái suất &amp; điều kiện áp dụng
               </Typography.Text>
-              <Descriptions bordered size="small" column={2}>
+              <Descriptions bordered size="small" column={{ xs: 1, sm: 2 }}>
                 <Descriptions.Item label="Nguồn phát hành">
                   {activeDetail.source === "PUBLIC_CODE" ? "Chiến dịch Admin phát hành" : "Hệ thống tự phát (Chào mừng)"}
                 </Descriptions.Item>
@@ -874,7 +874,7 @@ export default function Vouchers() {
                 <Descriptions.Item label="Đơn tối thiểu">
                   {formatMoney(activeDetail.minimumOrderAmount)}
                 </Descriptions.Item>
-                <Descriptions.Item label="Thời gian hiệu lực" span={2}>
+                <Descriptions.Item label="Thời gian hiệu lực" span={{ xs: 1, sm: 2 }}>
                   {new Date(activeDetail.validFrom).toLocaleString("vi-VN")} –{" "}
                   {new Date(activeDetail.validTo).toLocaleString("vi-VN")}
                 </Descriptions.Item>
@@ -894,6 +894,7 @@ export default function Vouchers() {
                   loading={claimants.isLoading}
                   dataSource={claimants.data ?? []}
                   pagination={{ pageSize: 5 }}
+                  scroll={{ x: "max-content" }}
                   locale={{ emptyText: "Chưa có tài khoản nào nhận voucher từ chiến dịch này" }}
                   columns={[
                     {

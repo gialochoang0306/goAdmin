@@ -97,11 +97,11 @@ export function Loading() {
   );
 }
 export function Status({ value }: { value: string | null | undefined }) {
-  const color = ["APPROVED", "ACTIVE", "COMPLETED", "ONLINE", "PAID"].includes(
+  const color = ["APPROVED", "ACTIVE", "COMPLETED", "ONLINE", "PAID", "SUCCESS"].includes(
     value ?? "",
   )
     ? "green"
-    : ["REJECTED", "BANNED", "CANCELLED", "EXPIRED"].includes(value ?? "")
+    : ["REJECTED", "BANNED", "CANCELLED", "EXPIRED", "FAILED"].includes(value ?? "")
       ? "red"
       : ["PENDING", "SEARCHING", "NO_DRIVER_FOUND", "BUSY"].includes(
             value ?? "",
