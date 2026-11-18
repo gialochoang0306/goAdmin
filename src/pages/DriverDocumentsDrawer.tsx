@@ -78,11 +78,7 @@ export function DriverDocumentsDrawer({
               {documents.filter(doc => doc.verificationStatus === "APPROVED").length}/{documents.length} giấy tờ đã duyệt
             </Typography.Text>
           </Space>
-          <Typography.Paragraph type="secondary">
-            Tài khoản chỉ được duyệt khi đủ giấy tờ bắt buộc đã được duyệt.
-          </Typography.Paragraph>
           {approvalBlockedReason && <Alert type="warning" showIcon title={approvalBlockedReason} />}
-          {!required?.length && <Typography.Paragraph type="secondary">Điều kiện duyệt sẽ được kiểm tra lại khi xác nhận.</Typography.Paragraph>}
           <QueryError error={verify.error} retry={() => { verify.reset(); void query.refetch(); }} />
           <DriverReviewForm
             title="Quyết định tài khoản"
@@ -120,11 +116,22 @@ export function DriverDocumentsDrawer({
               <div key={document.id} id={`review-document-${document.id}`} className="document-card">
                 <Photo url={document.secureUrl} alt={label(document.documentType)} />
                 <div className="document-info">
-                  <strong>{label(document.documentType)}</strong>
-                  <p>Số: {text(document.documentNumber)}</p>
-                  <p>Gửi: {date(document.createdAt)} · Hết hạn: {date(document.expiresAt)}</p>
-                  <Status value={document.verificationStatus} />
-                  {document.rejectionReason && <p>Lý do: {document.rejectionReason}</p>}
+                  <div className="document-header">
+                    <strong className="document-title">{label(document.documentType)}</strong>
+                    <Status value={document.verificationStatus} />
+                  </div>
+                  {document.documentType !== "SELFIE" && document.documentNumber && (
+                    <div className="document-number">
+                      Số giấy tờ: <strong>{document.documentNumber}</strong>
+                    </div>
+                  )}
+                  <p>
+                    Gửi: {date(document.createdAt)}
+                    {document.expiresAt ? ` · Hết hạn: ${date(document.expiresAt)}` : ""}
+                  </p>
+                  {document.rejectionReason && (
+                    <Alert type="error" showIcon title={`Lý do từ chối: ${document.rejectionReason}`} />
+                  )}
                   {reviewId === document.id && (
                     <>
                       <QueryError error={paper.error} retry={() => { paper.reset(); void query.refetch(); }} />

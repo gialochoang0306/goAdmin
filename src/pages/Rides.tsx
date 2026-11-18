@@ -351,7 +351,7 @@ function RideRatings({ id }: { id: number }) {
       {ratingsQuery.isPending ? (
         <Loading />
       ) : items.length ? (
-        <Space direction="vertical" size={14} style={{ width: "100%" }}>
+        <Space orientation="vertical" size={14} style={{ width: "100%" }}>
           {items.map((item) => {
             const isCustomerToDriver = item.direction === "CUSTOMER_TO_DRIVER";
             return (
@@ -382,6 +382,7 @@ function RideRatings({ id }: { id: number }) {
                     <Button
                       size="small"
                       loading={visibilityMutation.isPending}
+                      disabled={visibilityMutation.isPending}
                       onClick={() => visibilityMutation.mutate({ ratingId: item.id, hidden: false })}
                     >
                       Hiện lại
@@ -390,6 +391,7 @@ function RideRatings({ id }: { id: number }) {
                     <Button
                       size="small"
                       danger
+                      disabled={visibilityMutation.isPending}
                       onClick={() => {
                         setHideTarget(item);
                         setHideReason("");
@@ -400,7 +402,7 @@ function RideRatings({ id }: { id: number }) {
                   )
                 }
               >
-                <Space direction="vertical" size={8} style={{ width: "100%" }}>
+                <Space orientation="vertical" size={8} style={{ width: "100%" }}>
                   <Space wrap>
                     <Rate disabled value={item.stars} />
                     <Typography.Text strong>{item.stars}/5 sao</Typography.Text>
@@ -423,7 +425,7 @@ function RideRatings({ id }: { id: number }) {
                     <Alert
                       type="warning"
                       showIcon
-                      message={`Đã ẩn lúc ${date(item.hiddenAt)}${item.hiddenBy ? ` bởi Admin #${item.hiddenBy}` : ""}`}
+                      title={`Đã ẩn lúc ${date(item.hiddenAt)}${item.hiddenBy ? ` bởi Admin #${item.hiddenBy}` : ""}`}
                       description={item.hiddenReason ? `Lý do: ${item.hiddenReason}` : "Không ghi chú lý do."}
                     />
                   )}
@@ -444,12 +446,16 @@ function RideRatings({ id }: { id: number }) {
         title="Ẩn đánh giá vi phạm"
         okText="Xác nhận ẩn"
         cancelText="Hủy"
+        closable={!visibilityMutation.isPending}
+        keyboard={!visibilityMutation.isPending}
+        mask={{ closable: !visibilityMutation.isPending }}
         okButtonProps={{ danger: true, loading: visibilityMutation.isPending }}
+        cancelButtonProps={{ disabled: visibilityMutation.isPending }}
         onCancel={() => {
           if (!visibilityMutation.isPending) setHideTarget(null);
         }}
         onOk={() => {
-          if (!hideTarget) return;
+          if (!hideTarget || visibilityMutation.isPending) return;
           visibilityMutation.mutate({
             ratingId: hideTarget.id,
             hidden: true,
@@ -510,15 +516,21 @@ function AssignDriver({
           page,
           size: 20,
         });
+        const eligible = results.content.length
+          ? new Set(await api.assignableDriverIds(ride.id, results.content.map(driver => driver.id)))
+          : new Set<number>();
         return {
-          rows: results.content.map((driver) => ({ id: driver.id, driver })),
+          rows: results.content.filter(driver => eligible.has(driver.id)).map(driver => ({ id: driver.id, driver })),
           total: results.totalElements,
         };
       }
       const nearby = (
         await api.nearby(ride.pickup.lng!, ride.pickup.lat!, radius)
       ).slice(0, 20);
-      const rows = await mapConcurrent(nearby, async (entry) => {
+      const eligible = nearby.length
+        ? new Set(await api.assignableDriverIds(ride.id, nearby.map(entry => entry.driverId)))
+        : new Set<number>();
+      const rows = await mapConcurrent(nearby.filter(entry => eligible.has(entry.driverId)), async (entry) => {
         try {
           const detail = await client.fetchQuery({
             queryKey: ["admin", "driver", entry.driverId],
@@ -763,7 +775,7 @@ export function RideDetailPage() {
     return (
       <QueryError error={query.error} retry={() => void query.refetch()} />
     );
-  const vehicle = customer.data?.vehicles.find((v) => v.id === ride.vehicleId);
+  const vehicle = customer.data?.vehicles?.find((v) => v.id === ride.vehicleId);
   return (
     <>
       <Link className="back-link" to={returnPath(location.state, "/rides")}>

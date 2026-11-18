@@ -16,7 +16,7 @@ import {
 } from "antd";
 import { ArrowLeftOutlined } from "@ant-design/icons";
 import type { ColumnsType } from "antd/es/table";
-import { api } from "../lib/api";
+import { api, verificationEnabled } from "../lib/api";
 import { date, label, money, percentage, text } from "../lib/format";
 import { useAction, useFilters } from "../lib/hooks";
 import {
@@ -227,6 +227,7 @@ export function Documents() {
   ];
   return (
     <>
+      {verificationEnabled && <Link to="/driver-documents/verification">Xác minh hồ sơ từ ứng dụng tài xế</Link>}
       <Heading
         title="Duyệt hồ sơ tài xế"
         subtitle="Mỗi tài xế một hồ sơ. Kiểm tra giấy tờ, kỹ năng và duyệt tài khoản trong cùng cửa sổ."
@@ -483,19 +484,27 @@ export function DriverDetailPage() {
                         alt={label(doc.documentType)}
                       />
                       <div className="document-info">
-                        <strong>{label(doc.documentType)}</strong>{" "}
-                        {!doc.isCurrent && <Tag>Bản cũ</Tag>}
-                        <p>
-                          Số: {text(doc.documentNumber)} · Hết hạn:{" "}
-                          {date(doc.expiresAt)}
-                        </p>
-                        <Status value={doc.verificationStatus} />
+                        <div className="document-header">
+                          <strong className="document-title">{label(doc.documentType)}</strong>
+                          <Space size={6}>
+                            {!doc.isCurrent && <Tag>Bản cũ</Tag>}
+                            <Status value={doc.verificationStatus} />
+                          </Space>
+                        </div>
+                        {doc.documentType !== "SELFIE" && doc.documentNumber && (
+                          <div className="document-number">
+                            Số giấy tờ: <strong>{doc.documentNumber}</strong>
+                          </div>
+                        )}
                         {doc.rejectionReason && (
-                          <p>Lý do: {doc.rejectionReason}</p>
+                          <p style={{ color: "var(--md-sys-color-error)", fontWeight: 600 }}>
+                            Lý do từ chối: {doc.rejectionReason}
+                          </p>
                         )}
                         <p>
-                          Gửi: {date(doc.createdAt)} · Duyệt:{" "}
-                          {date(doc.reviewedAt)}
+                          Gửi: {date(doc.createdAt)}
+                          {doc.expiresAt ? ` · Hết hạn: ${date(doc.expiresAt)}` : ""}
+                          {doc.reviewedAt ? ` · Duyệt: ${date(doc.reviewedAt)}` : ""}
                         </p>
                       </div>
                       <Button

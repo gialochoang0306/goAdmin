@@ -116,22 +116,20 @@ export function DashboardFinance({ query, promoBudget, period, onPeriodChange }:
           <Metric label="Doanh thu nền tảng" value={money(data?.revenue)} detail="Chiết khấu đã ghi sổ" icon={<DollarCircleOutlined />} tone="revenue" />
           <Metric
             label="Chi phí khuyến mãi"
-            value={money(promoBudget ? promoBudget.budgetLimit : data?.promoCost)}
+            value={money(data?.promoCost)}
             icon={<GiftOutlined />}
             tone="promo"
             detail={
               promoBudget ? (
                 <>
-                  <span>
-                    Tổng quỹ chiến dịch · Còn lại: <strong>{money(promoBudget.availableAmount)}</strong>
-                  </span>
+                  <span>Tổng giá trị voucher đã trừ trong kỳ</span>
                   <span className="dashboard-trend">
-                    Đã chi: <strong>{money(promoBudget.spentAmount)}</strong> ·{" "}
+                    Quỹ còn lại: <strong>{money(promoBudget.availableAmount)}</strong> ·{" "}
                     <Link to="/vouchers">Quản lý quỹ</Link>
                   </span>
                 </>
               ) : (
-                "Tổng quỹ chiến dịch voucher"
+                "Tổng giá trị voucher đã trừ trong kỳ"
               )
             }
           />

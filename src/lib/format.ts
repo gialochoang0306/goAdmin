@@ -72,6 +72,16 @@ export const labels: Record<string, string> = {
   SELFIE: "Ảnh chân dung",
   DRIVER_LICENSE: "Giấy phép lái xe",
   DRIVER_LICENSE_BACK: "Mặt sau giấy phép lái xe",
+  DEPOSIT: "Nạp tiền",
+  TOP_UP: "Nạp ví",
+  TRIP_PAYMENT: "Thanh toán chuyến",
+  RIDE_PAYMENT: "Thanh toán chuyến",
+  TRIP_EARNING: "Thu nhập chuyến",
+  REFUND: "Hoàn tiền",
+  WITHDRAW: "Rút tiền",
+  COMMISSION_FEE: "Phí chiết khấu",
+  SUCCESS: "Thành công",
+  FAILED: "Thất bại",
 };
 export const text = (value: unknown) =>
   value === null || value === undefined || value === "" ? "—" : String(value);

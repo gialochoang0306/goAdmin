@@ -7,7 +7,10 @@ export default defineConfig({
     environment: "./vitest.environment.ts",
     setupFiles: ["./src/test/setup.ts"],
     clearMocks: true,
-    testTimeout: 20_000,
+    // Full-page tests exercise several successive interactions in jsdom.
+    testTimeout: 45_000,
+    // Limit contention between the CPU-heavy UI suites.
+    maxWorkers: 1,
   },
   build: {
     chunkSizeWarningLimit: 1100,

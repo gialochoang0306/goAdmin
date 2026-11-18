@@ -21,7 +21,7 @@ import { FilterField } from "../components/FilterField";
 import { Heading, InvalidRecord, Loading, Panel, Photo, QueryError, Refresh } from "../components/common";
 import { api, errorMessage } from "../lib/api";
 import { uploadSupportImage } from "../lib/upload";
-import { date, label } from "../lib/format";
+import { date, label, safeImage } from "../lib/format";
 import { useFilters } from "../lib/hooks";
 import type { TicketDetail, TicketMessage, TicketStatus, TicketSummary } from "../types";
 
@@ -255,22 +255,25 @@ export function TicketDetailPage() {
             <Panel title="Hội thoại & xử lý" extra={claim.isPending ? <Typography.Text type="secondary">Đang nhận ticket…</Typography.Text> : null}>
               {detail.messages.length ? (
                 <div className="ticket-chat" role="log" aria-label="Lịch sử tin nhắn hỗ trợ">
-                  {detail.messages.map(message => (
-                    <div key={message.id} className={`ticket-bubble ${message.senderRole === "ADMIN" ? "admin" : "user"}`}>
-                      {message.imageUrl ? (
-                        <Image
-                          src={message.imageUrl}
-                          alt="Ảnh trong hội thoại hỗ trợ"
-                          width={220}
-                          style={{ borderRadius: 8 }}
-                        />
-                      ) : null}
-                      {message.body.trim() ? <Typography.Text>{message.body}</Typography.Text> : null}
-                      <div className="ticket-meta">
-                        {message.senderRole === "ADMIN" ? "CSKH" : label(ticket.ownerRole)} · {date(message.createdAt)}
+                  {detail.messages.map(message => {
+                    const msgImage = safeImage(message.imageUrl);
+                    return (
+                      <div key={message.id} className={`ticket-bubble ${message.senderRole === "ADMIN" ? "admin" : "user"}`}>
+                        {msgImage ? (
+                          <Image
+                            src={msgImage}
+                            alt="Ảnh trong hội thoại hỗ trợ"
+                            width={220}
+                            style={{ borderRadius: 8 }}
+                          />
+                        ) : null}
+                        {message.body.trim() ? <Typography.Text>{message.body}</Typography.Text> : null}
+                        <div className="ticket-meta">
+                          {message.senderRole === "ADMIN" ? "CSKH" : label(ticket.ownerRole)} · {date(message.createdAt)}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               ) : <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="Chưa có tin nhắn" />}
               <div className="ticket-composer">

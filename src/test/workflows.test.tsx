@@ -142,6 +142,7 @@ beforeEach(() => {
         ride.cancelReason = String(body.reason);
         return ok({});
       }
+      if (path === "/api/admin/rides/11/assignable-drivers") return ok([41]);
       if (path === "/api/admin/rides/11/assign") {
         if (assignmentConflict)
           return fail(409, "Tài xế đang có lời mời hoặc chuyến khác");
@@ -152,6 +153,7 @@ beforeEach(() => {
       if (path === "/api/location/nearby-drivers")
         return ok([
           { driverId: 41, distanceKm: 1.25, location: { lat: 21, lng: 105 } },
+          { driverId: 42, distanceKm: 1.5, location: { lat: 21, lng: 105 } },
         ]);
       if (path === "/api/admin/drivers") return ok(page([driver.driver]));
       if (path === "/api/admin/drivers/41") return ok(driver);
@@ -253,7 +255,8 @@ describe("Admin pages", () => {
   });
   it("returns from a customer profile to the originating ride and tab", async () => {
     const { user } = renderPage("/rides/11");
-    await user.click(await screen.findByRole("link", { name: customer.fullName! }));
+    // Wait for the ride route and its dependent customer query to resolve.
+    await user.click(await screen.findByRole("link", { name: customer.fullName! }, { timeout: 15_000 }));
     await user.click(await screen.findByRole("link", { name: "Quay lại chuyến đi" }));
     expect(await screen.findByRole("heading", { name: "Chuyến đi #11" })).toBeInTheDocument();
   });
@@ -369,6 +372,7 @@ describe("Admin pages", () => {
     await user.click(
       await screen.findByRole("radio", { name: "Chọn tài xế 41" }),
     );
+    expect(screen.queryByRole("radio", { name: "Chọn tài xế 42" })).not.toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Xác nhận gán" }));
     await waitFor(() =>
       expect(

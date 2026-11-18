@@ -385,7 +385,7 @@ function CustomerWallet({ id }: { id: number }) {
       <div className="filters">
         <SearchDateFields filters={f} prefix="wallet" label="Tìm giao dịch ví" placeholder="Mã giao dịch, mã chuyến hoặc mô tả" />
         <FilterField label="Loại giao dịch"><Select aria-label="Loại giao dịch ví" allowClear placeholder="Tất cả loại" value={type || undefined}
-          options={["DEPOSIT", "TRIP_PAYMENT", "REFUND", "WITHDRAW", "COMMISSION_FEE"].map(value=>({value,label:label(value)}))} onChange={walletType=>f.update({walletType})} /></FilterField>
+          options={["DEPOSIT", "TOP_UP", "TRIP_PAYMENT", "RIDE_PAYMENT", "TRIP_EARNING", "REFUND", "WITHDRAW", "COMMISSION_FEE"].map(value=>({value,label:label(value)}))} onChange={walletType=>f.update({walletType})} /></FilterField>
         <FilterField label="Trạng thái giao dịch"><Select aria-label="Trạng thái giao dịch ví" allowClear placeholder="Tất cả trạng thái" value={status || undefined}
           options={["PENDING","SUCCESS","FAILED"].map(value=>({value,label:label(value)}))} onChange={walletStatus=>f.update({walletStatus})} /></FilterField>
         <Button onClick={()=>f.update({walletq:undefined,walletfrom:undefined,walletto:undefined,walletType:undefined,walletStatus:undefined})}>Xóa bộ lọc</Button>

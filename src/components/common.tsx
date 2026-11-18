@@ -97,11 +97,11 @@ export function Loading() {
   );
 }
 export function Status({ value }: { value: string | null | undefined }) {
-  const color = ["APPROVED", "ACTIVE", "COMPLETED", "ONLINE", "PAID"].includes(
+  const color = ["APPROVED", "ACTIVE", "COMPLETED", "ONLINE", "PAID", "SUCCESS"].includes(
     value ?? "",
   )
     ? "green"
-    : ["REJECTED", "BANNED", "CANCELLED", "EXPIRED"].includes(value ?? "")
+    : ["REJECTED", "BANNED", "CANCELLED", "EXPIRED", "FAILED"].includes(value ?? "")
       ? "red"
       : ["PENDING", "SEARCHING", "NO_DRIVER_FOUND", "BUSY"].includes(
             value ?? "",
@@ -119,14 +119,16 @@ export function Photo({
 }) {
   const src = safeImage(url);
   return src ? (
-    <Image
-      width={88}
-      height={70}
-      style={{ objectFit: "cover", borderRadius: 4 }}
-      src={src}
-      alt={alt}
-      fallback="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='88' height='70'%3E%3Crect width='100%25' height='100%25' fill='%23eeeeee'/%3E%3Ctext x='44' y='40' text-anchor='middle' font-size='10'%3ELỗi ảnh%3C/text%3E%3C/svg%3E"
-    />
+    <div className="document-photo-frame">
+      <Image
+        width={188}
+        height={132}
+        style={{ objectFit: "contain", borderRadius: 8 }}
+        src={src}
+        alt={alt}
+        fallback="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='188' height='132'%3E%3Crect width='100%25' height='100%25' fill='%23eeeeee'/%3E%3Ctext x='94' y='70' text-anchor='middle' font-size='12'%3ELỗi ảnh%3C/text%3E%3C/svg%3E"
+      />
+    </div>
   ) : (
     <Typography.Text type="secondary">Không có ảnh</Typography.Text>
   );

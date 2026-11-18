@@ -45,6 +45,7 @@ const Rides = lazy(() =>
 const RideDetail = lazy(() =>
   import("./pages/Rides").then((m) => ({ default: m.RideDetailPage })),
 );
+const VerificationReview = lazy(() => import("./pages/VerificationReview"));
 const Drivers = lazy(() =>
   import("./pages/Drivers").then((m) => ({ default: m.Drivers })),
 );
@@ -324,6 +325,7 @@ export function AdminApp() {
         <Route path="drivers" element={<Drivers />} />
         <Route path="drivers/:id" element={<DriverDetail />} />
         <Route path="driver-documents" element={<Documents />} />
+        <Route path="driver-documents/verification" element={<VerificationReview />} />
         <Route path="customers" element={<Customers />} />
         <Route path="customers/:id" element={<CustomerDetail />} />
         <Route path="tickets" element={<Tickets />} />
