@@ -13,7 +13,7 @@ pnpm install --frozen-lockfile
 Copy-Item .env.example .env.local
 ```
 
-Điền `.env.local` bằng Firebase **Web config** của cùng project với backend. Team nhận cấu hình local riêng; repo chỉ có tệp mẫu.
+Điền `.env.local` bằng Firebase **Web config** của cùng project với backend. Team nhận cấu hình local riêng. `.env.production` cung cấp origin API công khai cho bản build production.
 
 ```env
 VITE_API_BASE_URL=http://localhost:8080
@@ -67,6 +67,8 @@ API hàng chờ hiện phân trang theo giấy tờ. Frontend đọc hết các 
 Chưa bao gồm báo cáo doanh thu, bản đồ, quản lý voucher, quản lý tài khoản quản trị hoặc hosting.
 
 ## Kiểm tra và build
+
+GitHub Actions chạy lint, typecheck, Vitest và production build trên Node 24 với pnpm lấy đúng phiên bản từ `package.json`. Tests dùng dữ liệu tổng hợp và mô phỏng API.
 
 ```powershell
 pnpm typecheck
