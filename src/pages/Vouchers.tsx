@@ -76,6 +76,39 @@ const ledgerActionMap: Record<string, { label: string; color: string; sign: stri
   SPEND: { label: "Chi thực tế chuyến", color: "red", sign: "-" },
 };
 
+function VoucherNotificationPreview({ form }: { form: ReturnType<typeof Form.useForm>[0] }) {
+  const discountType = Form.useWatch("discountType", form) ?? "PERCENT";
+  const code = Form.useWatch("code", form) ?? "";
+  const title = Form.useWatch("campaignTitle", form) ?? "";
+  const value = Form.useWatch("value", form);
+  const maxDiscount = Form.useWatch("maxDiscount", form);
+  const limit = Form.useWatch("usageLimit", form);
+  const description = Form.useWatch("description", form) ?? "";
+  return (
+    <div className="voucher-preview-box">
+      <Space align="start" size={10}>
+        <BellOutlined className="voucher-preview-icon" />
+        <div>
+          <span className="voucher-preview-kicker">
+            Xem trước thông báo gửi tới App Khách hàng:
+          </span>
+          <span className="voucher-preview-title">
+            {(title || "Tên chiến dịch / Khẩu hiệu")}{code ? ` (${String(code).toUpperCase()})` : ""}
+          </span>
+          <span className="voucher-preview-desc">
+            {value
+              ? discountType === "PERCENT"
+                ? `Giảm ${value}%${maxDiscount ? ` (tối đa ${formatMoney(maxDiscount)})` : ""}`
+                : `Giảm ${formatMoney(value)}`
+              : "Mức giảm giá"}{" "}
+            · Giới hạn {limit || 0} suất. {description || "Nội dung mô tả chiến dịch sẽ hiển thị tại đây."}
+          </span>
+        </div>
+      </Space>
+    </div>
+  );
+}
+
 export default function Vouchers() {
   const client = useQueryClient();
   const { message } = App.useApp();
@@ -84,12 +117,6 @@ export default function Vouchers() {
   const [selectedCampaign, setSelectedCampaign] = useState<AdminVoucher | null>(null);
   const [ledgerOpen, setLedgerOpen] = useState(false);
   const selectedDiscountType = Form.useWatch("discountType", voucherForm) ?? "PERCENT";
-  const previewCode = Form.useWatch("code", voucherForm) ?? "";
-  const previewTitle = Form.useWatch("campaignTitle", voucherForm) ?? "";
-  const previewValue = Form.useWatch("value", voucherForm);
-  const previewMaxDiscount = Form.useWatch("maxDiscount", voucherForm);
-  const previewLimit = Form.useWatch("usageLimit", voucherForm);
-  const previewDescription = Form.useWatch("description", voucherForm) ?? "";
 
   const vouchers = useQuery({
     queryKey: ["admin", "vouchers"],
@@ -506,27 +533,7 @@ export default function Vouchers() {
               </Form.Item>
             </Col>
             <Col span={24}>
-              <div className="voucher-preview-box">
-                <Space align="start" size={10}>
-                  <BellOutlined className="voucher-preview-icon" />
-                  <div>
-                    <span className="voucher-preview-kicker">
-                      Xem trước thông báo gửi tới App Khách hàng:
-                    </span>
-                    <span className="voucher-preview-title">
-                      {(previewTitle || "Tên chiến dịch / Khẩu hiệu")}{previewCode ? ` (${String(previewCode).toUpperCase()})` : ""}
-                    </span>
-                    <span className="voucher-preview-desc">
-                      {previewValue
-                        ? selectedDiscountType === "PERCENT"
-                          ? `Giảm ${previewValue}%${previewMaxDiscount ? ` (tối đa ${formatMoney(previewMaxDiscount)})` : ""}`
-                          : `Giảm ${formatMoney(previewValue)}`
-                        : "Mức giảm giá"}{" "}
-                      · Giới hạn {previewLimit || 0} suất. {previewDescription || "Nội dung mô tả chiến dịch sẽ hiển thị tại đây."}
-                    </span>
-                  </div>
-                </Space>
-              </div>
+              <VoucherNotificationPreview form={voucherForm} />
             </Col>
           </Row>
 
