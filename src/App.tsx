@@ -17,6 +17,7 @@ import {
   Input,
   Layout,
   Menu,
+  Result,
   Space,
   Typography,
 } from "antd";
@@ -28,6 +29,8 @@ import {
   FileProtectOutlined,
   LogoutOutlined,
   MenuOutlined,
+  RightOutlined,
+  TagsOutlined,
   TeamOutlined,
   UserOutlined,
   WalletOutlined,
@@ -82,7 +85,7 @@ const navigation = [
   { key: "/customers", label: "Khách hàng", icon: <TeamOutlined /> },
   { key: "/tickets", label: "Hỗ trợ", icon: <CustomerServiceOutlined /> },
   { key: "/withdrawals", label: "Yêu cầu rút tiền", icon: <WalletOutlined /> },
-  { key: "/pricing-rules", label: "Bảng giá", icon: <WalletOutlined /> },
+  { key: "/pricing-rules", label: "Bảng giá", icon: <TagsOutlined /> },
   { key: "/vouchers", label: "Khuyến mãi", icon: <GiftOutlined /> },
 ];
 export function Login() {
@@ -219,6 +222,12 @@ function ProtectedLayout() {
     (n) =>
       location.pathname === n.key || location.pathname.startsWith(`${n.key}/`),
   );
+  const subLabel = (() => {
+    if (!selected || location.pathname === selected.key) return null;
+    if (location.pathname === "/driver-documents/verification") return "Xác minh eKYC";
+    const tail = location.pathname.slice(selected.key.length + 1);
+    return tail ? `#${tail}` : null;
+  })();
   const menu = (
     <>
       <Link
@@ -270,9 +279,17 @@ function ProtectedLayout() {
               aria-label="Mở điều hướng"
               onClick={() => setOpen(true)}
             />
-            <span className="section-name">
-              {selected?.label || "Quản trị"}
-            </span>
+            {subLabel && selected ? (
+              <nav className="topbar-breadcrumb" aria-label="Đường dẫn hiện tại">
+                <Link to={selected.key}>{selected.label}</Link>
+                <RightOutlined aria-hidden style={{ fontSize: 10 }} />
+                <strong>{subLabel}</strong>
+              </nav>
+            ) : (
+              <span className="section-name">
+                {selected?.label || "Quản trị"}
+              </span>
+            )}
           </Space>
           <Space className="account-actions">
             <ThemeSwitcher />
@@ -336,12 +353,16 @@ export function AdminApp() {
         <Route
           path="*"
           element={
-            <div>
-              <Typography.Title level={2}>
-                Không tìm thấy trang
-              </Typography.Title>
-              <Link to="/dashboard">Về trang tổng quan</Link>
-            </div>
+            <Result
+              status="404"
+              title="Không tìm thấy trang"
+              subTitle="Đường dẫn bạn truy cập không tồn tại hoặc đã thay đổi."
+              extra={
+                <Link to="/dashboard">
+                  <Button type="primary">Về trang tổng quan</Button>
+                </Link>
+              }
+            />
           }
         />
       </Route>
