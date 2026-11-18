@@ -6,6 +6,8 @@ coverage/
 !.env.example
 !.env.production
 .qa/
+.impeccable/config.local.json
+.impeccable/hook.cache.json
 .test-results.json
 *.tsbuildinfo
 *.log

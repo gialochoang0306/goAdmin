@@ -4,7 +4,7 @@
 
 ## Platform
 
-Web desktop & responsive admin dashboard (React 19, TypeScript, Vite, Ant Design 6, React Query v5, Firebase Auth, pnpm).
+web
 
 ## Users
 
@@ -30,6 +30,7 @@ GoAdmin cùng hệ sinh thái **PtitGo** với hai ứng dụng di động khác
 
 ## Operating Context
 
+- **Công nghệ nền tảng:** React 19, TypeScript, Vite, Ant Design 6, React Query v5, Firebase Authentication, pnpm (desktop & responsive web admin dashboard).
 - **Môi trường sử dụng:** Văn phòng điều hành trên màn hình desktop (`1280×720`, `1440×900`, zoom trình duyệt `200%`), kiêm hỗ trợ kiểm tra nhanh trên tablet/mobile (`375×812`) qua sidebar Drawer và card danh sách đáp ứng (`DataTable` responsive cards).
 - **Ngôn ngữ & định dạng:** Tiếng Việt làm ngôn ngữ giao diện (`antd/locale/vi_VN`), đơn vị tiền tệ Việt Nam Đồng (`đ`, định dạng `vi-VN`), ngày giờ theo múi giờ Việt Nam (`Asia/Ho_Chi_Minh`).
 - **Tích hợp & ranh giới kỹ thuật:** Xác thực admin qua Firebase Authentication + xác minh quyền admin qua `GET /api/admin/auth/me`; làm mới dashboard định kỳ 30 giây; hỗ trợ chế độ Sáng / Tối / Theo hệ thống lưu trữ đồng bộ trước khi render (`public/theme-init.js`).
