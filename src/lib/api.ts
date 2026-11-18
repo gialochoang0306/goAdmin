@@ -202,6 +202,8 @@ export const api = {
     request<MessagePage>(`${admin}/rides/${id}/chat`, {
       params: { size: 30, ...params },
     }),
+  assignableDriverIds: (id: number, driverIds: number[]) =>
+    request<number[]>(`${admin}/rides/${id}/assignable-drivers`, { method: "POST", body: driverIds }),
   assign: (id: number, driverId: number) =>
     request(`${admin}/rides/${id}/assign`, {
       method: "POST",
@@ -294,4 +296,67 @@ export async function mapConcurrent<T, R>(
     }),
   );
   return result;
+}
+
+const verificationBase = (() => {
+  const configured = import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_EKYC_BASE_URL || "http://localhost:8080";
+  try {
+    const url = new URL(configured);
+    const local = ["localhost", "127.0.0.1", "[::1]"].includes(url.hostname)
+      || /^(10\.\d{1,3}|192\.168|172\.(1[6-9]|2\d|3[01]))\.\d{1,3}\.\d{1,3}$/.test(url.hostname);
+    if (url.pathname === "/" && !url.username && !url.password && !url.search && !url.hash
+      && (url.protocol === "https:" || (import.meta.env.DEV && local && url.protocol === "http:")))
+      return url.origin;
+  } catch { /* Unconfigured environments keep the feature off. */ }
+  return null;
+})();
+
+export const verificationEnabled = Boolean(verificationBase);
+export async function verificationFetch<T = unknown>(path: string, options: {
+  signal?: AbortSignal; body?: unknown; binary?: boolean; timeoutMs?: number;
+} = {}): Promise<T> {
+  if (!verificationBase) throw new ApiError("Chưa cấu hình máy chủ xác minh.");
+  const timeout = AbortSignal.timeout(options.timeoutMs ?? 20_000);
+  const signal = options.signal ? AbortSignal.any([options.signal, timeout]) : timeout;
+  const send = async (refresh: boolean) => {
+    let token: string | null;
+    try { token = await tokenProvider(refresh); }
+    catch { throw new ApiError("Phiên đăng nhập đã hết hạn.", "UNAUTHORIZED", 401); }
+    if (!token) throw new ApiError("Vui lòng đăng nhập.", "UNAUTHORIZED", 401);
+    return fetch(verificationBase + "/ekyc/driver-verification/v1/admin/" + path, {
+      signal, cache: "no-store", credentials: "omit", redirect: "error",
+      method: options.body === undefined ? "GET" : "POST",
+      headers: {
+        Authorization: "Bearer " + token,
+        "X-Role": "ADMIN",
+        ...(options.body === undefined ? {} : { "Content-Type": "application/json" }),
+      },
+      body: options.body === undefined ? undefined : JSON.stringify(options.body),
+    });
+  };
+  let response: Response;
+  try {
+    response = await send(false);
+    if (response.status === 401 && options.body === undefined) response = await send(true);
+  } catch (error) {
+    if (error instanceof ApiError) throw error;
+    throw new ApiError("Không nhận được phản hồi. Hãy làm mới hồ sơ trước khi thử lại.");
+  }
+  const mime = response.headers.get("content-type") ?? "";
+  if (options.binary && response.ok && /^image\/(jpeg|png|webp)$/.test(mime)) return await response.blob() as T;
+  const result = await response.json().catch(() => null);
+  if (!response.ok || result?.success !== true || options.binary) {
+    const messages: Record<string, string> = {
+      FORBIDDEN: "Tài khoản chưa có quyền duyệt hồ sơ eKYC.",
+      UNAUTHORIZED: "Phiên đăng nhập đã hết hạn. Hãy đăng nhập lại.",
+      REVISION_CONFLICT: "Hồ sơ đã thay đổi. Hãy làm mới và kiểm tra lại bản hiện tại.",
+      INVALID_TRANSITION: "Hồ sơ đã chuyển trạng thái. Hãy làm mới trước khi duyệt.",
+      DOCUMENT_REMOVED: "Ảnh đã hết thời hạn lưu.",
+      ENGINE_BUSY: "Máy chủ đang bận. Hãy thử lại sau.",
+      ENGINE_TIMEOUT: "Lượt đối chiếu quá thời gian. Bạn vẫn có thể duyệt thủ công.",
+    };
+    throw new ApiError(messages[result?.errorCode] ?? "Không thực hiện được yêu cầu eKYC.",
+      result?.errorCode, response.status);
+  }
+  return result.data as T;
 }

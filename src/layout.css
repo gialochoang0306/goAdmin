@@ -394,11 +394,41 @@ input {
 .document-card {
   border: 1px solid var(--border);
   border-radius: var(--md-sys-shape-corner-md);
-  padding: 16px;
+  padding: 18px;
   display: flex;
-  gap: 16px;
-  align-items: flex-start;
-  margin-bottom: 12px;
+  gap: 20px;
+  align-items: center;
+  margin-bottom: 14px;
+}
+.document-photo-frame {
+  flex-shrink: 0;
+  width: 188px;
+  height: 132px;
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--surface);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.document-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.document-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text);
+}
+.document-number {
+  font-size: 16px;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+  margin: 6px 0;
 }
 .document-info {
   flex: 1;
