@@ -1,3 +1,4 @@
+import { ImageViewer } from "../components/ImageViewer";
 import { useEffect, useRef, useState } from "react";
 import { ArrowLeftOutlined, PictureOutlined } from "@ant-design/icons";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -6,7 +7,6 @@ import {
   Button,
   Descriptions,
   Empty,
-  Image,
   Input,
   Select,
   Tag,
@@ -243,7 +243,7 @@ export function TicketDetailPage() {
                     return (
                       <div key={message.id} className={`ticket-bubble ${message.senderRole === "ADMIN" ? "admin" : "user"}`}>
                         {msgImage ? (
-                          <Image
+                          <ImageViewer
                             src={msgImage}
                             alt="Ảnh trong hội thoại hỗ trợ"
                             width={220}
@@ -290,7 +290,7 @@ export function TicketDetailPage() {
                 </div>
                 {imagePreview ? (
                   <div className="ticket-image-preview">
-                    <Image src={imagePreview} alt="Ảnh sẽ gửi" width={72} />
+                    <ImageViewer src={imagePreview} alt="Ảnh sẽ gửi" width={72} />
                     <Button size="small" onClick={() => chooseImage(null)}>Xóa ảnh</Button>
                   </div>
                 ) : null}

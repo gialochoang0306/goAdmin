@@ -1,12 +1,14 @@
+import { ImageViewer } from "../components/ImageViewer";
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Alert, Button, Checkbox, Descriptions, Drawer, Empty, Image, Input, Select, Space, Table, Tag, Typography } from "antd";
+import { Alert, Button, Checkbox, ConfigProvider, Descriptions, Drawer, Empty, Input, Select, Space, Table, Tag, Typography } from "antd";
 import { Link } from "react-router-dom";
 import { DataTable, Heading, Loading, Panel, QueryError, Refresh } from "../components/common";
 import { FilterField } from "../components/FilterField";
 import { date } from "../lib/format";
 import { errorMessage, request, verificationEnabled, verificationFetch } from "../lib/api";
 import { LicensePolicyPreview, type ApprovalCapabilityReview } from "./LicensePolicyPreview";
+import { useVerificationReviewDraft } from "./useVerificationReviewDraft";
 import { FaceComparisonPanel } from "./FaceComparisonPanel";
 import { useFilters } from "../lib/hooks";
 import { captures, fieldComparison, fields, states, warningText, type QueueItem, type QueueResponse, type ReviewDetail, type UnsubmittedApplication, type VerificationWarning, verificationQueueKey, verificationReviewPath } from "./verificationReviewModel";
@@ -38,30 +40,38 @@ function PrivateImage({ id, slot, revision }: { id: string; slot: string; revisi
       if (objectUrl) URL.revokeObjectURL(objectUrl);
     };
   }, [id, slot, revision, requested]);
-  if (url) return <Image width={200} alt={captures[slot]} src={url} />;
+  if (url) return <ImageViewer width={200} alt={captures[slot]} src={url} />;
   return <Space orientation="vertical">
     <Button loading={requested && !error} onClick={() => setRequested(true)} disabled={!!error}>Mở ảnh</Button>
     {error && <Alert type="warning" title={error} />}
   </Space>;
 }
 
-function Review({ detail, snapshot, setSnapshot, onChanged, onPendingChange }: {
+function Review({ detail, snapshot, setSnapshot, onChanged, onPendingChange, refreshing }: {
   detail: ReviewDetail; snapshot?: number; setSnapshot: (value?: number) => void;
+  refreshing: boolean;
   onChanged: () => void;
   onPendingChange: (pending: boolean) => void;
 }) {
-  const [action, setAction] = useState<Decision>();
-  const [capabilityReview, setCapabilityReview] = useState<ApprovalCapabilityReview>();
+  const reviewClient = useQueryClient();
+  const draftScope = [detail.id, detail.submissionRevision, detail.document.revision] as const;
+  const [draft, updateDraft] = useVerificationReviewDraft<{
+    action?: Decision; capabilityReview?: ApprovalCapabilityReview;
+    reason: string; captureTargets: string[]; fieldTargets: string[]; reviewed: boolean;
+  }>([...draftScope, "decision"], { reason: "", captureTargets: [], fieldTargets: [], reviewed: false });
+  const { action, capabilityReview, reason, captureTargets, fieldTargets, reviewed } = draft;
+  const setAction = (value?: Decision) => updateDraft({ action: value });
+  const setCapabilityReview = (value?: ApprovalCapabilityReview) => updateDraft({ capabilityReview: value });
   const capabilities = useQuery({
     queryKey: ["admin", "capabilityPreferences", detail.id, detail.revision],
     enabled: detail.status === "APPROVED" && detail.document.revision === detail.submissionRevision,
     queryFn: () => request<{ enabled: boolean; groups: { groupId: string; label: string; approved: boolean; enabled: boolean; effective: boolean }[] }>(
       "/api/admin/vehicle-catalog/applications/" + detail.id + "/capabilities"),
   });
-  const [reason, setReason] = useState("");
-  const [captureTargets, setCaptureTargets] = useState<string[]>([]);
-  const [fieldTargets, setFieldTargets] = useState<string[]>([]);
-  const [reviewed, setReviewed] = useState(false);
+
+
+
+
   const [message, setMessage] = useState("");
   const [liveFaceWarnings, setLiveFaceWarnings] = useState<VerificationWarning[]>();
   const doc = detail.document;
@@ -78,7 +88,16 @@ function Review({ detail, snapshot, setSnapshot, onChanged, onPendingChange }: {
     NEEDS_MORE_INFO: "Yêu cầu bổ sung", REVOKED: "Thu hồi xác minh" };
   const decision = useMutation({
     mutationFn: (body: object) => verificationFetch("applications/" + detail.id + "/decision", { body }),
-    onSuccess: () => onChanged(),
+    onSuccess: (_, body) => {
+      setAction(undefined);
+      updateDraft({ reviewed: false });
+      setMessage("");
+      setLiveFaceWarnings(undefined);
+      if ("status" in body && body.status !== "UNDER_REVIEW") {
+        reviewClient.removeQueries({ queryKey: ["verificationReviewDraft", ...draftScope] });
+      }
+      onChanged();
+    },
   });
   useEffect(() => {
     onPendingChange(decision.isPending);
@@ -179,7 +198,7 @@ function Review({ detail, snapshot, setSnapshot, onChanged, onPendingChange }: {
         </Space>
       </details>
     )}
-    {current && ["SUBMITTED", "UNDER_REVIEW"].includes(detail.status) ? <LicensePolicyPreview confirmed={doc.confirmed} onReviewChange={setCapabilityReview} /> : null}
+    {current && ["SUBMITTED", "UNDER_REVIEW"].includes(detail.status) ? <LicensePolicyPreview draftScope={draftScope} confirmed={doc.confirmed} onReviewChange={setCapabilityReview} /> : null}
     {capabilities.isError && <Alert type="warning" title="Chưa tải được tùy chọn nhận chuyến của tài xế." />}
     {capabilities.data?.enabled && <section aria-label="Tùy chọn nhận chuyến của tài xế">
       <h3>Tùy chọn nhận chuyến của tài xế</h3>
@@ -210,7 +229,7 @@ function Review({ detail, snapshot, setSnapshot, onChanged, onPendingChange }: {
       <h4>Quyết định xét duyệt</h4>
       <form onSubmit={event => {
       event.preventDefault();
-      if (!action || !available.includes(action) || decision.isPending) return;
+      if (refreshing || !action || !available.includes(action) || decision.isPending) return;
       if (!reviewed) { setMessage("Xác nhận đã xem bản nộp hiện tại."); return; }
       if (needsReason && !reason.trim()) { setMessage("Nhập lý do cụ thể."); return; }
       if (action === "NEEDS_MORE_INFO" && !captureTargets.length && !fieldTargets.length) {
@@ -236,18 +255,18 @@ function Review({ detail, snapshot, setSnapshot, onChanged, onPendingChange }: {
         {action === "NEEDS_MORE_INFO" && <>
           <FilterField label="Ảnh cần bổ sung">
             <Select mode="multiple" aria-label="Ảnh cần bổ sung" placeholder="Ảnh cần bổ sung" style={{ width: "100%" }}
-              options={Object.entries(captures).map(([value, label]) => ({ value, label }))} onChange={setCaptureTargets} />
+              options={Object.entries(captures).map(([value, label]) => ({ value, label }))} value={captureTargets} onChange={value => updateDraft({ captureTargets: value })} />
           </FilterField>
           <FilterField label="Trường cần sửa">
             <Select mode="multiple" aria-label="Trường cần sửa" placeholder="Trường cần sửa" style={{ width: "100%" }}
-              options={Object.entries(fields).map(([value, label]) => ({ value, label }))} onChange={setFieldTargets} />
+              options={Object.entries(fields).map(([value, label]) => ({ value, label }))} value={fieldTargets} onChange={value => updateDraft({ fieldTargets: value })} />
           </FilterField>
         </>}
         {needsReason && <FilterField label="Lý do">
           <Input.TextArea aria-label="Lý do" placeholder="Lý do cụ thể gửi tài xế"
-            maxLength={500} showCount value={reason} onChange={event => setReason(event.target.value)} />
+            maxLength={500} showCount value={reason} onChange={event => updateDraft({ reason: event.target.value })} />
         </FilterField>}
-        <Checkbox checked={reviewed} onChange={event => setReviewed(event.target.checked)}>Tôi đã xem bản nộp hiện tại</Checkbox>
+        <Checkbox checked={reviewed} onChange={event => updateDraft({ reviewed: event.target.checked })}>Tôi đã xem bản nộp hiện tại</Checkbox>
         {(message || decision.error) && <Alert type="error" title={message || errorMessage(decision.error)} />}
         <Button type="primary" danger={action === "REJECTED" || action === "REVOKED"} htmlType="submit" loading={decision.isPending} disabled={!action || !available.includes(action)}>Lưu quyết định</Button>
       </Space>
@@ -336,14 +355,19 @@ export default function VerificationReview() {
       {id && detail.data && !detail.isFetching && !detail.error && !("document" in detail.data) && (
         <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="Tài xế chưa nộp hồ sơ xác minh." />
       )}
-      {id && detail.data && !detail.isFetching && !detail.error && "document" in detail.data && <Review
-        key={id + ":" + detail.data.revision + ":" + detail.data.document.revision}
-        detail={detail.data} snapshot={snapshot} setSnapshot={revision => setHistorical(revision ? { id, revision } : undefined)} onPendingChange={setDecisionPending} onChanged={() => {
-          setNotice("Đã lưu quyết định.");
-          void client.invalidateQueries({ queryKey: verificationQueueKey });
-          void client.invalidateQueries({ queryKey: ["admin", "driver"] });
-          void client.invalidateQueries({ queryKey: ["admin", "drivers"] });
-        }} />}
+      {id && detail.data && !detail.error && "document" in detail.data && (
+        <ConfigProvider componentDisabled={detail.isFetching || decisionPending}>
+          <Review
+          key={id + ":" + detail.data.submissionRevision + ":" + detail.data.document.revision}
+          refreshing={detail.isFetching}
+          detail={detail.data} snapshot={snapshot} setSnapshot={revision => setHistorical(revision ? { id, revision } : undefined)} onPendingChange={setDecisionPending} onChanged={() => {
+            setNotice("Đã lưu quyết định.");
+            void client.invalidateQueries({ queryKey: verificationQueueKey });
+            void client.invalidateQueries({ queryKey: ["admin", "driver"] });
+            void client.invalidateQueries({ queryKey: ["admin", "drivers"] });
+          }} />
+        </ConfigProvider>
+      )}
     </Drawer>
   </>;
 }
