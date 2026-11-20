@@ -183,3 +183,23 @@ it("validates night pricing and exact cancellation boundaries", () => {
   expect(date("2026-10-24")).toBe("24/10/2026");
   expect(date("2026-10-24T03:00:00Z")).toContain("10:00");
 });
+
+describe("verification decision error contracts", () => {
+  it.each([
+    [400, { success: false, error: { code: "BAD_REQUEST" } }, "BAD_REQUEST", "Dữ liệu xét duyệt không đúng định dạng"],
+    [400, { success: false, errorCode: "INVALID_REQUEST" }, "INVALID_REQUEST", "Thông tin xét duyệt chưa hợp lệ"],
+    [409, { success: false, errorCode: "VERIFICATION_ACTIVATION_BLOCKED" }, "VERIFICATION_ACTIVATION_BLOCKED", "Hồ sơ có cảnh báo chặn kích hoạt"],
+  ])("surfaces the validation reason for HTTP %i without retrying the decision", async (status, payload, code, message) => {
+    configureAuth(async () => "synthetic-token", () => {});
+    const fetcher = vi.fn().mockResolvedValue(new Response(JSON.stringify(payload), {
+      status: status as number, headers: { "Content-Type": "application/json" },
+    }));
+    vi.stubGlobal("fetch", fetcher);
+    await expect(verificationFetch("applications/synthetic-id/decision", {
+      body: { revision: 6, status: "APPROVED" },
+    })).rejects.toMatchObject({
+      code, status, message: expect.stringContaining(message as string),
+    });
+    expect(fetcher).toHaveBeenCalledTimes(1);
+  });
+});

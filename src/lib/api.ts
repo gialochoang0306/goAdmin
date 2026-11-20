@@ -350,7 +350,11 @@ export async function verificationFetch<T = unknown>(path: string, options: {
   if (options.binary && response.ok && /^image\/(jpeg|png|webp)$/.test(mime)) return await response.blob() as T;
   const result = await response.json().catch(() => null);
   if (!response.ok || result?.success !== true || options.binary) {
+    const code = result?.errorCode ?? result?.error?.code;
     const messages: Record<string, string> = {
+      BAD_REQUEST: "Dữ liệu xét duyệt không đúng định dạng. Hãy làm mới hồ sơ và kiểm tra phiên bản web admin/backend.",
+      INVALID_REQUEST: "Thông tin xét duyệt chưa hợp lệ. Kiểm tra quyết định, lý do và các mục yêu cầu bổ sung.",
+      VERIFICATION_ACTIVATION_BLOCKED: "Hồ sơ có cảnh báo chặn kích hoạt. Hãy kiểm tra cảnh báo và yêu cầu tài xế bổ sung trước khi phê duyệt.",
       FORBIDDEN: "Tài khoản chưa có quyền duyệt hồ sơ eKYC.",
       UNAUTHORIZED: "Phiên đăng nhập đã hết hạn. Hãy đăng nhập lại.",
       REVISION_CONFLICT: "Hồ sơ đã thay đổi. Hãy làm mới và kiểm tra lại bản hiện tại.",
@@ -359,8 +363,8 @@ export async function verificationFetch<T = unknown>(path: string, options: {
       ENGINE_BUSY: "Máy chủ đang bận. Hãy thử lại sau.",
       ENGINE_TIMEOUT: "Lượt đối chiếu quá thời gian. Bạn vẫn có thể duyệt thủ công.",
     };
-    throw new ApiError(messages[result?.errorCode] ?? "Không thực hiện được yêu cầu eKYC.",
-      result?.errorCode, response.status);
+    throw new ApiError(messages[code] ?? "Không thực hiện được yêu cầu eKYC.",
+      code, response.status);
   }
   return result.data as T;
 }
