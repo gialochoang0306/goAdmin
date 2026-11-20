@@ -49,8 +49,6 @@
 :root .ant-card-head-title { flex: 1 1 160px; min-width: 0; white-space: normal; overflow-wrap: anywhere; }
 :root .ant-card-extra { flex: 0 1 auto; display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-inline-start: auto; }
 :root .ant-card-head:has(.ant-card-extra) { padding-block: 12px; }
-:root .review-checklist li { align-items: center; gap: 12px; }
-:root .review-checklist .ant-tag { flex-shrink: 0; }
 :root .ant-modal-footer, :root .ant-popconfirm-buttons { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 8px; }
 :root .ant-modal-footer > .ant-btn + .ant-btn, :root .ant-popconfirm-buttons > .ant-btn + .ant-btn { margin-inline-start: 0; }
 :root .ant-alert:has(.ant-alert-action) { align-items: center; }

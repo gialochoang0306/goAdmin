@@ -133,7 +133,7 @@ export function Photo({
     <Typography.Text type="secondary">Không có ảnh</Typography.Text>
   );
 }
-export function DataTable<T extends { id: number }>({
+export function DataTable<T extends { id: number | string }>({
   data,
   columns,
   loading,

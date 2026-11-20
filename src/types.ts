@@ -123,19 +123,6 @@ export type Driver = {
   incomeBalance: number;
   createdAt: string;
 };
-export type DriverDocument = {
-  id: number;
-  driverId: number;
-  documentType: string;
-  documentNumber: string | null;
-  secureUrl: string;
-  verificationStatus: string;
-  rejectionReason: string | null;
-  expiresAt: string | null;
-  isCurrent: boolean;
-  reviewedAt: string | null;
-  createdAt: string;
-};
 export type Skill = {
   id: number;
   vehicleType: string;
@@ -143,16 +130,14 @@ export type Skill = {
   licenseClass: string | null;
   verified: boolean;
 };
+export type DriverVerificationSummary = {
+  applicationId: string;
+  status: string;
+};
 export type DriverDetail = {
   driver: Driver;
-  documents: DriverDocument[];
   skills: Skill[];
-  requiredDocumentTypes?: string[];
-};
-export type DocumentQueue = {
-  document: DriverDocument;
-  driverName: string | null;
-  driverPhone: string;
+  verification: DriverVerificationSummary | null;
 };
 export type Customer = {
   id: number;

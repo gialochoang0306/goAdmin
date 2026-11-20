@@ -51,6 +51,7 @@ export const ride: RideDetail = {
   ],
   handoverReports: [],
 };
+export const verificationApplicationId = "a4420000-0000-4000-8000-000000000041";
 export const driver: DriverDetail = {
   driver: {
     id: 41,
@@ -69,21 +70,7 @@ export const driver: DriverDetail = {
     incomeBalance: 300000,
     createdAt: "2026-10-01T02:00:00Z",
   },
-  documents: [
-    {
-      id: 51,
-      driverId: 41,
-      documentType: "CCCD",
-      documentNumber: "123456789",
-      secureUrl: "https://example.com/id.jpg",
-      verificationStatus: "PENDING",
-      rejectionReason: null,
-      expiresAt: null,
-      isCurrent: true,
-      reviewedAt: null,
-      createdAt: "2026-10-24T03:00:00Z",
-    },
-  ],
+  verification: { applicationId: verificationApplicationId, status: "APPROVED" },
   skills: [
     {
       id: 61,

@@ -7,7 +7,6 @@ import type {
   RideDetail,
   Driver,
   DriverDetail,
-  DocumentQueue,
   Customer,
   CustomerDetail,
   WalletTransaction,
@@ -239,23 +238,6 @@ export const api = {
   drivers: (params: Params = {}) =>
     request<Page<Driver>>(`${admin}/drivers`, { params }),
   driver: (id: number) => request<DriverDetail>(`${admin}/drivers/${id}`),
-  documents: (params: Params = {}) =>
-    request<Page<DocumentQueue>>(`${admin}/driver-documents`, { params }),
-  review: (id: number, status: string, rejectionReason?: string) =>
-    request(`${admin}/driver-documents/${id}/review`, {
-      method: "PUT",
-      body: { status, rejection_reason: rejectionReason },
-    }),
-  verifySkill: (id: number, verified: boolean) =>
-    request(`${admin}/driver-skills/${id}/verify`, {
-      method: "PUT",
-      body: { verified },
-    }),
-  verifyDriver: (id: number, status: string, rejectionReason?: string) =>
-    request(`${admin}/drivers/${id}/verification-status`, {
-      method: "PUT",
-      body: { status, rejection_reason: rejectionReason },
-    }),
   offline: (id: number) =>
     request(`${admin}/drivers/${id}/force-offline`, { method: "POST" }),
   customers: (params: Params = {}) =>
@@ -321,7 +303,7 @@ export async function mapConcurrent<T, R>(
 }
 
 const verificationBase = (() => {
-  const configured = import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_EKYC_BASE_URL || "http://localhost:8080";
+  const configured = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080";
   try {
     const url = new URL(configured);
     const local = ["localhost", "127.0.0.1", "[::1]"].includes(url.hostname)

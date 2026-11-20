@@ -4,6 +4,7 @@ import {
   ApiError,
   configureAuth,
   mapConcurrent,
+  verificationFetch,
   normalize,
   request,
 } from "../lib/api";
@@ -97,10 +98,11 @@ describe("API authentication and contracts", () => {
     expect(JSON.parse(fetcher.mock.calls.at(-1)![1].body)).toEqual({
       driver_id: 41,
     });
-    await api.review(51, "REJECTED", "Ảnh mờ");
+    await verificationFetch("applications/synthetic-id/decision", { body: { revision: 3, status: "REJECTED", reason: "Ảnh mờ" } });
     expect(JSON.parse(fetcher.mock.calls.at(-1)![1].body)).toEqual({
+      revision: 3,
       status: "REJECTED",
-      rejection_reason: "Ảnh mờ",
+      reason: "Ảnh mờ",
     });
     await api.customerStatus(21, "BANNED", "Vi phạm");
     expect(JSON.parse(fetcher.mock.calls.at(-1)![1].body)).toEqual({
