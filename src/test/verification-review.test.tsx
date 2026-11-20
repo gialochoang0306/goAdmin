@@ -1,6 +1,6 @@
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { focusManager, QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MemoryRouter } from "react-router-dom";
 import { ConfigProvider } from "antd";
 import { beforeEach, expect, it, vi } from "vitest";
@@ -32,8 +32,7 @@ beforeEach(() => {
   });
 });
 
-function mount() {
-  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+function mount(client = new QueryClient({ defaultOptions: { queries: { retry: false } } })) {
   render(<ConfigProvider theme={{ token: { motion: false } }}><MemoryRouter>
     <QueryClientProvider client={client}><VerificationReview /></QueryClientProvider>
   </MemoryRouter></ConfigProvider>);
@@ -323,4 +322,113 @@ it("keeps the eKYC drawer open and sends one decision while a review is pending"
     resolveDecision({ ...detail, status: "REJECTED", revision: 6 });
   }
   expect(await screen.findByText("Đã lưu quyết định.")).toBeVisible();
+});
+
+it("retains license evidence and selected groups when starting review, but resets for a new submission", async () => {
+  let current: ReviewDetail = { ...detail, status: "SUBMITTED" };
+  let finishReload: (() => void) | undefined;
+  let waitForReload = false;
+  vi.mocked(verificationFetch).mockImplementation(async path => {
+    if (path.startsWith("review-queue")) return { items: [current], hasMore: false, totalElements: 1 };
+    if (path.endsWith("/decision")) {
+      current = { ...current, status: "UNDER_REVIEW", revision: current.revision + 1 };
+      waitForReload = current.revision === 6;
+      return current;
+    }
+    if (waitForReload) {
+      waitForReload = false;
+      await new Promise<void>(resolve => { finishReload = resolve; });
+    }
+    return current;
+  });
+  vi.mocked(request).mockResolvedValue([{
+    groupId: "moto-small", label: "Xe máy", result: {
+      status: "ELIGIBLE", reasonCodes: [], policyVersion: "SYNTHETIC_V1",
+    },
+  }]);
+  const user = mount();
+  await user.click(await screen.findByRole("button", { name: id }));
+  fireEvent.change(screen.getByLabelText("Ngày cấp GPLX"), { target: { value: "2025-05-01" } });
+  await user.click(screen.getByLabelText("Hạn chế GPLX"));
+  await user.click(screen.getByText("Đã đối chiếu, không có hạn chế", { selector: ".ant-select-item-option-content" }));
+  await user.click(screen.getByRole("button", { name: "Xem nhóm xe" }));
+  await user.click(await screen.findByRole("checkbox", { name: "Duyệt Xe máy" }));
+  await user.click(screen.getByRole("combobox", { name: "Quyết định" }));
+  await user.click(screen.getByText("Bắt đầu xét duyệt", { selector: ".ant-select-item-option-content" }));
+  await user.click(screen.getByRole("checkbox", { name: "Tôi đã xem bản nộp hiện tại" }));
+  await user.click(screen.getByRole("button", { name: "Lưu quyết định" }));
+  await waitFor(() => expect(finishReload).toBeTypeOf("function"));
+  expect(screen.getByLabelText("Ngày cấp GPLX")).toHaveValue("2025-05-01");
+  expect(screen.getByLabelText("Ngày cấp GPLX")).toBeDisabled();
+  finishReload!();
+  await waitFor(() => expect(screen.getByLabelText("Ngày cấp GPLX")).toBeEnabled());
+  expect(screen.getByLabelText("Ngày cấp GPLX")).toHaveValue("2025-05-01");
+  expect(screen.getByRole("checkbox", { name: "Duyệt Xe máy" })).toBeChecked();
+  expect(screen.getByRole("checkbox", { name: "Tôi đã xem bản nộp hiện tại" })).not.toBeChecked();
+  await user.click(screen.getByRole("combobox", { name: "Quyết định" }));
+  await user.click(screen.getByText("Phê duyệt", { selector: ".ant-select-item-option-content" }));
+  await user.click(screen.getByRole("checkbox", { name: "Tôi đã xem bản nộp hiện tại" }));
+  await user.click(screen.getByRole("button", { name: "Lưu quyết định" }));
+  await waitFor(() => expect(verificationFetch).toHaveBeenCalledWith("applications/" + id + "/decision", {
+    body: expect.objectContaining({
+      revision: 6, status: "APPROVED", capabilityReview: {
+        policyVersion: "SYNTHETIC_V1", issuedOn: "2025-05-01", restriction: "VERIFIED_NONE",
+        restrictionCode: null, selectedGroupIds: ["moto-small"],
+      },
+    }),
+  }));
+  // A different submitted document must require a fresh license review.
+  current = {
+    ...current, revision: 8, submissionRevision: 7,
+    document: { ...current.document, revision: 7 },
+    submissions: [...current.submissions, { revision: 7, submittedAt: "2026-01-03T03:00:00Z" }],
+  };
+  await user.click(screen.getByRole("button", { name: "Làm mới" }));
+  await waitFor(() => expect(screen.getByLabelText("Ngày cấp GPLX")).toHaveValue(""));
+  expect(screen.queryByRole("checkbox", { name: "Duyệt Xe máy" })).not.toBeInTheDocument();
+});
+
+it("restores the review draft after leaving the page and refocusing, and clears it with the admin session", async () => {
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  vi.mocked(request).mockResolvedValue([{
+    groupId: "moto-small", label: "Xe máy", result: {
+      status: "ELIGIBLE", reasonCodes: [], policyVersion: "SYNTHETIC_V1",
+    },
+  }]);
+  let user = mount(client);
+  await user.click(await screen.findByRole("button", { name: id }));
+  fireEvent.change(screen.getByLabelText("Ngày cấp GPLX"), { target: { value: "2025-05-01" } });
+  await user.click(screen.getByLabelText("Hạn chế GPLX"));
+  await user.click(screen.getByText("Đã đối chiếu, không có hạn chế", { selector: ".ant-select-item-option-content" }));
+  await user.click(screen.getByRole("button", { name: "Xem nhóm xe" }));
+  await user.click(await screen.findByRole("checkbox", { name: "Duyệt Xe máy" }));
+  await user.click(screen.getByRole("combobox", { name: "Quyết định" }));
+  await user.click(screen.getByText("Từ chối", { selector: ".ant-select-item-option-content" }));
+  await user.type(screen.getByRole("textbox", { name: "Lý do" }), "Cần đối chiếu thêm");
+
+  cleanup();
+  user = mount(client);
+  await user.click(await screen.findByRole("button", { name: id }));
+  await waitFor(() => expect(screen.getByLabelText("Ngày cấp GPLX")).toHaveValue("2025-05-01"));
+  expect(screen.getByRole("checkbox", { name: "Duyệt Xe máy" })).toBeChecked();
+  expect(screen.getByRole("textbox", { name: "Lý do" })).toHaveValue("Cần đối chiếu thêm");
+  expect(request).toHaveBeenCalledTimes(1);
+
+  const callsBeforeFocus = vi.mocked(verificationFetch).mock.calls.length;
+  focusManager.setFocused(false);
+  focusManager.setFocused(true);
+  await waitFor(() => expect(vi.mocked(verificationFetch).mock.calls.length).toBeGreaterThan(callsBeforeFocus));
+  await waitFor(() => expect(screen.getByLabelText("Ngày cấp GPLX")).toBeEnabled());
+  expect(screen.getByLabelText("Ngày cấp GPLX")).toHaveValue("2025-05-01");
+  expect(screen.getByRole("checkbox", { name: "Duyệt Xe máy" })).toBeChecked();
+  expect(screen.getByRole("textbox", { name: "Lý do" })).toHaveValue("Cần đối chiếu thêm");
+  focusManager.setFocused(undefined);
+
+  cleanup();
+  client.clear();
+  user = mount(client);
+  await user.click(await screen.findByRole("button", { name: id }));
+  expect(await screen.findByLabelText("Ngày cấp GPLX")).toHaveValue("");
+  expect(screen.queryByRole("checkbox", { name: "Duyệt Xe máy" })).not.toBeInTheDocument();
+  expect(screen.queryByRole("textbox", { name: "Lý do" })).not.toBeInTheDocument();
 });

@@ -1,6 +1,6 @@
 import { Alert, Button, Checkbox, Input, Select, Tag, Typography } from "antd";
 import { useMutation } from "@tanstack/react-query";
-import { useState } from "react";
+import { useVerificationReviewDraft } from "./useVerificationReviewDraft";
 import { errorMessage, request } from "../lib/api";
 import { FilterField } from "../components/FilterField";
 
@@ -40,13 +40,15 @@ const explanations: Record<string, string> = {
   PASSENGER_CAR_CLASS_REQUIRED: "Cần hạng GPLX phù hợp để lái ô tô chở người.",
 };
 
-export function LicensePolicyPreview({ confirmed, onReviewChange }: {
+export function LicensePolicyPreview({ confirmed, onReviewChange, draftScope }: {
+  draftScope: readonly (string | number)[];
   confirmed: Record<string, unknown>;
   onReviewChange: (review: ApprovalCapabilityReview | undefined) => void;
 }) {
-  const [date, setDate] = useState("");
-  const [restriction, setRestriction] = useState("UNKNOWN");
-  const [selected, setSelected] = useState<string[]>([]);
+  const [draft, updateDraft] = useVerificationReviewDraft<{
+    date: string; restriction: string; selected: string[]; results?: Result[];
+  }>([...draftScope, "license"], { date: "", restriction: "UNKNOWN", selected: [] });
+  const { date, restriction, selected, results } = draft;
   const reviewedRestriction = restriction.includes(".") ? "UNKNOWN" : restriction;
   const restrictionCode = restriction.includes(".") ? restriction : null;
   const grades = Array.isArray(confirmed.gplx_classes)
@@ -63,8 +65,13 @@ export function LicensePolicyPreview({ confirmed, onReviewChange }: {
         restriction: reviewedRestriction, restrictionCode,
       },
     }),
+    onSuccess: results => updateDraft({ results }),
   });
-  const invalidate = () => { setSelected([]); preview.reset(); onReviewChange(undefined); };
+  const invalidate = () => {
+    updateDraft({ selected: [], results: undefined });
+    preview.reset();
+    onReviewChange(undefined);
+  };
   return <section aria-label="Phạm vi GPLX theo nhóm xe" className="verification-decision-box">
     <h4>Phạm vi GPLX theo nhóm xe</h4>
     <Typography.Paragraph type="secondary" style={{ marginBottom: 12 }}>
@@ -72,12 +79,12 @@ export function LicensePolicyPreview({ confirmed, onReviewChange }: {
     </Typography.Paragraph>
     <div className="filters" style={{ padding: 12, marginBottom: 12 }}>
       <FilterField label="Ngày cấp GPLX" htmlFor="license-preview-issued-on">
-        <Input id="license-preview-issued-on" type="date" value={date} disabled={preview.isPending}
-          onChange={event => { setDate(event.target.value); invalidate(); }} />
+        <Input id="license-preview-issued-on" type="date" value={date} disabled={preview.isPending || undefined}
+          onChange={event => { updateDraft({ date: event.target.value }); invalidate(); }} />
       </FilterField>
       <FilterField label="Hạn chế GPLX" htmlFor="license-preview-restriction">
-        <Select id="license-preview-restriction" value={restriction} disabled={preview.isPending}
-          onChange={value => { setRestriction(value); invalidate(); }}
+        <Select id="license-preview-restriction" value={restriction} disabled={preview.isPending || undefined}
+          onChange={value => { updateDraft({ restriction: value }); invalidate(); }}
           options={[
             { value: "UNKNOWN", label: "Chưa xác minh" },
             { value: "VERIFIED_NONE", label: "Đã đối chiếu, không có hạn chế" },
@@ -91,13 +98,13 @@ export function LicensePolicyPreview({ confirmed, onReviewChange }: {
     </div>
     <div role="status">
       {preview.error ? <Alert type="warning" title={errorMessage(preview.error)} /> : null}
-      {preview.data?.length ? <>
-        <p>Phiên bản chính sách {preview.data[0].result.policyVersion}</p>
-        <ul>{preview.data.map(({ groupId, label, result }) => <li key={groupId}>
+      {results?.length ? <>
+        <p>Phiên bản chính sách {results[0].result.policyVersion}</p>
+        <ul>{results.map(({ groupId, label, result }) => <li key={groupId}>
           {result.status === "ELIGIBLE" && <Checkbox checked={selected.includes(groupId)}
             onChange={event => {
               const ids = event.target.checked ? [...selected, groupId] : selected.filter(id => id !== groupId);
-              setSelected(ids);
+              updateDraft({ selected: ids });
               onReviewChange(ids.length ? { policyVersion: result.policyVersion, issuedOn: date,
                 restriction: reviewedRestriction, restrictionCode, selectedGroupIds: ids } : undefined);
             }}>Duyệt {label}</Checkbox>}

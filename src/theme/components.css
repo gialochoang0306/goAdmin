@@ -288,3 +288,59 @@
 :root :is(.ticket-bubble, .chat-message) { border-radius: var(--md-sys-shape-corner-lg); }
 :root .ticket-bubble.user, :root .chat-message:not(.driver) { border-bottom-left-radius: var(--md-sys-shape-corner-xs); }
 :root .ticket-bubble.admin, :root .chat-message.driver { border-bottom-right-radius: var(--md-sys-shape-corner-xs); }
+
+/* Shared photo preview controls, including authenticated eKYC images. */
+.image-viewer-trigger {
+  display: inline-block;
+  max-width: 100%;
+  padding: 0;
+  border: 0;
+  border-radius: var(--md-sys-shape-corner-md);
+  background: transparent;
+  cursor: zoom-in;
+  vertical-align: middle;
+}
+.image-viewer-trigger:focus-visible {
+  outline: 2px solid var(--md-sys-color-primary);
+  outline-offset: 4px;
+}
+.image-viewer-trigger .ant-image { max-width: 100%; }
+.image-viewer-trigger .ant-image-img { max-width: 100%; }
+.image-viewer-toolbar {
+  width: max-content;
+  max-width: calc(100vw - 24px);
+  padding: 12px;
+  border-radius: var(--md-sys-shape-corner-md);
+  background: var(--md-sys-color-surface-container-high);
+  color: var(--md-sys-color-on-surface);
+  pointer-events: auto;
+}
+.image-viewer-title {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+.image-viewer-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+}
+.image-viewer-actions .ant-btn { min-height: 44px; }
+.image-viewer-scale {
+  min-width: 56px;
+  text-align: center;
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}
+@media (max-width: 600px) {
+  .image-viewer-toolbar { width: calc(100vw - 24px); box-sizing: border-box; }
+  .image-viewer-actions .ant-btn { padding-inline: 12px; }
+}
+
+:root .image-viewer-close {
+  color: var(--md-sys-color-on-surface);
+  background: var(--md-sys-color-surface-container-high);
+}

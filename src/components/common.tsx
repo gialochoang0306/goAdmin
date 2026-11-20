@@ -1,10 +1,10 @@
+import { ImageViewer } from "./ImageViewer";
 import type { ReactNode } from "react";
 import {
   Alert,
   Button,
   Card,
   Empty,
-  Image,
   Grid,
   Pagination,
   Space,
@@ -120,7 +120,7 @@ export function Photo({
   const src = safeImage(url);
   return src ? (
     <div className="document-photo-frame">
-      <Image
+      <ImageViewer
         width={188}
         height={132}
         style={{ objectFit: "contain", borderRadius: 8 }}
