@@ -13,8 +13,9 @@ import { useFilters } from "../lib/hooks";
 import type { AdminWithdrawal, WithdrawalStatus } from "../types";
 
 const statuses: { value: WithdrawalStatus | "ALL"; label: string }[] = [
+  { value: "ALL", label: "Tất cả trạng thái" },
   { value: "PENDING", label: "Chờ duyệt" }, { value: "SUCCESS", label: "Đã chuyển tiền" },
-  { value: "REJECTED", label: "Đã từ chối" }, { value: "ALL", label: "Tất cả trạng thái" },
+  { value: "REJECTED", label: "Đã từ chối" },
 ];
 
 export default function Withdrawals() {

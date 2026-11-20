@@ -72,12 +72,15 @@ export function LicensePolicyPreview({ confirmed, onReviewChange, draftScope }: 
     preview.reset();
     onReviewChange(undefined);
   };
+  const eligibleIds = results?.filter(item => item.result.status === "ELIGIBLE").map(item => item.groupId) ?? [];
+  const allEligibleSelected = eligibleIds.length > 0 && eligibleIds.every(groupId => selected.includes(groupId));
+
   return <section aria-label="Phạm vi GPLX theo nhóm xe" className="verification-decision-box">
     <h4>Phạm vi GPLX theo nhóm xe</h4>
     <Typography.Paragraph type="secondary" style={{ marginBottom: 12 }}>
       Đối chiếu trực tiếp ngày cấp và hạn chế trên GPLX. Kết quả xem trước chỉ đánh giá phạm vi GPLX.
     </Typography.Paragraph>
-    <div className="filters" style={{ padding: 12, marginBottom: 12 }}>
+    <div className="verification-inline-controls">
       <FilterField label="Ngày cấp GPLX" htmlFor="license-preview-issued-on">
         <Input id="license-preview-issued-on" type="date" value={date} disabled={preview.isPending || undefined}
           onChange={event => { updateDraft({ date: event.target.value }); invalidate(); }} />
@@ -97,19 +100,49 @@ export function LicensePolicyPreview({ confirmed, onReviewChange, draftScope }: 
       <Button htmlType="button" loading={preview.isPending} onClick={() => { invalidate(); preview.mutate(); }}>Xem nhóm xe</Button>
     </div>
     <div role="status">
-      {preview.error ? <Alert type="warning" title={errorMessage(preview.error)} /> : null}
+      {preview.error ? <Alert type="warning" showIcon title={errorMessage(preview.error)} /> : null}
       {results?.length ? <>
-        <p>Phiên bản chính sách {results[0].result.policyVersion}</p>
-        <ul>{results.map(({ groupId, label, result }) => <li key={groupId}>
-          {result.status === "ELIGIBLE" && <Checkbox checked={selected.includes(groupId)}
-            onChange={event => {
-              const ids = event.target.checked ? [...selected, groupId] : selected.filter(id => id !== groupId);
-              updateDraft({ selected: ids });
-              onReviewChange(ids.length ? { policyVersion: result.policyVersion, issuedOn: date,
-                restriction: reviewedRestriction, restrictionCode, selectedGroupIds: ids } : undefined);
-            }}>Duyệt {label}</Checkbox>}
-          {result.status !== "ELIGIBLE" && label} <Tag color={outcomes[result.status].color}>{outcomes[result.status].label}</Tag>
-          {result.reasonCodes.map(code => <span key={code}> {explanations[code] ?? code}</span>)}
+        <div className="verification-policy-header">
+          <Typography.Text type="secondary">
+            Phiên bản chính sách {results[0].result.policyVersion}
+            {eligibleIds.length > 0 ? <span className="numeric"> · Đã chọn {selected.length}/{eligibleIds.length}</span> : null}
+          </Typography.Text>
+          {eligibleIds.length > 0 ? (
+            <Button
+              size="small"
+              htmlType="button"
+              onClick={() => {
+                const next = allEligibleSelected ? [] : eligibleIds;
+                updateDraft({ selected: next });
+                onReviewChange(next.length ? {
+                  policyVersion: results[0].result.policyVersion,
+                  issuedOn: date,
+                  restriction: reviewedRestriction,
+                  restrictionCode,
+                  selectedGroupIds: next,
+                } : undefined);
+              }}
+            >
+              {allEligibleSelected ? "Bỏ chọn tất cả" : "Chọn tất cả nhóm phù hợp"}
+            </Button>
+          ) : null}
+        </div>
+        <ul className="verification-policy-list">{results.map(({ groupId, label, result }) => <li key={groupId} className="verification-policy-item">
+          <div className="verification-policy-main">
+            {result.status === "ELIGIBLE" ? <Checkbox checked={selected.includes(groupId)}
+              onChange={event => {
+                const ids = event.target.checked ? [...selected, groupId] : selected.filter(id => id !== groupId);
+                updateDraft({ selected: ids });
+                onReviewChange(ids.length ? { policyVersion: result.policyVersion, issuedOn: date,
+                  restriction: reviewedRestriction, restrictionCode, selectedGroupIds: ids } : undefined);
+              }}>Duyệt {label}</Checkbox> : <span>{label}</span>}
+            <Tag color={outcomes[result.status].color}>{outcomes[result.status].label}</Tag>
+          </div>
+          {result.reasonCodes.length > 0 ? (
+            <div className="verification-policy-reason">
+              {result.reasonCodes.map(code => explanations[code] ?? code).join(" ")}
+            </div>
+          ) : null}
         </li>)}</ul>
       </> : null}
     </div>

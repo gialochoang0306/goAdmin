@@ -5,7 +5,7 @@ import { MemoryRouter } from "react-router-dom";
 import { ConfigProvider } from "antd";
 import { beforeEach, expect, it, vi } from "vitest";
 import VerificationReview from "../pages/VerificationReview";
-import { fieldComparison, type ReviewDetail } from "../pages/verificationReviewModel";
+import { fieldComparison, queueStatusLabel, verificationStatusColor, type ReviewDetail } from "../pages/verificationReviewModel";
 import { ApiError, request, verificationFetch } from "../lib/api";
 
 vi.mock("../lib/api", async load => ({
@@ -45,8 +45,8 @@ it("requires reason and review acknowledgment then submits the displayed revisio
   await user.click(await screen.findByRole("combobox", { name: "Quyết định" }));
   await user.click(screen.getByText("Từ chối", { selector: ".ant-select-item-option-content" }));
   await user.click(screen.getByRole("button", { name: "Lưu quyết định" }));
-  expect(await screen.findByText("Xác nhận đã xem bản nộp hiện tại.")).toBeVisible();
-  await user.click(screen.getByRole("checkbox", { name: "Tôi đã xem bản nộp hiện tại" }));
+  expect(await screen.findByText("Xác nhận đã đối chiếu ảnh và thông tin của bản nộp.")).toBeVisible();
+  await user.click(screen.getByRole("checkbox", { name: /Tôi đã đối chiếu/ }));
   await user.click(screen.getByRole("button", { name: "Lưu quyết định" }));
   expect(await screen.findByText("Nhập lý do cụ thể.")).toBeVisible();
   await user.type(screen.getByRole("textbox", { name: "Lý do" }), "Synthetic");
@@ -171,7 +171,7 @@ it("submits only eligible capability groups that the reviewer selected", async (
   await user.click(await screen.findByRole("checkbox", { name: "Duyệt Ô tô số tự động" }));
   await user.click(screen.getByRole("combobox", { name: "Quyết định" }));
   await user.click(screen.getByText("Phê duyệt", { selector: ".ant-select-item-option-content" }));
-  await user.click(screen.getByRole("checkbox", { name: "Tôi đã xem bản nộp hiện tại" }));
+  await user.click(screen.getByRole("checkbox", { name: /Tôi đã đối chiếu/ }));
   await user.click(screen.getByRole("button", { name: "Lưu quyết định" }));
   await waitFor(() => expect(verificationFetch).toHaveBeenCalledWith("applications/" + id + "/decision", {
     body: expect.objectContaining({ revision: 5, status: "APPROVED", capabilityReview: {
@@ -256,7 +256,7 @@ it("revokes an approved verification with a reason and the displayed revision", 
   await user.click(await screen.findByRole("combobox", { name: "Quyết định" }));
   await user.click(await screen.findByText("Thu hồi xác minh", { selector: ".ant-select-item-option-content" }));
   await user.type(await screen.findByRole("textbox", { name: "Lý do" }), "Giấy phép bị thu hồi");
-  await user.click(screen.getByRole("checkbox", { name: "Tôi đã xem bản nộp hiện tại" }));
+  await user.click(screen.getByRole("checkbox", { name: /Tôi đã đối chiếu/ }));
   await user.click(screen.getByRole("button", { name: "Lưu quyết định" }));
   await waitFor(() => expect(verificationFetch).toHaveBeenCalledWith(
     "applications/" + id + "/decision", { body: { revision: 5, status: "REVOKED", reason: "Giấy phép bị thu hồi", captures: [], fields: [] } },
@@ -307,7 +307,7 @@ it("keeps the eKYC drawer open and sends one decision while a review is pending"
   expect(drawer.querySelector(".ant-drawer-close")).toBeInTheDocument();
   await user.click(await screen.findByRole("combobox", { name: "Quyết định" }));
   await user.click(screen.getByText("Từ chối", { selector: ".ant-select-item-option-content" }));
-  await user.click(screen.getByRole("checkbox", { name: "Tôi đã xem bản nộp hiện tại" }));
+  await user.click(screen.getByRole("checkbox", { name: /Tôi đã đối chiếu/ }));
   await user.type(screen.getByRole("textbox", { name: "Lý do" }), "Synthetic");
   const submit = screen.getByRole("button", { name: "Lưu quyết định" });
   const form = submit.closest("form")!;
@@ -355,7 +355,7 @@ it("retains license evidence and selected groups when starting review, but reset
   await user.click(await screen.findByRole("checkbox", { name: "Duyệt Xe máy" }));
   await user.click(screen.getByRole("combobox", { name: "Quyết định" }));
   await user.click(screen.getByText("Bắt đầu xét duyệt", { selector: ".ant-select-item-option-content" }));
-  await user.click(screen.getByRole("checkbox", { name: "Tôi đã xem bản nộp hiện tại" }));
+  await user.click(screen.getByRole("checkbox", { name: /Tôi đã đối chiếu/ }));
   await user.click(screen.getByRole("button", { name: "Lưu quyết định" }));
   await waitFor(() => expect(finishReload).toBeTypeOf("function"));
   expect(screen.getByLabelText("Ngày cấp GPLX")).toHaveValue("2025-05-01");
@@ -364,10 +364,10 @@ it("retains license evidence and selected groups when starting review, but reset
   await waitFor(() => expect(screen.getByLabelText("Ngày cấp GPLX")).toBeEnabled());
   expect(screen.getByLabelText("Ngày cấp GPLX")).toHaveValue("2025-05-01");
   expect(screen.getByRole("checkbox", { name: "Duyệt Xe máy" })).toBeChecked();
-  expect(screen.getByRole("checkbox", { name: "Tôi đã xem bản nộp hiện tại" })).not.toBeChecked();
+  expect(screen.getByRole("checkbox", { name: /Tôi đã đối chiếu/ })).not.toBeChecked();
   await user.click(screen.getByRole("combobox", { name: "Quyết định" }));
   await user.click(screen.getByText("Phê duyệt", { selector: ".ant-select-item-option-content" }));
-  await user.click(screen.getByRole("checkbox", { name: "Tôi đã xem bản nộp hiện tại" }));
+  await user.click(screen.getByRole("checkbox", { name: /Tôi đã đối chiếu/ }));
   await user.click(screen.getByRole("button", { name: "Lưu quyết định" }));
   await waitFor(() => expect(verificationFetch).toHaveBeenCalledWith("applications/" + id + "/decision", {
     body: expect.objectContaining({
@@ -431,4 +431,71 @@ it("restores the review draft after leaving the page and refocusing, and clears 
   expect(await screen.findByLabelText("Ngày cấp GPLX")).toHaveValue("");
   expect(screen.queryByRole("checkbox", { name: "Duyệt Xe máy" })).not.toBeInTheDocument();
   expect(screen.queryByRole("textbox", { name: "Lý do" })).not.toBeInTheDocument();
+});
+
+it("recovers when a private image fails to load and opens all images on explicit action", async () => {
+  const createObjectURL = vi.fn(() => "blob:retry-ok");
+  const revokeObjectURL = vi.fn();
+  vi.stubGlobal("URL", Object.assign(class extends URL {}, { createObjectURL, revokeObjectURL }));
+  try {
+    let attempts = 0;
+    const withCaptures = {
+      ...detail,
+      document: {
+        ...detail.document,
+        captures: { cccd_front: {}, selfie: {} },
+      },
+    };
+    vi.mocked(verificationFetch).mockImplementation(async path => {
+      if (path.startsWith("review-queue")) return { items: [withCaptures], hasMore: false, totalElements: 1 };
+      if (path.includes("/captures/cccd_front")) {
+        attempts += 1;
+        if (attempts === 1) throw new ApiError("Mạng chập chờn", "NETWORK", 503);
+        return new Blob(["front"], { type: "image/png" });
+      }
+      if (path.includes("/captures/selfie")) return new Blob(["selfie"], { type: "image/png" });
+      return withCaptures;
+    });
+
+    const user = mount();
+    await user.click(await screen.findByRole("button", { name: id }));
+    expect(await screen.findByRole("button", { name: "Mở tất cả ảnh" })).toBeVisible();
+    expect(vi.mocked(verificationFetch).mock.calls.some(([path]) => path.includes("/captures/"))).toBe(false);
+
+    const openButtons = screen.getAllByRole("button", { name: "Mở ảnh" });
+    await user.click(openButtons[0]);
+    expect(await screen.findByText("Mạng chập chờn")).toBeVisible();
+    const retryBtn = await screen.findByRole("button", { name: "Thử lại" });
+    await user.click(retryBtn);
+    expect(await screen.findByAltText("CCCD mặt trước")).toHaveAttribute("src", "blob:retry-ok");
+
+    await user.click(screen.getByRole("button", { name: "Mở tất cả ảnh" }));
+    expect(await screen.findByAltText("Selfie")).toHaveAttribute("src", "blob:retry-ok");
+  } finally {
+    vi.unstubAllGlobals();
+  }
+});
+
+it("labels a re-verification draft as updating and explains the empty queue detail", async () => {
+  const draft = { ...detail, status: "DRAFT", verificationWarnings: [] };
+  vi.mocked(verificationFetch).mockImplementation(async (path) => {
+    if (path.startsWith("review-queue")) return { items: [draft], hasMore: false, totalElements: 1 };
+    return { id, status: "DRAFT", revision: 3 };
+  });
+  const user = mount();
+  expect(await screen.findByText("Đang cập nhật giấy tờ")).toBeVisible();
+  await user.click(screen.getByRole("button", { name: id }));
+  expect(await screen.findByText("Chưa có bản nộp đang chờ duyệt")).toBeVisible();
+});
+
+it("maps verification statuses to semantic tag colors", () => {
+  expect(verificationStatusColor("APPROVED")).toBe("green");
+  expect(verificationStatusColor("REJECTED")).toBe("red");
+  expect(verificationStatusColor("REVOKED")).toBe("red");
+  expect(verificationStatusColor("UNDER_REVIEW")).toBe("blue");
+  expect(verificationStatusColor("SUBMITTED")).toBe("gold");
+  expect(verificationStatusColor("NEEDS_MORE_INFO")).toBe("gold");
+  expect(verificationStatusColor("DRAFT")).toBe("default");
+  expect(queueStatusLabel("DRAFT")).toBe("Đang cập nhật giấy tờ");
+  expect(queueStatusLabel("APPROVED")).toBe("Đã duyệt");
 });

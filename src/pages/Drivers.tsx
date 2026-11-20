@@ -1,4 +1,5 @@
 import { FilterField } from "../components/FilterField";
+import { FilterSelect } from "../components/FilterSelect";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useLocation, useParams } from "react-router-dom";
 import {
@@ -7,14 +8,13 @@ import {
   Descriptions,
   Empty,
   Input,
-  Select,
   Table,
   Tabs,
   Tag,
 } from "antd";
 import { ArrowLeftOutlined } from "@ant-design/icons";
 import type { ColumnsType } from "antd/es/table";
-import { api } from "../lib/api";
+import { api, request } from "../lib/api";
 import { date, label, money, percentage, text } from "../lib/format";
 import { useAction, useFilters } from "../lib/hooks";
 import {
@@ -27,9 +27,32 @@ import {
   Refresh,
   Status,
 } from "../components/common";
-import type { Driver, Skill } from "../types";
+import type { Driver, DriverCapabilities, DriverCapabilityGroup } from "../types";
 import { returnPath, returnLabel } from "../lib/navigation";
-import { states, verificationApplicationPath } from "./verificationReviewModel";
+import { states, verificationApplicationPath, verificationStatusColor } from "./verificationReviewModel";
+
+const capabilityReasons: Record<string, string> = {
+  WORKFLOW_DISABLED: "Dịch vụ nhận chuyến theo nhóm xe đang tắt",
+  DRIVER_UNAVAILABLE: "Tài khoản chưa thể nhận chuyến",
+  VERIFICATION_NOT_SYNCHRONIZED: "Chưa đồng bộ hồ sơ xác minh",
+  VERIFICATION_NOT_APPROVED: "Hồ sơ eKYC chưa được duyệt",
+  CCCD_EXPIRED: "CCCD đã hết hạn",
+  CAPABILITY_NOT_APPROVED: "Chưa được duyệt nhóm xe này",
+  CAPABILITY_EXPIRED_OR_POLICY_CHANGED: "Quyền đã hết hiệu lực hoặc chính sách GPLX thay đổi",
+};
+
+function capabilityState(group: DriverCapabilityGroup) {
+  if (group.enabled && group.effective) return { color: "green", label: "Đang bật nhận chuyến" };
+  if (group.enabled) return { color: "red", label: "Đang bật · quyền hết hiệu lực" };
+  return { color: "default", label: "Chưa bật nhận chuyến" };
+}
+
+/** Lý do không có nhóm xe nào được duyệt, lấy từ reasonCode của projection hiện tại. */
+function noApprovedReason(groups: readonly DriverCapabilityGroup[]) {
+  const code = groups.find(group => group.reasonCode)?.reasonCode;
+  if (code) return capabilityReasons[code] ?? code;
+  return "Chưa có nhóm xe nào được duyệt trong hồ sơ eKYC.";
+}
 
 const verificationOptions = [
   "PENDING",
@@ -115,30 +138,27 @@ export function Drivers() {
           enterButton="Tìm" maxLength={200}
           onSearch={(search) => f.update({ search: search.trim() })}
         /></FilterField>
-        <FilterField label="Xác minh tài xế"><Select
-          allowClear
+        <FilterField label="Xác minh tài xế"><FilterSelect
           aria-label="Xác minh tài xế"
-          placeholder="Tất cả xác minh"
-          value={f.read("verification_status") || undefined}
+          allLabel="Tất cả xác minh"
+          value={f.read("verification_status")}
           options={verificationOptions}
           onChange={(v) => f.update({ verification_status: v })}
         /></FilterField>
-        <FilterField label="Kết nối tài xế"><Select
-          allowClear
+        <FilterField label="Kết nối tài xế"><FilterSelect
           aria-label="Kết nối tài xế"
-          placeholder="Tất cả kết nối"
-          value={f.read("online") || undefined}
+          allLabel="Tất cả kết nối"
+          value={f.read("online")}
           options={[
             { value: "true", label: "Đang kết nối (kể cả bận)" },
             { value: "false", label: "Ngoại tuyến" },
           ]}
           onChange={(v) => f.update({ online: v })}
         /></FilterField>
-        <FilterField label="Đánh dấu tài xế"><Select
-          allowClear
+        <FilterField label="Đánh dấu tài xế"><FilterSelect
           aria-label="Đánh dấu tài xế"
-          placeholder="Đánh dấu"
-          value={f.read("flagged") || undefined}
+          allLabel="Tất cả đánh dấu"
+          value={f.read("flagged")}
           options={booleanOptions}
           onChange={(v) => f.update({ flagged: v })}
         /></FilterField>
@@ -169,6 +189,13 @@ export function DriverDetailPage() {
     queryFn: () => api.driver(id),
     enabled: valid,
   });
+  const applicationId = query.data?.verification?.applicationId;
+  const capabilities = useQuery({
+    queryKey: ["admin", "driverCapabilities", applicationId],
+    queryFn: () => request<DriverCapabilities>(`/api/admin/vehicle-catalog/applications/${applicationId}/capabilities`),
+    enabled: Boolean(applicationId),
+    retry: false,
+  });
   const offline = useAction<void>(() => api.offline(id), undefined, `Đã chuyển tài xế #${id} sang ngoại tuyến.`);
   if (!valid) return <InvalidRecord />;
   if (query.isPending) return <Loading />;
@@ -176,23 +203,36 @@ export function DriverDetailPage() {
     return (
       <QueryError error={query.error} retry={() => void query.refetch()} />
     );
-  const { driver, verification, skills } = query.data;
+  const { driver, verification } = query.data;
   const verificationPath = verification ? verificationApplicationPath(verification.applicationId) : undefined;
   const activeTab = f.read("tab", "profile");
-  const skillColumns: ColumnsType<Skill> = [
-    { title: "Loại xe", dataIndex: "vehicleType", render: label },
-    { title: "Hộp số", dataIndex: "transmission", render: label },
-    { title: "Hạng bằng", dataIndex: "licenseClass", render: text },
+  const tabKey = activeTab === "skills" ? "vehicles" : activeTab;
+  const capabilityColumns: ColumnsType<DriverCapabilityGroup> = [
+    { title: "Nhóm xe", dataIndex: "label" },
     {
-      title: "Xác minh",
-      dataIndex: "verified",
-      render: (v) => (
-        <Tag color={v ? "green" : "default"}>
-          {v ? "Đã xác minh" : "Chưa xác minh"}
-        </Tag>
-      ),
+      title: "Nhận chuyến",
+      dataIndex: "effective",
+      render: (_, group) => {
+        const state = capabilityState(group);
+        return <Tag color={state.color}>{state.label}</Tag>;
+      },
+    },
+    {
+      title: "Ghi chú",
+      dataIndex: "reasonCode",
+      render: (_, group) => {
+        if (group.reasonCode) return capabilityReasons[group.reasonCode] ?? group.reasonCode;
+        if (group.expiresOn) return `Hiệu lực đến ${date(group.expiresOn)}`;
+        if (!group.enabled) return "Tài xế bật trong mục Loại xe nhận lái hộ";
+        return "—";
+      },
     },
   ];
+  // Chỉ hiện nhóm xe tài xế thực sự được phép lái (đã duyệt trong hồ sơ eKYC).
+  const approvedGroups = (capabilities.data?.groups ?? []).filter(group => group.approved);
+  const sortedGroups = [...approvedGroups].sort((a, b) =>
+    Number(b.effective) - Number(a.effective) || Number(b.enabled) - Number(a.enabled));
+  const acceptingLabels = approvedGroups.filter(group => group.enabled && group.effective).map(group => group.label);
   return (
     <>
       <Link className="back-link" to={returnPath(location.state, "/drivers")}>
@@ -205,10 +245,13 @@ export function DriverDetailPage() {
           <>
             <Status value={driver.verificationStatus} />
             <Refresh
-              loading={query.isFetching}
-              onClick={() => void query.refetch()}
+              loading={query.isFetching || capabilities.isFetching}
+              onClick={() => {
+                void query.refetch();
+                void capabilities.refetch();
+              }}
             />
-            {verificationPath && <Link to={verificationPath}>Xem hồ sơ eKYC</Link>}
+            {verificationPath && <Link className="ant-btn ant-btn-default verification-header-link" to={verificationPath}>Xem hồ sơ eKYC</Link>}
             <Button
               danger
               disabled={driver.status === "OFFLINE"}
@@ -232,7 +275,7 @@ export function DriverDetailPage() {
       />
       <QueryError error={query.error} retry={() => void query.refetch()} />
       <Tabs
-        activeKey={["verification", "skills"].includes(activeTab) ? activeTab : "profile"}
+        activeKey={["verification", "vehicles"].includes(tabKey) ? tabKey : "profile"}
         onChange={(tab) => f.update({ tab }, false)}
         items={[
           {
@@ -323,9 +366,9 @@ export function DriverDetailPage() {
             children: (
               <Panel>
                 {verification && verificationPath ? (
-                  <Descriptions column={1} items={[
+                  <Descriptions bordered column={1} items={[
                     { key: "application", label: "Mã hồ sơ", children: <Link to={verificationPath}>{verification.applicationId}</Link> },
-                    { key: "status", label: "Trạng thái hồ sơ", children: <Tag>{states[verification.status] ?? verification.status}</Tag> },
+                    { key: "status", label: "Trạng thái hồ sơ", children: <Tag color={verificationStatusColor(verification.status)}>{states[verification.status] ?? verification.status}</Tag> },
                   ]} />
                 ) : (
                   <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="Tài xế chưa tạo hồ sơ xác minh eKYC." />
@@ -334,18 +377,38 @@ export function DriverDetailPage() {
             ),
           },
           {
-            key: "skills",
-            label: `Kỹ năng (${skills.length})`,
+            key: "vehicles",
+            label: `Loại xe nhận chuyến (${approvedGroups.length})`,
             children: (
               <Panel>
-                <Table
-                  rowKey="id"
-                  columns={skillColumns}
-                  dataSource={skills}
-                  pagination={false}
-                  scroll={{ x: 650 }}
-                  locale={{ emptyText: "Chưa có kỹ năng" }}
-                />
+                {!applicationId ? (
+                  <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="Tài xế chưa có hồ sơ eKYC nên chưa xét được nhóm xe nhận chuyến." />
+                ) : capabilities.isPending ? <Loading /> : capabilities.error ? (
+                  <QueryError error={capabilities.error} retry={() => void capabilities.refetch()} />
+                ) : approvedGroups.length === 0 ? (
+                  <Empty
+                    image={Empty.PRESENTED_IMAGE_SIMPLE}
+                    description={<div>
+                      <div>Tài xế chưa được duyệt nhóm xe nào</div>
+                      <div className="muted">{noApprovedReason(capabilities.data?.groups ?? [])}</div>
+                    </div>}
+                  />
+                ) : (
+                  <>
+                    <div className="muted" style={{ marginBottom: 12 }}>
+                      {acceptingLabels.length
+                        ? `Đang bật nhận chuyến: ${acceptingLabels.join(", ")}`
+                        : "Tài xế chưa bật nhóm xe nào để nhận chuyến"}
+                    </div>
+                    <Table<DriverCapabilityGroup>
+                      rowKey="groupId"
+                      columns={capabilityColumns}
+                      dataSource={sortedGroups}
+                      pagination={false}
+                      scroll={{ x: 640 }}
+                    />
+                  </>
+                )}
               </Panel>
             ),
           },

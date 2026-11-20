@@ -1,4 +1,5 @@
 import { FilterField } from "../components/FilterField";
+import { FilterSelect } from "../components/FilterSelect";
 import { CreationDateInput } from "../components/CreationDateInput";
 import { returnPath, returnLabel } from "../lib/navigation";
 import { useState } from "react";
@@ -110,23 +111,21 @@ export function Customers() {
           enterButton="Tìm" maxLength={200}
           onSearch={(q) => f.update({ q: q.trim() })}
         /></FilterField>
-        <FilterField label="Trạng thái khách hàng"><Select
+        <FilterField label="Trạng thái khách hàng"><FilterSelect
           aria-label="Trạng thái khách hàng"
-          placeholder="Tất cả trạng thái"
-          allowClear
+          allLabel="Tất cả trạng thái"
           options={statusOptions}
-          value={f.read("status") || undefined}
+          value={f.read("status")}
           onChange={(status) => f.update({ status })}
         /></FilterField>
-        <FilterField label="Đánh dấu khách hàng"><Select
+        <FilterField label="Đánh dấu khách hàng"><FilterSelect
           aria-label="Đánh dấu khách hàng"
-          placeholder="Đánh dấu"
-          allowClear
+          allLabel="Tất cả đánh dấu"
           options={[
             { value: "true", label: "Có đánh dấu" },
             { value: "false", label: "Không đánh dấu" },
           ]}
-          value={f.read("flagged") || undefined}
+          value={f.read("flagged")}
           onChange={(flagged) => f.update({ flagged })}
         /></FilterField>
         <FilterField label="Sắp xếp khách hàng"><Select
@@ -298,11 +297,10 @@ function CustomerRides({ id }: { id: number }) {
   return (
     <>
       <div className="filters">
-        <FilterField label="Trạng thái chuyến của khách"><Select
+        <FilterField label="Trạng thái chuyến của khách"><FilterSelect
           aria-label="Trạng thái chuyến của khách"
-          placeholder="Tất cả trạng thái"
-          allowClear
-          value={status || undefined}
+          allLabel="Tất cả trạng thái"
+          value={status}
           options={Object.entries(rideLabels).map(([value, label]) => ({
             value,
             label,
@@ -390,9 +388,9 @@ function CustomerWallet({ id }: { id: number }) {
     <>
       <div className="filters">
         <SearchDateFields filters={f} prefix="wallet" label="Tìm giao dịch ví" placeholder="Mã giao dịch, mã chuyến hoặc mô tả" />
-        <FilterField label="Loại giao dịch"><Select aria-label="Loại giao dịch ví" allowClear placeholder="Tất cả loại" value={type || undefined}
+        <FilterField label="Loại giao dịch"><FilterSelect aria-label="Loại giao dịch ví" allLabel="Tất cả loại giao dịch" value={type}
           options={["DEPOSIT", "TOP_UP", "TRIP_PAYMENT", "RIDE_PAYMENT", "TRIP_EARNING", "REFUND", "WITHDRAW", "COMMISSION_FEE"].map(value=>({value,label:label(value)}))} onChange={walletType=>f.update({walletType})} /></FilterField>
-        <FilterField label="Trạng thái giao dịch"><Select aria-label="Trạng thái giao dịch ví" allowClear placeholder="Tất cả trạng thái" value={status || undefined}
+        <FilterField label="Trạng thái giao dịch"><FilterSelect aria-label="Trạng thái giao dịch ví" allLabel="Tất cả trạng thái" value={status}
           options={["PENDING","SUCCESS","FAILED"].map(value=>({value,label:label(value)}))} onChange={walletStatus=>f.update({walletStatus})} /></FilterField>
         <Button onClick={()=>f.update({walletq:undefined,walletfrom:undefined,walletto:undefined,walletType:undefined,walletStatus:undefined})}>Xóa bộ lọc</Button>
         <Refresh
