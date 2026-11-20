@@ -9,6 +9,22 @@ export const states: Record<string, string> = {
   DRAFT: "Chưa nộp", SUBMITTED: "Đã nộp", UNDER_REVIEW: "Đang xét duyệt", NEEDS_MORE_INFO: "Cần bổ sung",
   APPROVED: "Đã duyệt", REJECTED: "Đã từ chối", REVOKED: "Đã thu hồi",
 };
+export function verificationStatusColor(status: string | null | undefined): string {
+  switch (status) {
+    case "APPROVED":
+      return "green";
+    case "REJECTED":
+    case "REVOKED":
+      return "red";
+    case "UNDER_REVIEW":
+      return "blue";
+    case "SUBMITTED":
+    case "NEEDS_MORE_INFO":
+      return "gold";
+    default:
+      return "default";
+  }
+}
 export const captures: Record<string, string> = {
   cccd_front: "CCCD mặt trước", cccd_back: "CCCD mặt sau", gplx_front: "GPLX mặt trước",
   gplx_back: "GPLX mặt sau", selfie: "Selfie",
@@ -136,6 +152,14 @@ export function displayValue(value: unknown): string {
       "expiry_date" in value ? displayValue(value.expiry_date) : "—";
   }
   return "—";
+}
+
+export function formatFieldText(key: string, formatted: string): string {
+  if (key === "cccd_gender") {
+    if (formatted === "MALE") return "Nam";
+    if (formatted === "FEMALE") return "Nữ";
+  }
+  return formatted;
 }
 
 const mapping: Record<string, Record<string, string>> = {

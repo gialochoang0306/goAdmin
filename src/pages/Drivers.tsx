@@ -29,7 +29,7 @@ import {
 } from "../components/common";
 import type { Driver, Skill } from "../types";
 import { returnPath, returnLabel } from "../lib/navigation";
-import { states, verificationApplicationPath } from "./verificationReviewModel";
+import { states, verificationApplicationPath, verificationStatusColor } from "./verificationReviewModel";
 
 const verificationOptions = [
   "PENDING",
@@ -208,7 +208,7 @@ export function DriverDetailPage() {
               loading={query.isFetching}
               onClick={() => void query.refetch()}
             />
-            {verificationPath && <Link to={verificationPath}>Xem hồ sơ eKYC</Link>}
+            {verificationPath && <Link className="ant-btn ant-btn-default verification-header-link" to={verificationPath}>Xem hồ sơ eKYC</Link>}
             <Button
               danger
               disabled={driver.status === "OFFLINE"}
@@ -323,9 +323,9 @@ export function DriverDetailPage() {
             children: (
               <Panel>
                 {verification && verificationPath ? (
-                  <Descriptions column={1} items={[
+                  <Descriptions bordered column={1} items={[
                     { key: "application", label: "Mã hồ sơ", children: <Link to={verificationPath}>{verification.applicationId}</Link> },
-                    { key: "status", label: "Trạng thái hồ sơ", children: <Tag>{states[verification.status] ?? verification.status}</Tag> },
+                    { key: "status", label: "Trạng thái hồ sơ", children: <Tag color={verificationStatusColor(verification.status)}>{states[verification.status] ?? verification.status}</Tag> },
                   ]} />
                 ) : (
                   <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="Tài xế chưa tạo hồ sơ xác minh eKYC." />

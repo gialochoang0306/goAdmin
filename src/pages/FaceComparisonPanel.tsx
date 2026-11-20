@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Alert, Button, Descriptions, Space } from "antd";
+import { Alert, Button, Descriptions, Space, Tag, Typography } from "antd";
 import { errorMessage, verificationFetch } from "../lib/api";
 import { captures, type ReviewDetail, type VerificationWarning } from "./verificationReviewModel";
 
@@ -78,27 +78,47 @@ export function FaceComparisonPanel({ detail, onWarnings }: {
   }
 
   return <section aria-label="Đối chiếu khuôn mặt" className="verification-decision-box">
+    <h4>Đối chiếu khuôn mặt</h4>
     <Space orientation="vertical" style={{ width: "100%" }}>
-      <Descriptions size="small" column={1} items={[
-        { key: "face", label: "Đối chiếu khuôn mặt", children: result?.mode === "EXPERIMENTAL"
-          ? "Thử nghiệm · Chưa có ngưỡng kết luận" : "Chưa đánh giá" },
-        { key: "liveness", label: "Kiểm tra người thật", children: "Chưa đánh giá" },
+      <Descriptions size="small" bordered column={{ xs: 1, sm: 2 }} items={[
+        {
+          key: "face",
+          label: "Đối chiếu khuôn mặt",
+          children: result?.mode === "EXPERIMENTAL"
+            ? <Tag color="blue">Thử nghiệm · Chưa có ngưỡng kết luận</Tag>
+            : <Tag>Chưa đánh giá</Tag>,
+        },
+        { key: "liveness", label: "Kiểm tra người thật", children: <Tag>Chưa đánh giá</Tag> },
       ]} />
       {available ? <Button loading={busy} onClick={() => void evaluate()}>Chạy đối chiếu thử nghiệm</Button>
         : detail.faceComparisonAvailable && current && !consent
-          ? <div>Bản nộp này chưa có đồng ý đối chiếu khuôn mặt.</div> : null}
-      {error && <Alert type="warning" title={error} />}
-      {result?.mode === "NOT_EVALUATED" && <Alert type="info" title="Chưa thể thực hiện đối chiếu cho bản nộp này." />}
+          ? <Typography.Text type="secondary">Bản nộp này chưa có đồng ý đối chiếu khuôn mặt.</Typography.Text> : null}
+      {error && <Alert type="warning" showIcon title={error} />}
+      {result?.mode === "NOT_EVALUATED" && <Alert type="info" showIcon title="Chưa thể thực hiện đối chiếu cho bản nộp này." />}
       {result?.mode === "EXPERIMENTAL" && <>
-        <Alert type="info" title="Điểm cosine chỉ hỗ trợ xem xét. Hãy đối chiếu trực tiếp ảnh trước khi quyết định." />
-        <ul>{Object.entries(result.quality).map(([slot, status]) =>
-          <li key={slot}>{captures[slot]} · {quality[status] ?? states.NOT_EVALUATED}</li>)}</ul>
-        <ul>{result.pairs.map(pair =>
-          <li key={pair.left + pair.right}>
-            {captures[pair.left]} – {captures[pair.right]} · {states[pair.status] ?? states.NOT_EVALUATED}
-            {typeof pair.score === "number" ? " · Cosine " + pair.score.toFixed(3) : ""}
-          </li>)}</ul>
-        <div>Model {result.modelVersion} · Chất lượng {result.qualityVersion} · Ngưỡng chưa đánh giá</div>
+        <Alert type="info" showIcon title="Điểm cosine chỉ hỗ trợ xem xét. Hãy đối chiếu trực tiếp ảnh trước khi quyết định." />
+        <div className="verification-face-group">
+          <Typography.Text strong>Chất lượng khuôn mặt theo ảnh</Typography.Text>
+          <ul className="verification-face-list">{Object.entries(result.quality).map(([slot, status]) =>
+            <li key={slot} className="verification-face-item">
+              <span>{captures[slot]} · {quality[status] ?? states.NOT_EVALUATED}</span>
+              <Tag color={status === "READY" ? "green" : "gold"}>{status === "READY" ? "Đạt" : "Lưu ý"}</Tag>
+            </li>)}</ul>
+        </div>
+        <div className="verification-face-group">
+          <Typography.Text strong>Kết quả so khớp từng cặp</Typography.Text>
+          <ul className="verification-face-list">{result.pairs.map(pair =>
+            <li key={pair.left + pair.right} className="verification-face-item">
+              <span>{captures[pair.left]} – {captures[pair.right]}</span>
+              <Tag color={pair.status === "SIMILARITY_SUPPORTED" ? "green" : pair.status === "POSSIBLE_MISMATCH" ? "red" : "gold"}>
+                {states[pair.status] ?? states.NOT_EVALUATED}
+                {typeof pair.score === "number" ? " · Cosine " + pair.score.toFixed(3) : ""}
+              </Tag>
+            </li>)}</ul>
+        </div>
+        <Typography.Text type="secondary" className="verification-meta-note">
+          Model {result.modelVersion} · Chất lượng {result.qualityVersion} · Ngưỡng chưa đánh giá
+        </Typography.Text>
         <Button onClick={() => setResult(undefined)}>Ẩn kết quả đối chiếu</Button>
       </>}
     </Space>
