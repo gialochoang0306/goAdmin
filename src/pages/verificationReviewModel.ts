@@ -9,6 +9,17 @@ export const states: Record<string, string> = {
   DRAFT: "Chưa nộp", SUBMITTED: "Đã nộp", UNDER_REVIEW: "Đang xét duyệt", NEEDS_MORE_INFO: "Cần bổ sung",
   APPROVED: "Đã duyệt", REJECTED: "Đã từ chối", REVOKED: "Đã thu hồi",
 };
+
+/**
+ * Hàng chờ chỉ chứa hồ sơ đã từng có bản nộp (JOIN theo submission_revision),
+ * nên DRAFT ở đây luôn là hồ sơ đã nộp trước đó và tài xế đang mở bản cập nhật.
+ * Hiển thị "Chưa nộp" cho trường hợp này là sai sự thật.
+ */
+export function queueStatusLabel(status: string | null | undefined): string {
+  if (!status) return "";
+  if (status === "DRAFT") return "Đang cập nhật giấy tờ";
+  return states[status] ?? status;
+}
 export function verificationStatusColor(status: string | null | undefined): string {
   switch (status) {
     case "APPROVED":

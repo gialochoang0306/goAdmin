@@ -36,6 +36,16 @@ let assignmentConflict = false;
 
 let supportsAdvanced = true;
 let withdrawalPending = true;
+type CapabilityGroupFixture = {
+  groupId: string;
+  label: string;
+  approved: boolean;
+  enabled: boolean;
+  effective: boolean;
+  reasonCode: string | null;
+  expiresOn: string | null;
+};
+let capabilityGroups: CapabilityGroupFixture[] = [];
 const writes: {
   path: string;
   method: string;
@@ -73,6 +83,12 @@ beforeEach(() => {
 
   supportsAdvanced = true;
   withdrawalPending = true;
+  capabilityGroups = [
+    { groupId: "moto-1", label: "Mô tô xăng 50–125 cm³", approved: true, enabled: true, effective: true, reasonCode: null, expiresOn: null },
+    { groupId: "car-expiring", label: "Ô tô con 4 chỗ", approved: true, enabled: true, effective: true, reasonCode: null, expiresOn: "2030-01-02" },
+    { groupId: "car-auto", label: "Ô tô số tự động", approved: true, enabled: false, effective: false, reasonCode: null, expiresOn: null },
+    { groupId: "car-manual", label: "Ô tô số sàn", approved: false, enabled: false, effective: false, reasonCode: "CAPABILITY_NOT_APPROVED", expiresOn: null },
+  ];
   configureAuth(
     async () => "test-token",
     () => {},
@@ -158,6 +174,13 @@ beforeEach(() => {
         ]);
       if (path === "/api/admin/drivers") return ok(page([driver.driver]));
       if (path === "/api/admin/drivers/41") return ok(driver);
+      if (path === "/api/admin/vehicle-catalog/applications/" + verificationId + "/capabilities") return ok({
+        enabled: true,
+        approvalRevision: 3,
+        preferenceVersion: 1,
+        acceptingVehicleTypes: ["MOTORCYCLE"],
+        groups: capabilityGroups,
+      });
       if (path === "/api/admin/drivers/41/force-offline") {
         driver.driver.status = "OFFLINE";
         return ok({});
@@ -386,8 +409,30 @@ describe("Admin pages", () => {
     expect(link).toHaveAttribute("href", "/driver-documents/verification?application_id=" + verificationId);
     await user.click(link);
     expect(await screen.findByText("Chi tiết xác minh tài xế")).toBeVisible();
-    expect(await screen.findByText("Tài xế chưa nộp hồ sơ xác minh.")).toBeInTheDocument();
+    expect(await screen.findByText("Chưa có bản nộp đang chờ duyệt")).toBeInTheDocument();
     expect(writes).toHaveLength(0);
+  });
+  it("lists only approved eKYC vehicle groups and marks the ones enabled for rides", async () => {
+    renderPage("/drivers/41?tab=skills");
+    expect(await screen.findByText("Đang bật nhận chuyến: Mô tô xăng 50–125 cm³, Ô tô con 4 chỗ")).toBeInTheDocument();
+    expect(screen.getByText("Loại xe nhận chuyến (3)")).toBeInTheDocument();
+    expect(screen.getByText("Mô tô xăng 50–125 cm³")).toBeInTheDocument();
+    expect(screen.getByText("Ô tô số tự động")).toBeInTheDocument();
+    expect(screen.queryByText("Ô tô số sàn")).not.toBeInTheDocument();
+    expect(screen.getAllByText("Đang bật nhận chuyến")).toHaveLength(2);
+    expect(screen.getByText("Chưa bật nhận chuyến")).toBeInTheDocument();
+    expect(screen.getByText("Tài xế bật trong mục Loại xe nhận lái hộ")).toBeInTheDocument();
+    expect(screen.getByText("Hiệu lực đến 02/01/2030")).toBeInTheDocument();
+    expect(screen.queryByText("Chưa có kỹ năng")).not.toBeInTheDocument();
+  });
+  it("states explicitly when the driver has no approved vehicle group", async () => {
+    capabilityGroups = [
+      { groupId: "car-manual", label: "Ô tô số sàn", approved: false, enabled: false, effective: false, reasonCode: "VERIFICATION_NOT_APPROVED", expiresOn: null },
+    ];
+    renderPage("/drivers/41?tab=vehicles");
+    expect(await screen.findByText("Tài xế chưa được duyệt nhóm xe nào")).toBeInTheDocument();
+    expect(screen.getByText("Hồ sơ eKYC chưa được duyệt")).toBeInTheDocument();
+    expect(screen.getByText("Loại xe nhận chuyến (0)")).toBeInTheDocument();
   });
   it("shows an empty verification state and confirms force offline", async () => {
     driver.verification = null;

@@ -130,6 +130,23 @@ export type Skill = {
   licenseClass: string | null;
   verified: boolean;
 };
+/** Nhóm xe nhận chuyến theo hồ sơ eKYC đã duyệt (admin view). */
+export type DriverCapabilityGroup = {
+  groupId: string;
+  label: string;
+  approved: boolean;
+  enabled: boolean;
+  effective: boolean;
+  reasonCode?: string | null;
+  expiresOn?: string | null;
+};
+export type DriverCapabilities = {
+  enabled: boolean;
+  approvalRevision: number | null;
+  preferenceVersion: number;
+  acceptingVehicleTypes: string[];
+  groups: DriverCapabilityGroup[];
+};
 export type DriverVerificationSummary = {
   applicationId: string;
   status: string;

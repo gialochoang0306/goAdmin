@@ -5,7 +5,7 @@ import { MemoryRouter } from "react-router-dom";
 import { ConfigProvider } from "antd";
 import { beforeEach, expect, it, vi } from "vitest";
 import VerificationReview from "../pages/VerificationReview";
-import { fieldComparison, verificationStatusColor, type ReviewDetail } from "../pages/verificationReviewModel";
+import { fieldComparison, queueStatusLabel, verificationStatusColor, type ReviewDetail } from "../pages/verificationReviewModel";
 import { ApiError, request, verificationFetch } from "../lib/api";
 
 vi.mock("../lib/api", async load => ({
@@ -476,6 +476,18 @@ it("recovers when a private image fails to load and opens all images on explicit
   }
 });
 
+it("labels a re-verification draft as updating and explains the empty queue detail", async () => {
+  const draft = { ...detail, status: "DRAFT", verificationWarnings: [] };
+  vi.mocked(verificationFetch).mockImplementation(async (path) => {
+    if (path.startsWith("review-queue")) return { items: [draft], hasMore: false, totalElements: 1 };
+    return { id, status: "DRAFT", revision: 3 };
+  });
+  const user = mount();
+  expect(await screen.findByText("Đang cập nhật giấy tờ")).toBeVisible();
+  await user.click(screen.getByRole("button", { name: id }));
+  expect(await screen.findByText("Chưa có bản nộp đang chờ duyệt")).toBeVisible();
+});
+
 it("maps verification statuses to semantic tag colors", () => {
   expect(verificationStatusColor("APPROVED")).toBe("green");
   expect(verificationStatusColor("REJECTED")).toBe("red");
@@ -484,4 +496,6 @@ it("maps verification statuses to semantic tag colors", () => {
   expect(verificationStatusColor("SUBMITTED")).toBe("gold");
   expect(verificationStatusColor("NEEDS_MORE_INFO")).toBe("gold");
   expect(verificationStatusColor("DRAFT")).toBe("default");
+  expect(queueStatusLabel("DRAFT")).toBe("Đang cập nhật giấy tờ");
+  expect(queueStatusLabel("APPROVED")).toBe("Đã duyệt");
 });

@@ -6,6 +6,7 @@ import { Alert, Button, Checkbox, ConfigProvider, Descriptions, Drawer, Empty, I
 import { Link } from "react-router-dom";
 import { DataTable, Heading, Loading, Panel, QueryError, Refresh } from "../components/common";
 import { FilterField } from "../components/FilterField";
+import { FilterSelect } from "../components/FilterSelect";
 import { date } from "../lib/format";
 import { errorMessage, request, verificationEnabled, verificationFetch } from "../lib/api";
 import { LicensePolicyPreview, type ApprovalCapabilityReview } from "./LicensePolicyPreview";
@@ -17,6 +18,7 @@ import {
   fieldComparison,
   fields,
   formatFieldText,
+  queueStatusLabel,
   states,
   verificationQueueKey,
   verificationReviewPath,
@@ -226,7 +228,7 @@ function Review({ detail, snapshot, setSnapshot, onChanged, onPendingChange, ref
           </div>
         </div>
         <Space wrap size={6}>
-          <Tag color={verificationStatusColor(detail.status)}>{states[detail.status] ?? detail.status}</Tag>
+          <Tag color={verificationStatusColor(detail.status)}>{queueStatusLabel(detail.status)}</Tag>
           {detail.warningCount > 0 ? <Tag color="orange">{detail.warningCount} cảnh báo</Tag> : null}
         </Space>
       </div>
@@ -240,7 +242,7 @@ function Review({ detail, snapshot, setSnapshot, onChanged, onPendingChange, ref
     </section>
 
     <Descriptions size="small" bordered column={{ xs: 1, sm: 2 }} items={[
-      { key: "status", label: "Trạng thái", children: <Tag color={verificationStatusColor(detail.status)}>{states[detail.status] ?? detail.status}</Tag> },
+      { key: "status", label: "Trạng thái", children: <Tag color={verificationStatusColor(detail.status)}>{queueStatusLabel(detail.status)}</Tag> },
       { key: "revision", label: "Bản nộp đang xem", children: <span className="numeric">{doc.revision}</span> },
       { key: "submitted", label: "Thời gian nộp", children: <span className="numeric">{date(doc.submittedAt)}</span> },
       ...(detail.identityLocked ? [
@@ -429,11 +431,13 @@ function Review({ detail, snapshot, setSnapshot, onChanged, onPendingChange, ref
         type="info"
         showIcon
         title="Hồ sơ không có hành động xét duyệt ở trạng thái hiện tại."
-        description={detail.status === "NEEDS_MORE_INFO"
-          ? "Đang chờ tài xế bổ sung. Hồ sơ quay lại hàng chờ sau khi tài xế nộp bản mới."
-          : detail.status === "REJECTED"
-            ? "Hồ sơ đã bị từ chối. Chỉ xét lại khi tài xế nộp bản mới."
-            : "Chuyển sang bản nộp mới nhất để ra quyết định."}
+        description={detail.status === "DRAFT"
+          ? "Tài xế đang cập nhật giấy tờ. Nội dung bên dưới là bản nộp gần nhất đã nộp; chưa có bản mới để ra quyết định."
+          : detail.status === "NEEDS_MORE_INFO"
+            ? "Đang chờ tài xế bổ sung. Hồ sơ quay lại hàng chờ sau khi tài xế nộp bản mới."
+            : detail.status === "REJECTED"
+              ? "Hồ sơ đã bị từ chối. Chỉ xét lại khi tài xế nộp bản mới."
+              : "Chuyển sang bản nộp mới nhất để ra quyết định."}
       />
     ) : null}
     {available.length > 0 ? (
@@ -449,7 +453,7 @@ function Review({ detail, snapshot, setSnapshot, onChanged, onPendingChange, ref
       <aside id="verification-decision-rail" tabIndex={-1} className="verification-decision-rail" aria-label="Quyết định xét duyệt">
         <div className="verification-rail-head">
           <h4>Quyết định xét duyệt</h4>
-          <Tag color={verificationStatusColor(detail.status)}>{states[detail.status] ?? detail.status}</Tag>
+          <Tag color={verificationStatusColor(detail.status)}>{queueStatusLabel(detail.status)}</Tag>
         </div>
         <p className="verification-rail-context">
           Bản nộp {doc.revision} · {date(doc.submittedAt)}
@@ -559,7 +563,7 @@ export default function VerificationReview() {
             maxLength={36} enterButton="Tìm" onSearch={value => filters.update({ application_id: value.trim(), review: undefined })} />
         </FilterField>
         <FilterField label="Trạng thái hồ sơ">
-          <Select aria-label="Trạng thái hồ sơ" placeholder="Tất cả trạng thái" allowClear value={status || undefined}
+          <FilterSelect aria-label="Trạng thái hồ sơ" allLabel="Tất cả trạng thái" value={status}
             options={statuses} style={{ minWidth: 190 }} onChange={value => filters.update({ status: value })} />
         </FilterField>
         <Button className="filter-reset" onClick={filters.reset}>Xóa bộ lọc</Button>
@@ -580,7 +584,7 @@ export default function VerificationReview() {
             { title: "Mã hồ sơ", dataIndex: "id", render: (value, row) => <Button type="link" className="verification-application-link" onClick={() => {
               filters.update({ review: row.id }, false); setHistorical(undefined); setNotice("");
             }}><code>{value}</code></Button> },
-            { title: "Trạng thái", dataIndex: "status", render: value => <Tag color={verificationStatusColor(value)}>{states[value] ?? value}</Tag> },
+            { title: "Trạng thái", dataIndex: "status", render: value => <Tag color={verificationStatusColor(value)}>{queueStatusLabel(value)}</Tag> },
             { title: "Thời gian nộp", dataIndex: "submittedAt", render: date, className: "numeric" },
             { title: "Lần bổ sung", dataIndex: "resubmissionCount", align: "right" },
             { title: "Cảnh báo", dataIndex: "warningCount", align: "right", render: value => value ? <Tag color="orange">{value}</Tag> : "0" },
@@ -611,7 +615,15 @@ export default function VerificationReview() {
     } }} size="large" destroyOnHidden>
       {detail.isFetching ? <Loading /> : <QueryError error={detail.error} retry={() => void detail.refetch()} />}
       {id && detail.data && !detail.isFetching && !detail.error && !("document" in detail.data) && (
-        <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="Tài xế chưa nộp hồ sơ xác minh." />
+        <Empty
+          image={Empty.PRESENTED_IMAGE_SIMPLE}
+          description={<div>
+            <div>Chưa có bản nộp đang chờ duyệt</div>
+            <Typography.Text type="secondary">
+              Hồ sơ đang ở bản nháp hoặc tài xế đang cập nhật giấy tờ. Khi tài xế nộp bản mới, hồ sơ sẽ xuất hiện ở đây để duyệt.
+            </Typography.Text>
+          </div>}
+        />
       )}
       {id && detail.data && !detail.error && "document" in detail.data && (
         <ConfigProvider componentDisabled={detail.isFetching || decisionPending}>

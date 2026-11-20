@@ -1,4 +1,5 @@
 import { FilterField } from "../components/FilterField";
+import { FilterSelect } from "../components/FilterSelect";
 import { useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import {
@@ -350,19 +351,17 @@ export default function PricingPage() {
       />
       <div className="filters">
         <FilterField label="Tìm bảng giá" search><Input.Search key={f.read("q")} defaultValue={f.read("q")} aria-label="Tìm bảng giá" placeholder="Mã bảng giá hoặc loại xe" maxLength={200} enterButton="Tìm" onSearch={q=>f.update({q:q.trim()})} /></FilterField>
-        <FilterField label="Loại xe bảng giá"><Select
+        <FilterField label="Loại xe bảng giá"><FilterSelect
           aria-label="Loại xe bảng giá"
-          placeholder="Tất cả loại xe"
-          allowClear
-          value={vehicleType || undefined}
+          allLabel="Tất cả loại xe"
+          value={vehicleType}
           onChange={(vehicleType) => f.update({ vehicleType })}
           options={vehicleOptions}
         /></FilterField>
-        <FilterField label="Trạng thái bảng giá"><Select
+        <FilterField label="Trạng thái bảng giá"><FilterSelect
           aria-label="Trạng thái bảng giá"
-          placeholder="Tất cả trạng thái"
-          allowClear
-          value={active || undefined}
+          allLabel="Tất cả trạng thái"
+          value={active}
           onChange={(active) => f.update({ active })}
           options={[
             { value: "true", label: "Đang hoạt động" },

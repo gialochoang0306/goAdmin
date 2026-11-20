@@ -16,6 +16,7 @@ import type { TableColumnsType } from "antd";
 import { Link, useLocation, useParams } from "react-router-dom";
 import { SearchDateFields, listSearch } from "../components/SearchDateFields";
 import { FilterField } from "../components/FilterField";
+import { FilterSelect } from "../components/FilterSelect";
 import { DataTable, Heading, InvalidRecord, Loading, Panel, Photo, QueryError, Refresh } from "../components/common";
 import { api, errorMessage } from "../lib/api";
 import { uploadSupportImage } from "../lib/upload";
@@ -101,14 +102,15 @@ export function Tickets() {
       />
       <div className="filters">
         <SearchDateFields filters={filters} label="Tìm yêu cầu hỗ trợ" placeholder="Mã HT-, mã chuyến, tên hoặc SĐT" />
-        <FilterField label="Vai trò người gửi"><Select aria-label="Vai trò người gửi" allowClear placeholder="Tất cả vai trò" value={ownerRole || undefined}
+        <FilterField label="Vai trò người gửi"><FilterSelect aria-label="Vai trò người gửi" allLabel="Tất cả vai trò" value={ownerRole}
           options={[{value:"CUSTOMER",label:"Khách hàng"},{value:"DRIVER",label:"Tài xế"}]} onChange={ownerRole => filters.update({ownerRole})} /></FilterField>
-        <FilterField label="Chủ đề hỗ trợ"><Select aria-label="Chủ đề hỗ trợ" allowClear placeholder="Tất cả chủ đề" value={category || undefined}
+        <FilterField label="Chủ đề hỗ trợ"><FilterSelect aria-label="Chủ đề hỗ trợ" allLabel="Tất cả chủ đề" value={category}
           options={Object.entries(categories).map(([value,label])=>({value,label}))} onChange={category => filters.update({category})} /></FilterField>
         <FilterField label="Trạng thái">
-          <Select
+          <FilterSelect
             aria-label="Lọc trạng thái ticket"
-            options={[{ value: "", label: "Tất cả trạng thái" }, ...statusOptions]}
+            allLabel="Tất cả trạng thái"
+            options={statusOptions}
             value={status ?? ""}
             onChange={value => filters.update({ status: value })}
           />

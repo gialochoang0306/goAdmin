@@ -1,6 +1,7 @@
 import { returnPath, returnLabel } from "../lib/navigation";
 import dayjs from "dayjs";
 import { FilterField } from "../components/FilterField";
+import { FilterMultiSelect } from "../components/FilterSelect";
 import { CreationDateInput } from "../components/CreationDateInput";
 import { useEffect, useRef, useState } from "react";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
@@ -19,7 +20,6 @@ import {
   Input,
   InputNumber,
   Modal,
-  Select,
   Space,
   Table,
   Tabs,
@@ -118,19 +118,17 @@ export function Rides() {
           />
         </FilterField>}
         <FilterField label="Trạng thái chuyến">
-        <Select
+        <FilterMultiSelect
           aria-label="Trạng thái chuyến"
-          placeholder="Tất cả trạng thái"
-          mode="multiple"
+          allLabel="Tất cả trạng thái"
           style={{ minWidth: 260, maxWidth: 580 }}
           maxTagCount="responsive"
-          allowClear
           value={status ? status.split(",") : []}
           options={Object.entries(rideLabels).map(([value, label]) => ({
             value,
             label,
           }))}
-          onChange={(values) => f.update({ status: values.join(",") })}
+          onChange={(values) => f.update({ status: values?.join(",") })}
         />
         </FilterField>
         <Button onClick={() => f.update({ status: activeStatuses })}>
