@@ -96,7 +96,7 @@ beforeEach(() => {
       }
 
       if (u.pathname === "/api/admin/drivers") return ok(page([driverFixture]));
-      if (u.pathname === "/api/admin/drivers/41") return ok({ ...driverFixture, documents: [], capabilities: [] });
+      if (u.pathname === "/api/admin/drivers/41") return ok({ ...driverFixture, capabilities: [] });
       if (u.pathname === "/api/admin/customers") return ok(page([customerFixture]));
       if (u.pathname === "/api/admin/customers/21") return ok({ ...customerFixture, vehicles: [] });
 
@@ -229,7 +229,7 @@ beforeEach(() => {
           anomalies: [],
         } satisfies DashboardSummary);
       }
-      if (u.pathname === "/api/admin/driver-documents") return ok(page([]));
+      if (u.pathname === "/ekyc/driver-verification/v1/admin/review-queue") return ok({ items: [], hasMore: false, totalElements: 0 });
       if (u.pathname === "/api/admin/withdrawals") return ok(page([]));
       if (u.pathname === "/api/admin/pricing-rules") return ok(page([]));
 

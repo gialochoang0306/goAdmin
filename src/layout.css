@@ -490,17 +490,6 @@ input {
   gap: 8px;
   margin-bottom: 6px;
 }
-.document-title {
-  font-size: 16px;
-  font-weight: 700;
-  color: var(--text);
-}
-.document-number {
-  font-size: 16px;
-  color: var(--text);
-  font-variant-numeric: tabular-nums;
-  margin: 6px 0;
-}
 .document-info {
   flex: 1;
   min-width: 0;
@@ -509,12 +498,6 @@ input {
   margin: 5px 0;
   color: var(--muted);
   font-size: 13px;
-}
-.driver-review-form {
-  margin-top: 12px;
-}
-.driver-review-form .ant-form-item {
-  margin-bottom: 12px;
 }
 .form-grid {
   display: grid;
@@ -754,11 +737,7 @@ input {
 .numeric { font-variant-numeric: tabular-nums; }
 .document-card { background: var(--surface-subtle); border-color: var(--border); border-radius: var(--md-sys-shape-corner-sm); }
 .document-card:focus-within { border-color: var(--brand-border); }
-.driver-review-footer { max-height: 36vh; overflow: auto; }
-.review-checklist { list-style: none; padding: 0; margin: 12px 0; display: grid; gap: 8px; }
-.review-checklist li { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
 .last-updated { color: var(--muted); font-size: 12px; margin: -10px 0 18px; }
-.queue-summary { padding: 0; margin-bottom: 12px !important; }
 .verification-capture-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
 .verification-capture-card {
   display: flex;
@@ -777,6 +756,8 @@ input {
   background: var(--md-sys-color-surface-container-low);
 }
 .verification-decision-box h4 { margin: 0 0 12px; font-size: 15px; font-weight: 600; color: var(--text); }
+.verification-application-link.ant-btn { max-width: 100%; height: auto; padding-inline: 0; white-space: normal; text-align: start; }
+.verification-application-link code { overflow-wrap: anywhere; }
 .verification-pagination { display: flex; align-items: center; justify-content: flex-end; gap: 10px; padding: 14px 16px; }
 .ticket-composer-field { display: flex; flex-direction: column; gap: 6px; }
 @media (max-width: 720px) {
@@ -801,6 +782,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, [tabindex]:focus-vis
   .theme-switcher { width: 112px; }
   .account-actions { gap: 6px !important; }
   .topbar { gap: 6px; }
+  .topbar-breadcrumb { display: none; }
   .section-name { display: none !important; }
   .filters { padding: 12px; }
   .filter-field, .filter-field.search-field { width: 100%; min-width: 0; }
@@ -815,7 +797,6 @@ a:focus-visible, button:focus-visible, input:focus-visible, [tabindex]:focus-vis
   .document-info { flex-basis: 100%; }
   .table-desktop.has-mobile-cards { display: none; }
   .table-cards { display: block; }
-  .driver-review-footer { max-height: 40vh; }
 }
 /* Ticket chat: Admin bên phải, người dùng bên trái (theo PRD). */
 .ticket-chat {

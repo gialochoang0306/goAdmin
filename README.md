@@ -53,9 +53,9 @@ Phiên Firebase chỉ giữ trong tab hiện tại. Đăng nhập gọi `/api/au
 
 - Tổng quan: số đếm vận hành từ `totalElements`, các danh sách đã lọc.
 - Chuyến đi: danh sách/chi tiết, lịch sử trạng thái, biên bản bàn giao, chat chỉ đọc, gán tài xế và hủy chuyến.
-- Tài xế: tìm kiếm/lọc, hồ sơ, duyệt giấy tờ, xác minh kỹ năng, duyệt tài khoản và ép offline.
-- Hàng chờ duyệt gom theo mã tài xế: mỗi tài xế một dòng, tổng kết quả và phân trang tính theo hồ sơ. Cửa sổ “Xem và duyệt” có toàn bộ giấy tờ hiện hành, xác minh kỹ năng và quyết định tài khoản. Biểu mẫu từng giấy tờ mở ngay trong cửa sổ; quyết định tài khoản luôn nằm ở phần dưới cố định. Các nút duyệt trên trang chi tiết tài xế cũng mở cùng cửa sổ này.
-- Duyệt giấy tờ không tự động duyệt tài khoản. Hồ sơ có giấy tờ đã nộp và tài khoản còn `PENDING` vẫn xuất hiện trong hàng chờ, kể cả khi đã xét duyệt hết giấy tờ. Backend quyết định giấy tờ nào bắt buộc; nếu chưa đủ, lỗi hiển thị ngay cạnh quyết định tài khoản. Khi đang lưu, cửa sổ khóa các thao tác ghi khác và nút đóng để tránh gửi trùng.
+- Tài xế: tìm kiếm, lọc, xem hồ sơ eKYC, xem kỹ năng và ép ngoại tuyến.
+- Duyệt hồ sơ tài xế tại `/driver-documents/verification`. Mở bản nộp và ảnh riêng tư bằng phiên admin, đối chiếu từng revision, rồi ghi quyết định eKYC.
+- Từ chi tiết tài xế, mở trực tiếp hồ sơ eKYC bằng mã hồ sơ. Tab Xác minh eKYC hiển thị trạng thái hồ sơ hoặc thông báo khi tài xế chưa tạo hồ sơ.
 - Khách hàng: hồ sơ, trạng thái, đánh dấu, lịch sử chuyến và giao dịch ví.
 - Voucher & quỹ khuyến mãi: xem hạn mức, số tiền đang giữ/đã chi/khả dụng, cập nhật hạn mức và phát hành voucher có giới hạn lượt cùng mức giảm tối đa. Voucher chào mừng và voucher mốc do backend tự cấp theo chính sách.
 - Bảng giá: tạo/sửa, kích hoạt, tắt và xác nhận riêng khi tắt cưỡng chế bảng giá cuối cùng.
@@ -63,7 +63,7 @@ Phiên Firebase chỉ giữ trong tab hiện tại. Đăng nhập gọi `/api/au
 
 Bộ lọc, phân trang và tab được lưu trên URL. Dashboard/chuyến cập nhật mỗi 30 giây, chat mỗi 10 giây khi mở; dừng polling khi tab ẩn. Tiền hiển thị VND, thời gian có múi giờ hiển thị theo Việt Nam. Giấy tờ chỉ xuất hiện trong hàng chờ khi đã được gửi thật lên backend.
 
-API hàng chờ hiện phân trang theo giấy tờ. Frontend đọc hết các trang khớp bộ lọc (tối đa 100 giấy tờ mỗi lần), rồi gom và phân trang theo tài xế để một hồ sơ không bị tách qua nhiều trang. Bộ lọc `PENDING` bổ sung các tài khoản chờ duyệt đã nộp giấy tờ; tối đa bốn yêu cầu đọc chi tiết đồng thời. Khi hàng chờ lớn, nên bổ sung API hồ sơ duyệt theo tài xế tại backend để giảm số lần tải. Số “Giấy tờ chờ duyệt” ở tổng quan vẫn đếm giấy tờ.
+Tổng quan dùng `totalElements` từ hàng chờ eKYC để đếm hồ sơ Đã nộp và Đang xét duyệt. Backend chọn bản nộp hiện hành của mỗi hồ sơ. Các hàng ở Tổng quan dẫn thẳng tới mã hồ sơ tương ứng.
 
 Chưa bao gồm báo cáo doanh thu, bản đồ, quản lý tài khoản quản trị hoặc hosting.
 

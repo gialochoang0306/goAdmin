@@ -195,12 +195,12 @@ beforeEach(() => {
           anomalies: [],
         });
       }
+      if (path === "/ekyc/driver-verification/v1/admin/review-queue") return ok({ items: [], hasMore: false, totalElements: 0 });
       if (path === "/api/admin/withdrawals") return ok(page([], 0, 0, 5));
       if (
         path === "/api/admin/rides" ||
         path === "/api/admin/drivers" ||
-        path === "/api/admin/customers" ||
-        path === "/api/admin/driver-documents"
+        path === "/api/admin/customers"
       ) {
         return ok(page([]));
       }

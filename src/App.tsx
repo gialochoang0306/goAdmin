@@ -40,6 +40,7 @@ import { useAuth } from "./auth";
 import { errorMessage } from "./lib/api";
 import { Loading } from "./components/common";
 import { ThemeSwitcher } from "./components/ThemeSwitcher";
+import { verificationReviewPath } from "./pages/verificationReviewModel";
 
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const Rides = lazy(() =>
@@ -54,9 +55,6 @@ const Drivers = lazy(() =>
 );
 const DriverDetail = lazy(() =>
   import("./pages/Drivers").then((m) => ({ default: m.DriverDetailPage })),
-);
-const Documents = lazy(() =>
-  import("./pages/Drivers").then((m) => ({ default: m.Documents })),
 );
 const Customers = lazy(() =>
   import("./pages/Customers").then((m) => ({ default: m.Customers })),
@@ -78,8 +76,8 @@ const navigation = [
   { key: "/rides", label: "Chuyến đi", icon: <CarOutlined /> },
   { key: "/drivers", label: "Tài xế", icon: <UserOutlined /> },
   {
-    key: "/driver-documents",
-    label: "Duyệt hồ sơ",
+    key: verificationReviewPath,
+    label: "Duyệt hồ sơ tài xế",
     icon: <FileProtectOutlined />,
   },
   { key: "/customers", label: "Khách hàng", icon: <TeamOutlined /> },
@@ -224,7 +222,6 @@ function ProtectedLayout() {
   );
   const subLabel = (() => {
     if (!selected || location.pathname === selected.key) return null;
-    if (location.pathname === "/driver-documents/verification") return "Xác minh eKYC";
     const tail = location.pathname.slice(selected.key.length + 1);
     return tail ? `#${tail}` : null;
   })();
@@ -341,7 +338,7 @@ export function AdminApp() {
         <Route path="rides/:id" element={<RideDetail />} />
         <Route path="drivers" element={<Drivers />} />
         <Route path="drivers/:id" element={<DriverDetail />} />
-        <Route path="driver-documents" element={<Documents />} />
+        <Route path="driver-documents" element={<Navigate to={verificationReviewPath} replace />} />
         <Route path="driver-documents/verification" element={<VerificationReview />} />
         <Route path="customers" element={<Customers />} />
         <Route path="customers/:id" element={<CustomerDetail />} />

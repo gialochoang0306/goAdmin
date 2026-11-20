@@ -1,22 +1,20 @@
 import { FilterField } from "../components/FilterField";
-import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useLocation, useParams } from "react-router-dom";
 import {
   App,
   Button,
   Descriptions,
+  Empty,
   Input,
   Select,
-  Space,
   Table,
   Tabs,
   Tag,
-  Typography,
 } from "antd";
 import { ArrowLeftOutlined } from "@ant-design/icons";
 import type { ColumnsType } from "antd/es/table";
-import { api, verificationEnabled } from "../lib/api";
+import { api } from "../lib/api";
 import { date, label, money, percentage, text } from "../lib/format";
 import { useAction, useFilters } from "../lib/hooks";
 import {
@@ -25,15 +23,13 @@ import {
   InvalidRecord,
   Loading,
   Panel,
-  Photo,
   QueryError,
   Refresh,
   Status,
 } from "../components/common";
 import type { Driver, Skill } from "../types";
-import { loadDocumentApplications, type DriverApplication } from "./documentApplications";
-import { DriverDocumentsDrawer } from "./DriverDocumentsDrawer";
 import { returnPath, returnLabel } from "../lib/navigation";
+import { states, verificationApplicationPath } from "./verificationReviewModel";
 
 const verificationOptions = [
   "PENDING",
@@ -162,150 +158,12 @@ export function Drivers() {
   );
 }
 
-export function Documents() {
-  const f = useFilters();
-  const location = useLocation();
-  const selectedId = Number(f.read("driverId"));
-  const validSelection = Number.isSafeInteger(selectedId) && selectedId > 0;
-  const selected = useQuery({
-    queryKey: ["admin", "driver", selectedId],
-    queryFn: () => api.driver(selectedId),
-    enabled: validSelection,
-  });
-  const application = validSelection ? {
-    id: selectedId, driverName: selected.data?.driver.fullName ?? null,
-    driverPhone: selected.data?.driver.phoneNumber ?? "",
-  } : undefined;
-  const setApplication = (row?: Pick<DriverApplication, "id">) => f.update({ driverId: row?.id }, false);
-  const status = f.read("status", "PENDING");
-  const query = useQuery({
-    queryKey: ["admin", "documents", "applications", status],
-    queryFn: () => loadDocumentApplications(status),
-  });
-  const term = f.read("q").trim().toLocaleLowerCase("vi");
-  const applications = (query.data ?? []).filter(row =>
-    !term || `${row.id} ${row.driverName ?? ""} ${row.driverPhone}`.toLocaleLowerCase("vi").includes(term));
-  const totalPages = Math.ceil(applications.length / f.size);
-  const page = Math.min(f.page, Math.max(0, totalPages - 1));
-  const columns: ColumnsType<DriverApplication> = [
-    {
-      title: "Tài xế",
-      width: 200,
-      render: (_, row) => (
-        <>
-          <Link to={`/drivers/${row.id}`} state={{ from: location.pathname + location.search }}>
-            {row.driverName || `Tài xế #${row.id}`}
-          </Link>
-          <div className="muted">#{row.id} · {row.driverPhone}</div>
-        </>
-      ),
-    },
-    {
-      title: "Giấy tờ",
-      render: (_, row) => (
-        <>
-          <div style={{ marginBottom: 6, fontWeight: 500 }}>{row.documents.length} giấy tờ</div>
-          <Space size={[0, 8]} wrap>
-            {row.documents.map(doc => <Tag key={doc.id}>{label(doc.documentType)}</Tag>)}
-          </Space>
-        </>
-      ),
-    },
-    {
-      title: "Trạng thái xử lý",
-      render: (_, row) => row.waitingForAccount ? <Tag color="gold">Chờ duyệt tài khoản</Tag> : <Status value={status} />,
-    },
-    { title: "Ngày gửi", render: (_, row) => date(row.createdAt) },
-    {
-      title: "Thao tác",
-      render: (_, row) => (
-        <Button size="small" onClick={() => setApplication(row)}>
-          Xem và duyệt
-        </Button>
-      ),
-    },
-  ];
-  return (
-    <>
-      <Heading
-        title="Duyệt hồ sơ tài xế"
-        subtitle="Mỗi tài xế một hồ sơ. Kiểm tra giấy tờ, kỹ năng và duyệt tài khoản trong cùng cửa sổ."
-        actions={
-          <>
-            {verificationEnabled && (
-              <Link to="/driver-documents/verification">
-                <Button>Xác minh hồ sơ từ ứng dụng tài xế</Button>
-              </Link>
-            )}
-            <Refresh
-              loading={query.isFetching}
-              onClick={() => void query.refetch()}
-            />
-          </>
-        }
-      />
-      <div className="filters">
-        <FilterField label="Tìm hồ sơ tài xế" search><Input.Search
-          key={f.read("q")}
-          defaultValue={f.read("q")}
-          aria-label="Tìm hồ sơ tài xế"
-          placeholder="Tên, SĐT hoặc mã tài xế"
-          enterButton="Tìm" maxLength={200}
-          onSearch={q => f.update({ q: q.trim() })}
-        /></FilterField>
-        <FilterField label="Trạng thái xử lý hồ sơ"><Select
-          aria-label="Trạng thái xử lý hồ sơ"
-          value={status}
-          options={["PENDING", "APPROVED", "REJECTED"].map((value) => ({
-            value,
-            label: label(value),
-          }))}
-          onChange={(status) => f.update({ status })}
-        /></FilterField>
-        <Button onClick={f.reset}>Xóa bộ lọc</Button>
-      </div>
-      <Typography.Paragraph type="secondary" className="toolbar-note">
-        Đếm theo tài xế · Sắp xếp theo thời gian gửi cũ nhất · Bao gồm tài khoản còn chờ quyết định.
-      </Typography.Paragraph>
-      {f.read("driverId") && !validSelection && <Typography.Paragraph type="danger">Mã hồ sơ trong đường dẫn không hợp lệ.</Typography.Paragraph>}
-      <QueryError error={query.error} retry={() => void query.refetch()} />
-      <Panel>
-        <DataTable
-          data={
-            query.data
-              ? {
-                  content: applications.slice(page * f.size, (page + 1) * f.size),
-                  page,
-                  size: f.size,
-                  totalElements: applications.length,
-                  totalPages,
-                  hasNext: page + 1 < totalPages,
-                }
-              : undefined
-          }
-          columns={columns}
-          loading={query.isPending}
-          onPage={(page, size) => f.update({ page, size }, false)}
-          scroll={900}
-        />
-      </Panel>
-      {application && (
-        <DriverDocumentsDrawer
-          application={application}
-          onClose={() => setApplication(undefined)}
-        />
-      )}
-    </>
-  );
-}
-
 export function DriverDetailPage() {
   const id = Number(useParams().id);
   const valid = Number.isSafeInteger(id) && id > 0;
   const location = useLocation();
   const f = useFilters();
   const { modal } = App.useApp();
-  const [review, setReview] = useState<number | null>();
   const query = useQuery({
     queryKey: ["admin", "driver", id],
     queryFn: () => api.driver(id),
@@ -318,7 +176,9 @@ export function DriverDetailPage() {
     return (
       <QueryError error={query.error} retry={() => void query.refetch()} />
     );
-  const { driver, documents, skills } = query.data;
+  const { driver, verification, skills } = query.data;
+  const verificationPath = verification ? verificationApplicationPath(verification.applicationId) : undefined;
+  const activeTab = f.read("tab", "profile");
   const skillColumns: ColumnsType<Skill> = [
     { title: "Loại xe", dataIndex: "vehicleType", render: label },
     { title: "Hộp số", dataIndex: "transmission", render: label },
@@ -330,17 +190,6 @@ export function DriverDetailPage() {
         <Tag color={v ? "green" : "default"}>
           {v ? "Đã xác minh" : "Chưa xác minh"}
         </Tag>
-      ),
-    },
-    {
-      title: "Thao tác",
-      render: () => (
-        <Button
-          size="small"
-          onClick={() => setReview(null)}
-        >
-          Xem và duyệt
-        </Button>
       ),
     },
   ];
@@ -359,12 +208,7 @@ export function DriverDetailPage() {
               loading={query.isFetching}
               onClick={() => void query.refetch()}
             />
-            <Button
-              type="primary"
-              onClick={() => setReview(null)}
-            >
-              Xem và duyệt hồ sơ
-            </Button>
+            {verificationPath && <Link to={verificationPath}>Xem hồ sơ eKYC</Link>}
             <Button
               danger
               disabled={driver.status === "OFFLINE"}
@@ -388,11 +232,7 @@ export function DriverDetailPage() {
       />
       <QueryError error={query.error} retry={() => void query.refetch()} />
       <Tabs
-        activeKey={
-          ["profile", "documents", "skills"].includes(f.read("tab", "profile"))
-            ? f.read("tab", "profile")
-            : "profile"
-        }
+        activeKey={["verification", "skills"].includes(activeTab) ? activeTab : "profile"}
         onChange={(tab) => f.update({ tab }, false)}
         items={[
           {
@@ -478,54 +318,17 @@ export function DriverDetailPage() {
             ),
           },
           {
-            key: "documents",
-            label: `Giấy tờ (${documents.length})`,
+            key: "verification",
+            label: "Xác minh eKYC",
             children: (
               <Panel>
-                {documents.length ? (
-                  documents.map((doc) => (
-                    <div key={doc.id} className="document-card">
-                      <Photo
-                        url={doc.secureUrl}
-                        alt={label(doc.documentType)}
-                      />
-                      <div className="document-info">
-                        <div className="document-header">
-                          <strong className="document-title">{label(doc.documentType)}</strong>
-                          <Space size={6}>
-                            {!doc.isCurrent && <Tag>Bản cũ</Tag>}
-                            <Status value={doc.verificationStatus} />
-                          </Space>
-                        </div>
-                        {doc.documentType !== "SELFIE" && doc.documentNumber && (
-                          <div className="document-number">
-                            Số giấy tờ: <strong>{doc.documentNumber}</strong>
-                          </div>
-                        )}
-                        {doc.rejectionReason && (
-                          <p style={{ color: "var(--md-sys-color-error)", fontWeight: 600 }}>
-                            Lý do từ chối: {doc.rejectionReason}
-                          </p>
-                        )}
-                        <p>
-                          Gửi: {date(doc.createdAt)}
-                          {doc.expiresAt ? ` · Hết hạn: ${date(doc.expiresAt)}` : ""}
-                          {doc.reviewedAt ? ` · Duyệt: ${date(doc.reviewedAt)}` : ""}
-                        </p>
-                      </div>
-                      <Button
-                        size="small"
-                        disabled={!doc.isCurrent}
-                        onClick={() => setReview(doc.id)}
-                      >
-                        Xem và duyệt
-                      </Button>
-                    </div>
-                  ))
+                {verification && verificationPath ? (
+                  <Descriptions column={1} items={[
+                    { key: "application", label: "Mã hồ sơ", children: <Link to={verificationPath}>{verification.applicationId}</Link> },
+                    { key: "status", label: "Trạng thái hồ sơ", children: <Tag>{states[verification.status] ?? verification.status}</Tag> },
+                  ]} />
                 ) : (
-                  <Typography.Text type="secondary">
-                    Chưa có giấy tờ.
-                  </Typography.Text>
+                  <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="Tài xế chưa tạo hồ sơ xác minh eKYC." />
                 )}
               </Panel>
             ),
@@ -548,13 +351,6 @@ export function DriverDetailPage() {
           },
         ]}
       />
-      {review !== undefined && (
-        <DriverDocumentsDrawer
-          application={{ id, driverName: driver.fullName, driverPhone: driver.phoneNumber }}
-          initialDocumentId={review ?? undefined}
-          onClose={() => setReview(undefined)}
-        />
-      )}
     </>
   );
 }

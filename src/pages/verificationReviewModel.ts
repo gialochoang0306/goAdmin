@@ -1,5 +1,12 @@
+export const verificationReviewPath = "/driver-documents/verification";
+export const verificationQueueKey = ["admin", "ekyc-review"] as const;
+
+export function verificationApplicationPath(applicationId: string) {
+  return verificationReviewPath + "?" + new URLSearchParams({ application_id: applicationId });
+}
+
 export const states: Record<string, string> = {
-  SUBMITTED: "Đã nộp", UNDER_REVIEW: "Đang xét duyệt", NEEDS_MORE_INFO: "Cần bổ sung",
+  DRAFT: "Chưa nộp", SUBMITTED: "Đã nộp", UNDER_REVIEW: "Đang xét duyệt", NEEDS_MORE_INFO: "Cần bổ sung",
   APPROVED: "Đã duyệt", REJECTED: "Đã từ chối", REVOKED: "Đã thu hồi",
 };
 export const captures: Record<string, string> = {
@@ -73,6 +80,10 @@ export type ReviewDocument = {
 export type QueueItem = {
   id: string; status: string; revision: number; submissionRevision: number;
   submittedAt: string; warningCount: number; resubmissionCount: number;
+  driverId?: number | null; driverName?: string | null; driverPhone?: string | null;
+};
+export type QueueResponse = {
+  items: QueueItem[]; hasMore: boolean; totalElements: number;
 };
 export type VerificationWarning = {
   code: string;
@@ -96,6 +107,8 @@ export type LockedIdentity = {
   dob?: string | null;
   verifiedGplxNumber?: string | null;
 };
+
+export type UnsubmittedApplication = Pick<QueueItem, "id" | "status" | "revision">;
 
 export type ReviewDetail = QueueItem & {
   verificationWarnings?: VerificationWarning[];

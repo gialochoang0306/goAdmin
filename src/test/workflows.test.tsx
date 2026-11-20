@@ -11,6 +11,7 @@ import {
   profile,
   ride as rideFixture,
   driver as driverFixture,
+  verificationApplicationId as verificationId,
   customer as customerFixture,
   pricing as pricingFixture,
   page,
@@ -32,7 +33,7 @@ let driver = structuredClone(driverFixture);
 let customer = structuredClone(customerFixture);
 let pricing = structuredClone(pricingFixture);
 let assignmentConflict = false;
-let verificationConflict = false;
+
 let supportsAdvanced = true;
 let withdrawalPending = true;
 const writes: {
@@ -69,7 +70,7 @@ beforeEach(() => {
   writes.length = 0;
   reads.length = 0;
   assignmentConflict = false;
-  verificationConflict = false;
+
   supportsAdvanced = true;
   withdrawalPending = true;
   configureAuth(
@@ -157,36 +158,17 @@ beforeEach(() => {
         ]);
       if (path === "/api/admin/drivers") return ok(page([driver.driver]));
       if (path === "/api/admin/drivers/41") return ok(driver);
-      if (path === "/api/admin/drivers/41/verification-status") {
-        if (verificationConflict)
-          return fail(409, "Chưa duyệt đủ giấy tờ bắt buộc: DRIVER_LICENSE");
-        driver.driver.verificationStatus = String(body.status);
-        return ok({});
-      }
       if (path === "/api/admin/drivers/41/force-offline") {
         driver.driver.status = "OFFLINE";
         return ok({});
       }
-      if (path === "/api/admin/driver-skills/61/verify") {
-        driver.skills[0].verified = Boolean(body.verified);
-        return ok({});
-      }
-      if (path === "/api/admin/driver-documents")
-        return ok(
-          page(
-            [
-              {
-                document: driver.documents[0],
-                driverName: driver.driver.fullName,
-                driverPhone: driver.driver.phoneNumber,
-              },
-            ],
-            8,
-          ),
-        );
-      if (path === "/api/admin/driver-documents/51/review") {
-        driver.documents[0].verificationStatus = String(body.status);
-        return ok(driver.documents[0]);
+      if (path === "/ekyc/driver-verification/v1/admin/review-queue") return ok({
+        items: [{ id: verificationId, status: "SUBMITTED", driverId: 41, driverName: "Nguyễn Văn An", submittedAt: "2026-10-24T03:00:00Z" }],
+        hasMore: true,
+        totalElements: 8,
+      });
+      if (path === "/ekyc/driver-verification/v1/admin/applications/" + verificationId) {
+        return ok({ id: verificationId, revision: 0, status: "DRAFT" });
       }
       if (path === "/api/admin/customers") return ok(page([customer], 3));
       if (path === "/api/admin/customers/21") return ok(customer);
@@ -292,11 +274,8 @@ describe("Admin pages", () => {
     await waitFor(() =>
       expect(within(activeCard).getByText("42")).toBeInTheDocument(),
     );
-    expect(
-      within(screen.getByRole("link", { name: /Giấy tờ chờ duyệt/ })).getByText(
-        "8",
-      ),
-    ).toBeInTheDocument();
+    expect(await within(screen.getByRole("link", { name: /Hồ sơ tài xế chờ duyệt/ })).findByText("8")).toBeInTheDocument();
+    expect(await screen.findByRole("link", { name: "Xem hồ sơ" })).toHaveAttribute("href", "/driver-documents/verification?application_id=" + verificationId);
   });
   it("shows finance separately from wallets and switches the reporting period", async () => {
     const { user } = renderPage("/dashboard");
@@ -399,63 +378,25 @@ describe("Admin pages", () => {
     expect(screen.queryByRole("textbox")).not.toBeInTheDocument();
     expect(writes).toHaveLength(0);
   });
-  it("requires a rejection reason for documents", async () => {
-    const { user } = renderPage("/driver-documents");
-    await user.click(
-      await screen.findByRole("button", { name: "Xem và duyệt" }),
-    );
-    await user.click(await screen.findByRole("button", { name: "Duyệt giấy tờ Căn cước công dân" }));
-    const dialog = await screen.findByRole("form", { name: "Duyệt Căn cước công dân · #51" });
-    await user.click(within(dialog).getByRole("combobox"));
-    await user.click(
-      await screen.findByText("Từ chối", {
-        selector: ".ant-select-item-option-content",
-      }),
-    );
-    await user.click(screen.getByRole("button", { name: "Từ chối giấy tờ" }));
-    expect(
-      await screen.findByText("Nhập lý do từ chối giấy tờ."),
-    ).toBeInTheDocument();
+  it("links from driver detail directly to the eKYC application without a manual approval action", async () => {
+    const { user } = renderPage("/drivers/41?tab=verification");
+    expect(await screen.findByRole("link", { name: verificationId })).toHaveAttribute("href", "/driver-documents/verification?application_id=" + verificationId);
+    expect(screen.queryByRole("button", { name: "Duyệt tài khoản" })).not.toBeInTheDocument();
+    const link = screen.getByRole("link", { name: "Xem hồ sơ eKYC" });
+    expect(link).toHaveAttribute("href", "/driver-documents/verification?application_id=" + verificationId);
+    await user.click(link);
+    expect(await screen.findByText("Chi tiết xác minh tài xế")).toBeVisible();
+    expect(await screen.findByText("Tài xế chưa nộp hồ sơ xác minh.")).toBeInTheDocument();
     expect(writes).toHaveLength(0);
-    await user.type(screen.getByLabelText("Lý do từ chối"), "Ảnh không rõ");
-    await user.click(screen.getByRole("button", { name: "Từ chối giấy tờ" }));
-    await waitFor(() =>
-      expect(writes[0]?.body).toEqual({
-        status: "REJECTED",
-        rejection_reason: "Ảnh không rõ",
-      }),
-    );
   });
-  it("shows missing-document errors when approving a driver", async () => {
-    verificationConflict = true;
-    driver.driver.verificationStatus = "PENDING";
-    const { user } = renderPage("/drivers/41");
-    await user.click(
-      await screen.findByRole("button", { name: "Xem và duyệt hồ sơ" }),
-    );
-    const dossier = await screen.findByRole("dialog", { name: /Duyệt hồ sơ tài xế/ });
-    await user.click(within(dossier).getByRole("button", { name: "Duyệt tài khoản" }));
-    await waitFor(() =>
-      expect(
-        screen.getAllByText("Chưa duyệt đủ giấy tờ bắt buộc: DRIVER_LICENSE")
-          .length,
-      ).toBeGreaterThan(0),
-    );
-    expect(screen.getByRole("dialog")).toBeInTheDocument();
-  });
-  it("verifies skills in the shared review window and confirms force offline", async () => {
-    const { user } = renderPage("/drivers/41?tab=skills");
-    await user.click(await screen.findByRole("button", { name: "Xem và duyệt hồ sơ" }));
-    const dossier = await screen.findByRole("dialog", { name: /Duyệt hồ sơ tài xế/ });
-    await user.click(await within(dossier).findByRole("button", { name: "Xác minh kỹ năng Ô tô · Số tự động · B2" }));
-    await waitFor(() => expect(driver.skills[0].verified).toBe(true));
-    await waitFor(() => expect(within(dossier).getByRole("button", { name: "Đóng hồ sơ" })).toBeEnabled());
-    await user.click(within(dossier).getByRole("button", { name: "Đóng hồ sơ" }));
+  it("shows an empty verification state and confirms force offline", async () => {
+    driver.verification = null;
+    const { user } = renderPage("/drivers/41?tab=verification");
+    expect(await screen.findByText("Tài xế chưa tạo hồ sơ xác minh eKYC.")).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Xem hồ sơ eKYC" })).not.toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Ép offline" }));
     const dialog = await screen.findByRole("dialog");
-    await user.click(
-      within(dialog).getByRole("button", { name: "Ép offline" }),
-    );
+    await user.click(within(dialog).getByRole("button", { name: "Ép offline" }));
     await waitFor(() => expect(driver.driver.status).toBe("OFFLINE"));
   });
   it("updates customer status only after a required reason and permits flagging", async () => {

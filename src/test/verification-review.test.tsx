@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MemoryRouter } from "react-router-dom";
@@ -27,7 +27,7 @@ const detail: ReviewDetail = {
 
 beforeEach(() => {
   vi.mocked(verificationFetch).mockImplementation(async (path) => {
-    if (path.startsWith("review-queue")) return { items: [detail], hasMore: false };
+    if (path.startsWith("review-queue")) return { items: [detail], hasMore: false, totalElements: 1 };
     return detail;
   });
 });
@@ -81,7 +81,7 @@ it("distinguishes a source conflict from a confirmed value that differs from eve
 
 it("runs optional face comparison only for the consented current submission", async () => {
   vi.mocked(verificationFetch).mockImplementation(async (path) => {
-    if (path.startsWith("review-queue")) return { items: [detail], hasMore: false };
+    if (path.startsWith("review-queue")) return { items: [detail], hasMore: false, totalElements: 1 };
     if (path.endsWith("/face-comparison")) return {
       mode: "EXPERIMENTAL", modelVersion: "fake", qualityVersion: "fake-quality",
       liveness: "NOT_EVALUATED", quality: { selfie: "MULTIPLE_FACES" },
@@ -116,7 +116,7 @@ it("runs optional face comparison only for the consented current submission", as
 
 it("displays the backend warning and leaves supplementation available when approval is blocked", async () => {
   vi.mocked(verificationFetch).mockImplementation(async path => {
-    if (path.startsWith("review-queue")) return { items: [detail], hasMore: false };
+    if (path.startsWith("review-queue")) return { items: [detail], hasMore: false, totalElements: 1 };
     return {
       ...detail,
       verificationWarnings: [{
@@ -184,7 +184,7 @@ it("submits only eligible capability groups that the reviewer selected", async (
 
 it("renders locked identity and side-by-side approved baseline for re-verification updates", async () => {
   vi.mocked(verificationFetch).mockImplementation(async path => {
-    if (path.startsWith("review-queue")) return { items: [detail], hasMore: false };
+    if (path.startsWith("review-queue")) return { items: [detail], hasMore: false, totalElements: 1 };
     return {
       ...detail,
       approvedRevision: 2,
@@ -215,7 +215,7 @@ it("renders locked identity and side-by-side approved baseline for re-verificati
 
 it("shows old-snapshot warning when viewing prior submission and styles reject as danger", async () => {
   vi.mocked(verificationFetch).mockImplementation(async (path) => {
-    if (path.startsWith("review-queue")) return { items: [detail], hasMore: false };
+    if (path.startsWith("review-queue")) return { items: [detail], hasMore: false, totalElements: 1 };
     if (path.includes("?snapshot=3")) {
       return {
         ...detail,
@@ -244,4 +244,83 @@ it("shows old-snapshot warning when viewing prior submission and styles reject a
   await user.click(screen.getByText(/Bản 3 ·/, { selector: ".ant-select-item-option-content" }));
   expect(await screen.findByText(/Đang xem bản nộp cũ \(Bản 3\)/)).toBeVisible();
   expect(screen.queryByRole("button", { name: "Lưu quyết định" })).not.toBeInTheDocument();
+});
+
+
+it("revokes an approved verification with a reason and the displayed revision", async () => {
+  const approved = { ...detail, status: "APPROVED", verificationWarnings: [] };
+  vi.mocked(request).mockResolvedValue({ enabled: false, groups: [] });
+  vi.mocked(verificationFetch).mockImplementation(async path =>
+    path.startsWith("review-queue") ? { items: [approved], hasMore: false, totalElements: 1 } : approved);
+  const user = mount();
+  await user.click(await screen.findByRole("button", { name: id }));
+  await user.click(await screen.findByRole("combobox", { name: "Quyết định" }));
+  await user.click(await screen.findByText("Thu hồi xác minh", { selector: ".ant-select-item-option-content" }));
+  await user.type(await screen.findByRole("textbox", { name: "Lý do" }), "Giấy phép bị thu hồi");
+  await user.click(screen.getByRole("checkbox", { name: "Tôi đã xem bản nộp hiện tại" }));
+  await user.click(screen.getByRole("button", { name: "Lưu quyết định" }));
+  await waitFor(() => expect(verificationFetch).toHaveBeenCalledWith(
+    "applications/" + id + "/decision", { body: { revision: 5, status: "REVOKED", reason: "Giấy phép bị thu hồi", captures: [], fields: [] } },
+  ));
+});
+
+it("loads a private image only when opened and revokes its blob URL on unmount", async () => {
+  const createObjectURL = vi.fn(() => "blob:review-test");
+  const revokeObjectURL = vi.fn();
+  vi.stubGlobal("URL", Object.assign(class extends URL {}, { createObjectURL, revokeObjectURL }));
+  try {
+    const withCapture = { ...detail, document: { ...detail.document, captures: { cccd_front: {} } } };
+    vi.mocked(verificationFetch).mockImplementation(async path => {
+      if (path.startsWith("review-queue")) return { items: [withCapture], hasMore: false, totalElements: 1 };
+      if (path.includes("/captures/")) return new Blob(["synthetic image"], { type: "image/png" });
+      return withCapture;
+    });
+    const user = mount();
+    await user.click(await screen.findByRole("button", { name: id }));
+    expect(await screen.findByRole("button", { name: "Mở ảnh" })).toBeVisible();
+    expect(vi.mocked(verificationFetch).mock.calls.some(([path]) => path.includes("/captures/"))).toBe(false);
+    await user.click(screen.getByRole("button", { name: "Mở ảnh" }));
+    expect(await screen.findByAltText("CCCD mặt trước")).toHaveAttribute("src", "blob:review-test");
+    expect(verificationFetch).toHaveBeenCalledWith("applications/" + id + "/captures/cccd_front?snapshot=4",
+      expect.objectContaining({ binary: true, signal: expect.any(AbortSignal) }));
+    cleanup();
+    expect(revokeObjectURL).toHaveBeenCalledWith("blob:review-test");
+  } finally {
+    vi.unstubAllGlobals();
+  }
+});
+
+
+it("keeps the eKYC drawer open and sends one decision while a review is pending", async () => {
+  const path = "applications/" + id + "/decision";
+  let resolveDecision!: (value: ReviewDetail) => void;
+  const response = new Promise<ReviewDetail>(resolve => { resolveDecision = resolve; });
+  const pendingDecision = vi.fn(() => response);
+  vi.mocked(verificationFetch).mockImplementation(async requestPath => {
+    if (requestPath === path) return pendingDecision();
+    if (requestPath.startsWith("review-queue")) return { items: [detail], hasMore: false, totalElements: 1 };
+    return detail;
+  });
+
+  const user = mount();
+  await user.click(await screen.findByRole("button", { name: id }));
+  const drawer = (await screen.findByText("Chi tiết xác minh tài xế")).closest("[role=dialog]")!;
+  expect(drawer.querySelector(".ant-drawer-close")).toBeInTheDocument();
+  await user.click(await screen.findByRole("combobox", { name: "Quyết định" }));
+  await user.click(screen.getByText("Từ chối", { selector: ".ant-select-item-option-content" }));
+  await user.click(screen.getByRole("checkbox", { name: "Tôi đã xem bản nộp hiện tại" }));
+  await user.type(screen.getByRole("textbox", { name: "Lý do" }), "Synthetic");
+  const submit = screen.getByRole("button", { name: "Lưu quyết định" });
+  const form = submit.closest("form")!;
+  try {
+    await user.click(submit);
+    await waitFor(() => expect(drawer.querySelector(".ant-drawer-close")).not.toBeInTheDocument());
+    fireEvent.submit(form);
+    await user.keyboard("{Escape}");
+    expect(drawer).toBeVisible();
+    expect(pendingDecision).toHaveBeenCalledTimes(1);
+  } finally {
+    resolveDecision({ ...detail, status: "REJECTED", revision: 6 });
+  }
+  expect(await screen.findByText("Đã lưu quyết định.")).toBeVisible();
 });

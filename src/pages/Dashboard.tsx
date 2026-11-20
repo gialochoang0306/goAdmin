@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQueries, useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
-import { Alert, Button, Card, Empty, Typography } from "antd";
+import { Alert, Card, Empty, Typography } from "antd";
 import {
   ArrowRightOutlined,
   CarOutlined,
@@ -9,16 +9,18 @@ import {
   FlagOutlined,
   SearchOutlined,
 } from "@ant-design/icons";
-import { api } from "../lib/api";
-import { activeStatuses, date, label } from "../lib/format";
+import { api, verificationFetch } from "../lib/api";
+import { activeStatuses, date } from "../lib/format";
 import { Heading, Panel, QueryError, Refresh, UpdatedAt, Loading } from "../components/common";
 import { RideTable } from "../components/RideTable";
 import { DashboardFinance } from "./DashboardFinance";
 import { DashboardAnomalies, WithdrawalQueue } from "./DashboardActions";
 import type { DashboardPeriod } from "../types";
+import { verificationApplicationPath, verificationReviewPath, verificationQueueKey, states, type QueueResponse } from "./verificationReviewModel";
 import "./dashboard.css";
 
 const financeKey = ["admin", "dashboard", "finance"];
+const pendingVerificationPath = verificationReviewPath + "?status=PENDING_REVIEW";
 
 export default function Dashboard() {
   const [period, setPeriod] = useState<DashboardPeriod>(7);
@@ -38,7 +40,7 @@ export default function Dashboard() {
     queryFn: () => api.withdrawals({ status: "PENDING", page: withdrawalPage, size: 5 }),
     refetchInterval: 30_000,
   });
-  const [active, noDriver, documents, flagged, recent, pendingAccounts] = useQueries({
+  const [active, noDriver, flagged, recent] = useQueries({
     queries: [
       {
         queryKey: ["admin", "dashboard", "active"],
@@ -51,11 +53,6 @@ export default function Dashboard() {
         refetchInterval: 30_000,
       },
       {
-        queryKey: ["admin", "dashboard", "documents"],
-        queryFn: () => api.documents({ status: "PENDING", size: 5 }),
-        refetchInterval: 30_000,
-      },
-      {
         queryKey: ["admin", "dashboard", "flagged"],
         queryFn: () => api.customers({ flagged: true, size: 1 }),
         refetchInterval: 30_000,
@@ -65,12 +62,12 @@ export default function Dashboard() {
         queryFn: () => api.rides({ size: 5 }),
         refetchInterval: 30_000,
       },
-      {
-        queryKey: ["admin", "dashboard", "pending-accounts"],
-        queryFn: () => api.drivers({ verification_status: "PENDING", size: 1 }),
-        refetchInterval: 30_000,
-      },
     ],
+  });
+  const verification = useQuery({
+    queryKey: [...verificationQueueKey, "dashboard"],
+    queryFn: ({ signal }) => verificationFetch<QueueResponse>("review-queue?status=PENDING_REVIEW&limit=5", { signal }),
+    refetchInterval: 30_000,
   });
   const stats = [
     {
@@ -86,9 +83,9 @@ export default function Dashboard() {
       icon: <SearchOutlined />,
     },
     {
-      title: "Giấy tờ chờ duyệt",
-      query: documents,
-      href: "/driver-documents?status=PENDING",
+      title: "Hồ sơ tài xế chờ duyệt",
+      query: verification,
+      href: pendingVerificationPath,
       icon: <FileProtectOutlined />,
     },
     {
@@ -98,7 +95,7 @@ export default function Dashboard() {
       icon: <FlagOutlined />,
     },
   ];
-  const all = [finance, promoBudget, withdrawals, active, noDriver, documents, flagged, recent, pendingAccounts];
+  const all = [finance, promoBudget, withdrawals, active, noDriver, flagged, recent, verification];
   const updatedAt = Math.max(...all.map(query => query.dataUpdatedAt));
   return (
     <>
@@ -161,43 +158,26 @@ export default function Dashboard() {
         />
       </Panel>
       <Panel
-        title="Giấy tờ đang chờ duyệt"
-        extra={
-          <Link to="/driver-documents">
-            Mở hàng chờ <ArrowRightOutlined />
-          </Link>
-        }
+        title="Hồ sơ tài xế chờ duyệt"
+        extra={<Link to={pendingVerificationPath}>Mở hàng chờ <ArrowRightOutlined /></Link>}
       >
-        <Typography.Paragraph type="secondary" className="queue-summary">
-          {documents.data && !documents.isError ? `${documents.data.totalElements} giấy tờ chờ duyệt` : "Chưa tải được số giấy tờ"}
-          {" · "}<Link to="/drivers?verification_status=PENDING">
-            {pendingAccounts.data && !pendingAccounts.isError ? `${pendingAccounts.data.totalElements} tài khoản tài xế chờ quyết định` : "Xem tài khoản chờ quyết định"}
-          </Link>
-        </Typography.Paragraph>
-        <QueryError error={pendingAccounts.error} retry={() => void pendingAccounts.refetch()} />
-        <QueryError
-          error={documents.error}
-          retry={() => void documents.refetch()}
-        />
-        {documents.isPending && <Loading />}
-        {documents.data?.content.map((row) => (
-          <div className="queue-row" key={row.document.id}>
+        <QueryError error={verification.error} retry={() => void verification.refetch()} />
+        {verification.isPending && <Loading />}
+        {verification.data?.items.map((application) => (
+          <div className="queue-row" key={application.id}>
             <div>
-              <Link to={`/drivers/${row.document.driverId}`} state={{ from: "/dashboard" }}>
-                {row.driverName || `Tài xế #${row.document.driverId}`}
+              <Link to={verificationApplicationPath(application.id)}>
+                {application.driverName || (application.driverId ? "Tài xế #" + application.driverId : "Hồ sơ " + application.id)}
               </Link>
               <Typography.Text type="secondary">
-                {label(row.document.documentType)} ·{" "}
-                {date(row.document.createdAt)}
+                {states[application.status]} · {date(application.submittedAt)}
               </Typography.Text>
             </div>
-            <Link to={`/driver-documents?status=PENDING&driverId=${row.document.driverId}`}>
-              <Button size="small">Xem hồ sơ</Button>
-            </Link>
+            <Link to={verificationApplicationPath(application.id)}>Xem hồ sơ</Link>
           </div>
         ))}
-        {documents.data?.content.length === 0 && (
-          <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="Không có giấy tờ đang chờ duyệt." />
+        {verification.data?.items.length === 0 && (
+          <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="Không có hồ sơ đang chờ duyệt." />
         )}
       </Panel>
       <div className="dashboard-section-heading">

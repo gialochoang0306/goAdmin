@@ -1,20 +1,18 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Alert, Button, Checkbox, Descriptions, Drawer, Image, Input, Select, Space, Table, Tag, Typography } from "antd";
+import { Alert, Button, Checkbox, Descriptions, Drawer, Empty, Image, Input, Select, Space, Table, Tag, Typography } from "antd";
 import { Link } from "react-router-dom";
-import { Heading, Loading, Panel, QueryError, Refresh } from "../components/common";
+import { DataTable, Heading, Loading, Panel, QueryError, Refresh } from "../components/common";
 import { FilterField } from "../components/FilterField";
 import { date } from "../lib/format";
 import { errorMessage, request, verificationEnabled, verificationFetch } from "../lib/api";
 import { LicensePolicyPreview, type ApprovalCapabilityReview } from "./LicensePolicyPreview";
 import { FaceComparisonPanel } from "./FaceComparisonPanel";
 import { useFilters } from "../lib/hooks";
-import { captures, fieldComparison, fields, states, warningText, type QueueItem, type ReviewDetail, type VerificationWarning } from "./verificationReviewModel";
+import { captures, fieldComparison, fields, states, warningText, type QueueItem, type QueueResponse, type ReviewDetail, type UnsubmittedApplication, type VerificationWarning, verificationQueueKey, verificationReviewPath } from "./verificationReviewModel";
 
-const statuses = Object.entries(states).map(([value, label]) => ({ value, label }));
+const statuses = [{ value: "PENDING_REVIEW", label: "Chờ duyệt" }, ...Object.entries(states).filter(([value]) => value !== "DRAFT").map(([value, label]) => ({ value, label }))];
 const uuid = /^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i;
-const queueKey = ["admin", "ekyc-review"];
-type Queue = { items: QueueItem[]; hasMore: boolean };
 type Decision = "UNDER_REVIEW" | "APPROVED" | "REJECTED" | "NEEDS_MORE_INFO" | "REVOKED";
 
 function PrivateImage({ id, slot, revision }: { id: string; slot: string; revision: number }) {
@@ -261,31 +259,32 @@ function Review({ detail, snapshot, setSnapshot, onChanged, onPendingChange }: {
 export default function VerificationReview() {
   const filters = useFilters();
   const client = useQueryClient();
-  const [id, setId] = useState<string>();
-  const [snapshot, setSnapshot] = useState<number>();
+  const search = filters.read("application_id");
+  const selected = filters.read("review") || search;
+  const id = uuid.test(selected) ? selected : undefined;
+  const [historical, setHistorical] = useState<{ id: string; revision: number }>();
+  const snapshot = historical && historical.id === id ? historical.revision : undefined;
   const [notice, setNotice] = useState("");
   const [decisionPending, setDecisionPending] = useState(false);
-  const search = filters.read("application_id");
   const status = filters.read("status");
   const params = new URLSearchParams({ limit: String(filters.size), offset: String(filters.size * filters.page) });
   if (search && uuid.test(search)) params.set("application_id", search);
-  if (status && states[status]) params.set("status", status);
+  if (statuses.some(option => option.value === status)) params.set("status", status);
   const canSearch = !search || uuid.test(search);
   const queue = useQuery({
-    queryKey: [...queueKey, params.toString()],
-    queryFn: ({ signal }) => verificationFetch<Queue>("review-queue?" + params.toString(), { signal }),
+    queryKey: [...verificationQueueKey, params.toString()],
+    queryFn: ({ signal }) => verificationFetch<QueueResponse>("review-queue?" + params.toString(), { signal }),
     enabled: verificationEnabled && canSearch, retry: false, gcTime: 0,
   });
-  const detailKey = [...queueKey, id, snapshot] as const;
+  const detailKey = [...verificationQueueKey, id, snapshot] as const;
   const detail = useQuery({
     queryKey: detailKey,
-    queryFn: ({ signal }) => verificationFetch<ReviewDetail>("applications/" + id + (snapshot ? "?snapshot=" + snapshot : ""), { signal }),
+    queryFn: ({ signal }) => verificationFetch<ReviewDetail | UnsubmittedApplication>("applications/" + id + (snapshot ? "?snapshot=" + snapshot : ""), { signal }),
     enabled: verificationEnabled && !!id, retry: false, gcTime: 0,
   });
   return <>
-    <Heading title="Xác minh hồ sơ tài xế" subtitle="Đối chiếu hồ sơ nộp từ ứng dụng tài xế."
+    <Heading title="Duyệt hồ sơ tài xế" subtitle="Đối chiếu hồ sơ nộp từ ứng dụng tài xế."
       actions={<Space>
-        <Link to="/driver-documents"><Button>Hồ sơ hiện có</Button></Link>
         <Refresh loading={queue.isFetching || detail.isFetching} onClick={() => {
           void queue.refetch(); if (id) void detail.refetch();
         }} /></Space>} />
@@ -293,7 +292,7 @@ export default function VerificationReview() {
       <div className="filters">
         <FilterField label="Tìm theo mã hồ sơ" search>
           <Input.Search key={search} aria-label="Mã hồ sơ" placeholder="Mã hồ sơ UUID đầy đủ" defaultValue={search}
-            maxLength={36} enterButton="Tìm" onSearch={value => filters.update({ application_id: value.trim() })} />
+            maxLength={36} enterButton="Tìm" onSearch={value => filters.update({ application_id: value.trim(), review: undefined })} />
         </FilterField>
         <FilterField label="Trạng thái hồ sơ">
           <Select aria-label="Trạng thái hồ sơ" placeholder="Tất cả trạng thái" allowClear value={status || undefined}
@@ -305,10 +304,17 @@ export default function VerificationReview() {
       {notice && <Alert className="query-error" type="success" showIcon title={notice} closable onClose={() => setNotice("")} />}
       <QueryError error={queue.error} retry={() => void queue.refetch()} />
       <Panel>
-        <Table<QueueItem> rowKey="id" loading={queue.isFetching} pagination={false} scroll={{ x: 760 }}
-          dataSource={canSearch ? queue.data?.items ?? [] : []} columns={[
-            { title: "Mã hồ sơ", dataIndex: "id", render: (value, row) => <Button type="link" onClick={() => {
-              setId(row.id); setSnapshot(undefined); setNotice("");
+        <DataTable<QueueItem> loading={queue.isFetching} scroll={760}
+          data={canSearch && queue.data ? {
+            content: queue.data.items, totalElements: queue.data.totalElements, hasNext: queue.data.hasMore,
+            page: filters.page, size: filters.size, totalPages: Math.ceil(queue.data.totalElements / filters.size),
+          } : undefined} columns={[
+            { title: "Tài xế", dataIndex: "driverName", render: (_, row) => row.driverId == null
+              ? <Typography.Text type="secondary">Chưa liên kết tài xế</Typography.Text>
+              : <><Link to={`/drivers/${row.driverId}`} state={{ from: verificationReviewPath }}>{row.driverName || `Tài xế #${row.driverId}`}</Link>
+                <div className="muted">#{row.driverId}{row.driverPhone ? ` · ${row.driverPhone}` : ""}</div></> },
+            { title: "Mã hồ sơ", dataIndex: "id", render: (value, row) => <Button type="link" className="verification-application-link" onClick={() => {
+              filters.update({ review: row.id }, false); setHistorical(undefined); setNotice("");
             }}><code>{value}</code></Button> },
             { title: "Trạng thái", dataIndex: "status", render: value => <Tag color={value === "APPROVED" ? "green" : value === "REJECTED" || value === "REVOKED" ? "red" : "gold"}>{states[value] ?? value}</Tag> },
             { title: "Thời gian nộp", dataIndex: "submittedAt", render: date },
@@ -322,13 +328,21 @@ export default function VerificationReview() {
         </div>
       </Panel>
     </>}
-    <Drawer title="Chi tiết xác minh tài xế" open={!!id} closable={!decisionPending} keyboard={!decisionPending} mask={{ closable: !decisionPending }} onClose={() => { if (!decisionPending) setId(undefined); }} size="large" destroyOnHidden>
+    <Drawer aria-label="Chi tiết xác minh tài xế" title="Chi tiết xác minh tài xế" open={!!id} closable={!decisionPending} keyboard={!decisionPending} mask={{ closable: !decisionPending }} onClose={() => { if (!decisionPending) {
+      filters.update({ review: undefined, application_id: search === id ? undefined : search }, false);
+      setHistorical(undefined);
+    } }} size="large" destroyOnHidden>
       {detail.isFetching ? <Loading /> : <QueryError error={detail.error} retry={() => void detail.refetch()} />}
-      {id && detail.data && !detail.isFetching && !detail.error && <Review
+      {id && detail.data && !detail.isFetching && !detail.error && !("document" in detail.data) && (
+        <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="Tài xế chưa nộp hồ sơ xác minh." />
+      )}
+      {id && detail.data && !detail.isFetching && !detail.error && "document" in detail.data && <Review
         key={id + ":" + detail.data.revision + ":" + detail.data.document.revision}
-        detail={detail.data} snapshot={snapshot} setSnapshot={setSnapshot} onPendingChange={setDecisionPending} onChanged={() => {
+        detail={detail.data} snapshot={snapshot} setSnapshot={revision => setHistorical(revision ? { id, revision } : undefined)} onPendingChange={setDecisionPending} onChanged={() => {
           setNotice("Đã lưu quyết định.");
-          void client.invalidateQueries({ queryKey: queueKey });
+          void client.invalidateQueries({ queryKey: verificationQueueKey });
+          void client.invalidateQueries({ queryKey: ["admin", "driver"] });
+          void client.invalidateQueries({ queryKey: ["admin", "drivers"] });
         }} />}
     </Drawer>
   </>;
