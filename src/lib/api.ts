@@ -193,6 +193,8 @@ export const api = {
   tickets: (page: number, status?: TicketStatus, params: Params = {}) =>
     request<Page<TicketSummary>>(`${admin}/tickets`, { params: { page, size: 20, status, ...params } }),
   ticket: (id: number) => request<TicketDetail>(`${admin}/tickets/${id}`),
+  ticketMessages: (id: number, beforeId: number) =>
+    request<TicketMessage[]>(`${admin}/tickets/${id}/messages`, { params: { beforeId } }),
   claimTicket: (id: number) =>
     request<TicketDetail>(`${admin}/tickets/${id}/claim`, { method: "POST", body: {} }),
   sendTicketMessage: (id: number, body: SendTicketMessage) =>
