@@ -201,12 +201,20 @@ function CustomerStatus({
         >
           <Select options={statusOptions} />
         </Form.Item>
+        {status === "INACTIVE" && (
+          <Alert
+            className="toolbar-note"
+            showIcon
+            type="info"
+            title="Mức 1 (Tạm ngưng): Khách vẫn đăng nhập được, xem lịch sử chuyến đi, xem số dư ví, thanh toán nợ và gửi ticket CSKH, nhưng bị khóa toàn bộ tính năng đặt xe và đặt lịch mới."
+          />
+        )}
         {status === "BANNED" && (
           <Alert
             className="toolbar-note"
             showIcon
             type="warning"
-            title="Các chuyến chờ xử lý hoặc đang tìm tài xế của khách sẽ bị hủy. Phiên đăng nhập của khách cũng bị thu hồi."
+            title="Mức 2 (Khóa toàn bộ): Đá văng phiên đăng nhập ngay lập tức, chặn đăng nhập lại, chặn toàn bộ API và hủy các chuyến chờ xử lý hoặc đang tìm tài xế."
           />
         )}
         <Form.Item
