@@ -152,6 +152,12 @@
 :root :is(.ant-input-status-error, .ant-input-affix-wrapper-status-error, .ant-select-status-error, .ant-input-number-status-error) { border-bottom: 2px solid var(--md-sys-color-error) !important; }
 :root .ant-form-item-explain-error, :root .ant-typography-danger { color: var(--md-sys-color-error); }
 :root :is(.ant-input-disabled, .ant-input-affix-wrapper-disabled, .ant-select-disabled, .ant-input-number-disabled) { opacity: .6; cursor: not-allowed; }
+:root[data-theme="dark"] .ant-empty-normal > .ant-empty-image > svg g[stroke] {
+  stroke: color-mix(in srgb, var(--md-sys-color-outline) 70%, var(--md-sys-color-outline-variant));
+}
+:root[data-theme="dark"] .ant-empty-normal > .ant-empty-image > svg path[fill] {
+  fill: var(--md-sys-color-outline-variant);
+}
 :root .ant-radio-inner { border-color: var(--md-sys-color-outline); }
 :root .ant-radio-checked .ant-radio-inner { background: var(--md-sys-color-primary); border-color: var(--md-sys-color-primary); }
 :root[data-theme="dark"] .ant-checkbox-checked:not(:where(.ant-checkbox-disabled, .ant-checkbox-indeterminate)) {
