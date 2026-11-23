@@ -53,6 +53,7 @@ export const md3Theme: ThemeConfig = {
     Descriptions: { itemPaddingBottom: 8, labelColor: color("on-surface-variant"), contentColor: color("on-surface"), labelBg: color("surface-container-high") },
     Segmented: { trackBg: color("surface-container-highest"), itemSelectedBg: color("surface-container"), itemColor: color("on-surface-variant"), itemSelectedColor: color("on-surface"), itemHoverBg: state("on-surface", "hover"), itemHoverColor: color("on-surface") },
     Rate: { starBg: color("outline-variant"), starColor: color("warning") },
+    Spin: { colorPrimary: color("primary") },
     Pagination: { itemSize: 40, itemSizeSM: 32, itemSizeLG: 40 },
     Card: { borderRadiusLG: 12, colorBgContainer: color("surface-container") },
     Menu: { itemHeight: 56, itemBorderRadius: 9999, itemSelectedBg: color("secondary-container"), itemSelectedColor: color("on-secondary-container"), itemColor: color("on-surface-variant"), itemBg: "transparent", itemHoverBg: state("on-surface", "hover") },
