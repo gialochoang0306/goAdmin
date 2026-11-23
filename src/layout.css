@@ -824,6 +824,52 @@ input {
 .verification-review-main > section, .verification-review-main > .ant-descriptions, .verification-review-main > .ant-alert { min-width: 0; }
 .verification-review-main > section:focus-visible, .verification-review-main > div:focus-visible,
 .verification-decision-rail :focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: var(--md-sys-shape-corner-sm); }
+.verification-guide-steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+}
+.verification-guide-steps li {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-radius: var(--md-sys-shape-corner-full);
+  background: var(--md-sys-color-surface-container-low);
+  color: var(--md-sys-color-on-surface-variant);
+  font-size: 13px;
+  font-weight: 500;
+}
+.verification-guide-steps li[data-state="active"] {
+  background: var(--md-sys-color-primary-container);
+  color: var(--md-sys-color-on-primary-container);
+  font-weight: 600;
+}
+.verification-guide-steps li[data-state="done"] {
+  background: var(--md-sys-color-secondary-container);
+  color: var(--md-sys-color-on-secondary-container);
+}
+.verification-guide-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: var(--md-sys-shape-corner-full);
+  background: var(--md-sys-color-surface);
+  color: var(--md-sys-color-on-surface);
+  font-size: 12px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.verification-quick-claim {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
 .verification-decision-rail {
   position: sticky;
   top: 0;
