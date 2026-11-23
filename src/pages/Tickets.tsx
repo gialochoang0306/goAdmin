@@ -161,6 +161,22 @@ export function TicketDetailPage() {
   const [reply, setReply] = useState("");
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [history, setHistory] = useState<{ ticketId: number; messages: TicketMessage[]; hasMore: boolean }>();
+  const prior = history?.ticketId === id ? history : undefined;
+  const timeline = Array.from(new Map([
+    ...(prior?.messages ?? []), ...(detail?.messages ?? []),
+  ].map(message => [message.id, message])).values());
+  const loadOlder = useMutation({
+    mutationFn: (beforeId: number) => api.ticketMessages(id, beforeId),
+    onSuccess: page => {
+      const visibleIds = new Set(timeline.map(message => message.id));
+      const previous = page.filter(message => !visibleIds.has(message.id));
+      setHistory({ ticketId: id, messages: [...previous, ...timeline], hasMore: previous.length === 100 });
+    },
+  });
+  const pending = useRef<{
+    key: string; ticketId: number; body: string; status: TicketStatus; file: File | null; imageUrl?: string;
+  } | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
   const chooseImage = (file: File | null) => {
     if (imagePreview) URL.revokeObjectURL(imagePreview);
@@ -173,17 +189,28 @@ export function TicketDetailPage() {
 
   const send = useMutation({
     mutationFn: async () => {
-      const imageUrl = imageFile ? await uploadSupportImage(imageFile) : undefined;
-      return api.sendTicketMessage(id, { body: reply.trim(), status: status ?? ticket!.status, imageUrl });
+      const body = reply.trim();
+      const requestedStatus = status ?? ticket!.status;
+      const previous = pending.current;
+      const draft: NonNullable<typeof pending.current> = previous && previous.ticketId === id && previous.body === body &&
+        (status == null || previous.status === requestedStatus) && previous.file === imageFile
+        ? previous
+        : { key: crypto.randomUUID(), ticketId: id, body, status: requestedStatus, file: imageFile };
+      pending.current = draft;
+      if (draft.file && !draft.imageUrl) draft.imageUrl = await uploadSupportImage(draft.file);
+      return api.sendTicketMessage(id, {
+        body: draft.body, status: draft.status, imageUrl: draft.imageUrl, clientMessageId: draft.key,
+      });
     },
     onSuccess: (message: TicketMessage) => {
+      pending.current = null;
       setReply("");
       chooseImage(null);
-      client.setQueryData<TicketDetail>(detailKey(id), current => current ? {
+      client.setQueryData<TicketDetail>(detailKey(id), current => current && !current.messages.some(item => item.id === message.id) ? {
         ...current,
-        ticket: { ...current.ticket, status: status ?? current.ticket.status, updatedAt: message.createdAt },
-        messages: [...current.messages.filter(item => item.id !== message.id), message],
+        messages: [...current.messages, message],
       } : current);
+      void client.invalidateQueries({ queryKey: detailKey(id) });
       void client.invalidateQueries({ queryKey: listKey });
     },
   });
@@ -238,9 +265,15 @@ export function TicketDetailPage() {
               )}
             </Panel>
             <Panel title="Hội thoại & xử lý" extra={claim.isPending ? <Typography.Text type="secondary">Đang nhận ticket…</Typography.Text> : null}>
-              {detail.messages.length ? (
+              {loadOlder.error ? <Alert className="query-error" type="error" showIcon title={errorMessage(loadOlder.error)} /> : null}
+              {timeline.length ? (
                 <div className="ticket-chat" role="log" aria-label="Lịch sử tin nhắn hỗ trợ">
-                  {detail.messages.map(message => {
+                  {(prior?.hasMore ?? detail.hasOlderMessages) ? (
+                    <Button loading={loadOlder.isPending} onClick={() => loadOlder.mutate(timeline[0].id)}>
+                      Tải tin nhắn cũ hơn
+                    </Button>
+                  ) : null}
+                  {timeline.map(message => {
                     const msgImage = safeImage(message.imageUrl);
                     return (
                       <div key={message.id} className={`ticket-bubble ${message.senderRole === "ADMIN" ? "admin" : "user"}`}>

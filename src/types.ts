@@ -278,8 +278,9 @@ export type TicketDetail = {
   description: string;
   images: { fileUrl: string; publicId: string }[];
   messages: TicketMessage[];
+  hasOlderMessages?: boolean;
 };
-export type SendTicketMessage = { body: string; status: TicketStatus; imageUrl?: string };
+export type SendTicketMessage = { body: string; status: TicketStatus; imageUrl?: string; clientMessageId?: string };
 
 export type CampaignClaimant = {
   voucherId: number;

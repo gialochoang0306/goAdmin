@@ -99,17 +99,20 @@ it("runs optional face comparison only for the consented current submission", as
   });
   const user = mount();
   await user.click(await screen.findByRole("button", { name: id }));
-  await user.click(await screen.findByRole("button", { name: "Chạy đối chiếu thử nghiệm" }));
+  // Face comparison runs automatically once detail loads with faceConsent + faceComparisonAvailable.
   expect(await screen.findByText("Ảnh selfie có nhiều khuôn mặt.")).toBeVisible();
   const hideResult = await screen.findByRole("button", { name: "Ẩn kết quả đối chiếu" });
   const panel = screen.getByRole("region", { name: "Đối chiếu khuôn mặt" });
   expect(panel).toHaveTextContent(/Chưa đủ căn cứ kết luận\s*·\s*Cosine 0\.890/);
   expect(screen.getByText(/Có nhiều khuôn mặt/)).toBeInTheDocument();
   expect(screen.getByText("Kiểm tra người thật")).toBeInTheDocument();
-  expect(verificationFetch).toHaveBeenLastCalledWith("applications/" + id + "/face-comparison",
+  expect(verificationFetch).toHaveBeenCalledWith("applications/" + id + "/face-comparison",
     expect.objectContaining({ body: { revision: 5, submissionRevision: 4 } }));
   await user.click(hideResult);
   expect(panel).not.toHaveTextContent("Cosine 0.890");
+  // Manual re-run remains available after hiding results.
+  await user.click(screen.getByRole("button", { name: "Chạy đối chiếu thử nghiệm" }));
+  expect(await screen.findByText(/Cosine 0\.890/)).toBeVisible();
 });
 
 
@@ -353,10 +356,7 @@ it("retains license evidence and selected groups when starting review, but reset
   await user.click(screen.getByText("Đã đối chiếu, không có hạn chế", { selector: ".ant-select-item-option-content" }));
   await user.click(screen.getByRole("button", { name: "Xem nhóm xe" }));
   await user.click(await screen.findByRole("checkbox", { name: "Duyệt Xe máy" }));
-  await user.click(screen.getByRole("combobox", { name: "Quyết định" }));
-  await user.click(screen.getByText("Bắt đầu xét duyệt", { selector: ".ant-select-item-option-content" }));
-  await user.click(screen.getByRole("checkbox", { name: /Tôi đã đối chiếu/ }));
-  await user.click(screen.getByRole("button", { name: "Lưu quyết định" }));
+  await user.click(screen.getByRole("button", { name: "Bắt đầu xét duyệt ngay" }));
   await waitFor(() => expect(finishReload).toBeTypeOf("function"));
   expect(screen.getByLabelText("Ngày cấp GPLX")).toHaveValue("2025-05-01");
   expect(screen.getByLabelText("Ngày cấp GPLX")).toBeDisabled();

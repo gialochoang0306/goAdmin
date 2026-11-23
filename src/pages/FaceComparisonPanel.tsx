@@ -38,44 +38,84 @@ const quality: Record<string, string> = {
   READY: "Đủ điều kiện kỹ thuật trong lượt thử nghiệm.",
 };
 
+type FacePanelState = {
+  key: string;
+  status: "loading" | "done" | "error" | "hidden";
+  result?: FaceResult;
+  error?: string;
+};
+
 export function FaceComparisonPanel({ detail, onWarnings }: {
   detail: ReviewDetail;
   onWarnings: (warnings: VerificationWarning[]) => void;
 }) {
-  const [result, setResult] = useState<FaceResult>();
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState("");
+  const [panelState, setPanelState] = useState<FacePanelState | null>(null);
   const active = useRef<AbortController | null>(null);
+  const onWarningsRef = useRef(onWarnings);
+  useEffect(() => {
+    onWarningsRef.current = onWarnings;
+  }, [onWarnings]);
+
   const current = detail.submissionRevision === detail.document.revision
     && ["SUBMITTED", "UNDER_REVIEW"].includes(detail.status);
   const consent = detail.document.faceConsent?.version === "face-comparison-v1";
   const available = detail.faceComparisonAvailable && consent && current;
+  const evaluationKey = available ? `${detail.id}:${detail.revision}:${detail.document.revision}` : "";
 
-  useEffect(() => () => active.current?.abort(), []);
+  const currentState = evaluationKey && panelState?.key === evaluationKey ? panelState : null;
+  const busy = Boolean(evaluationKey) && (!currentState || currentState.status === "loading");
+  const result = currentState?.status === "done" ? currentState.result : undefined;
+  const error = currentState?.status === "error" ? (currentState.error ?? "") : "";
 
   async function evaluate() {
-    if (!available || active.current) return;
+    if (!available || !evaluationKey || active.current) return;
     const controller = new AbortController();
     active.current = controller;
-    setBusy(true);
-    setError("");
-    setResult(undefined);
+    setPanelState({ key: evaluationKey, status: "loading" });
     try {
       const value = await verificationFetch<FaceResult>("applications/" + detail.id + "/face-comparison", {
         body: { revision: detail.revision, submissionRevision: detail.document.revision },
         signal: controller.signal, timeoutMs: 35_000,
       });
       if (!controller.signal.aborted) {
-        setResult(value);
-        if (value.verificationWarnings) onWarnings(value.verificationWarnings);
+        setPanelState({ key: evaluationKey, status: "done", result: value });
+        if (value.verificationWarnings) onWarningsRef.current(value.verificationWarnings);
       }
-    } catch (error) {
-      if (!controller.signal.aborted) setError(errorMessage(error));
+    } catch (err) {
+      if (!controller.signal.aborted) {
+        setPanelState({ key: evaluationKey, status: "error", error: errorMessage(err) });
+      }
     } finally {
-      if (!controller.signal.aborted) setBusy(false);
       if (active.current === controller) active.current = null;
     }
   }
+
+  useEffect(() => {
+    if (!evaluationKey) return;
+    const controller = new AbortController();
+    active.current = controller;
+    verificationFetch<FaceResult>("applications/" + detail.id + "/face-comparison", {
+      body: { revision: detail.revision, submissionRevision: detail.document.revision },
+      signal: controller.signal, timeoutMs: 35_000,
+    })
+      .then(value => {
+        if (controller.signal.aborted) return;
+        setPanelState({ key: evaluationKey, status: "done", result: value });
+        if (value.verificationWarnings) onWarningsRef.current(value.verificationWarnings);
+      })
+      .catch(err => {
+        if (!controller.signal.aborted) {
+          setPanelState({ key: evaluationKey, status: "error", error: errorMessage(err) });
+        }
+      })
+      .finally(() => {
+        if (active.current === controller) active.current = null;
+      });
+    return () => {
+      controller.abort();
+      if (active.current === controller) active.current = null;
+    };
+  }, [evaluationKey, detail.id, detail.revision, detail.document.revision]);
 
   return <section aria-label="Đối chiếu khuôn mặt" className="verification-decision-box">
     <h4>Đối chiếu khuôn mặt</h4>
@@ -84,15 +124,34 @@ export function FaceComparisonPanel({ detail, onWarnings }: {
         {
           key: "face",
           label: "Đối chiếu khuôn mặt",
-          children: result?.mode === "EXPERIMENTAL"
-            ? <Tag color="blue">Thử nghiệm · Chưa có ngưỡng kết luận</Tag>
-            : <Tag>Chưa đánh giá</Tag>,
+          children: busy
+            ? <Tag color="processing">Đang tự động đối chiếu…</Tag>
+            : result?.mode === "EXPERIMENTAL"
+              ? <Tag color="blue">Đã đối chiếu · Hỗ trợ xem xét</Tag>
+              : <Tag>Chưa đánh giá</Tag>,
         },
         { key: "liveness", label: "Kiểm tra người thật", children: <Tag>Chưa đánh giá</Tag> },
       ]} />
-      {available ? <Button loading={busy} onClick={() => void evaluate()}>Chạy đối chiếu thử nghiệm</Button>
-        : detail.faceComparisonAvailable && current && !consent
-          ? <Typography.Text type="secondary">Bản nộp này chưa có đồng ý đối chiếu khuôn mặt.</Typography.Text> : null}
+      {available ? (
+        <Space wrap>
+          <Button loading={busy} onClick={() => void evaluate()}>
+            {result ? "Chạy lại đối chiếu" : "Chạy đối chiếu thử nghiệm"}
+          </Button>
+          {result?.mode === "EXPERIMENTAL" && (
+            <Button onClick={() => setPanelState({ key: evaluationKey, status: "hidden" })}>
+              Ẩn kết quả đối chiếu
+            </Button>
+          )}
+        </Space>
+      ) : !detail.faceComparisonAvailable ? (
+        <Typography.Text type="secondary">
+          Tính năng đối chiếu khuôn mặt đang tắt trên máy chủ (cần bật DATXE_EKYC_FACE_COMPARISON_ENABLED=true).
+        </Typography.Text>
+      ) : current && !consent ? (
+        <Typography.Text type="secondary">
+          Bản nộp này chưa có đồng ý đối chiếu khuôn mặt từ tài xế.
+        </Typography.Text>
+      ) : null}
       {error && <Alert type="warning" showIcon title={error} />}
       {result?.mode === "NOT_EVALUATED" && <Alert type="info" showIcon title="Chưa thể thực hiện đối chiếu cho bản nộp này." />}
       {result?.mode === "EXPERIMENTAL" && <>
@@ -119,7 +178,6 @@ export function FaceComparisonPanel({ detail, onWarnings }: {
         <Typography.Text type="secondary" className="verification-meta-note">
           Model {result.modelVersion} · Chất lượng {result.qualityVersion} · Ngưỡng chưa đánh giá
         </Typography.Text>
-        <Button onClick={() => setResult(undefined)}>Ẩn kết quả đối chiếu</Button>
       </>}
     </Space>
   </section>;

@@ -269,6 +269,7 @@ beforeEach(() => {
         },
         description: "Cần hỗ trợ",
         images: [],
+        hasOlderMessages: true,
         messages: [
           {
             id: 1,
@@ -292,6 +293,15 @@ beforeEach(() => {
       };
       if (path === "/api/admin/tickets/77" || path === "/api/admin/tickets/77/claim") {
         return ok(ticketPayload);
+      }
+      if (path === "/api/admin/tickets/77/messages" && url.searchParams.get("beforeId") === "1") {
+        return ok([{
+          ...ticketPayload.messages[0],
+          id: 3,
+          body: "Nội dung hỗ trợ trước đó",
+          imageUrl: null,
+          createdAt: "2026-11-08T03:00:30Z",
+        }]);
       }
       return ok({});
     }),
@@ -396,5 +406,15 @@ describe("GoAdmin post-merge integration & security regressions", () => {
     const imgs = screen.getAllByAltText("Ảnh trong hội thoại hỗ trợ");
     expect(imgs).toHaveLength(1);
     expect(imgs[0]).toHaveAttribute("src", "https://cdn.ptitgo.me/support/proof.png");
+  });
+
+  it("loads the previous page in chronological order without replacing the latest messages", async () => {
+    const { user } = renderPage("/tickets/77");
+    const older = await screen.findByRole("button", { name: "Tải tin nhắn cũ hơn" }, { timeout: 10_000 });
+    await user.click(older);
+    const previous = await screen.findByText("Nội dung hỗ trợ trước đó");
+    const current = screen.getByText("Ảnh hợp lệ");
+    expect(previous.compareDocumentPosition(current) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Tải tin nhắn cũ hơn" })).not.toBeInTheDocument();
   });
 });

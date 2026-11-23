@@ -232,6 +232,22 @@ function Review({ detail, snapshot, setSnapshot, onChanged, onPendingChange, ref
           {detail.warningCount > 0 ? <Tag color="orange">{detail.warningCount} cảnh báo</Tag> : null}
         </Space>
       </div>
+      {current && ["SUBMITTED", "UNDER_REVIEW"].includes(detail.status) ? (
+        <ol className="verification-guide-steps" aria-label="Trình tự xét duyệt 3 bước">
+          <li data-state={detail.status === "SUBMITTED" ? "active" : "done"}>
+            <span className="verification-guide-num">1</span>
+            <span>Tiếp nhận hồ sơ</span>
+          </li>
+          <li data-state={detail.status === "UNDER_REVIEW" && (viewedSlots.length < captureEntries.length || !reviewed) ? "active" : detail.status === "UNDER_REVIEW" ? "done" : "upcoming"}>
+            <span className="verification-guide-num">2</span>
+            <span>Mở ảnh &amp; đối chiếu</span>
+          </li>
+          <li data-state={detail.status === "UNDER_REVIEW" && viewedSlots.length >= captureEntries.length && reviewed ? "active" : "upcoming"}>
+            <span className="verification-guide-num">3</span>
+            <span>Phạm vi GPLX &amp; quyết định</span>
+          </li>
+        </ol>
+      ) : null}
       <div className="verification-toolbar">
         <FilterField label="Phiên bản hồ sơ đang xem">
           <Select aria-label="Bản nộp" value={snapshot ?? detail.submissionRevision} style={{ minWidth: 260 }}
@@ -335,7 +351,15 @@ function Review({ detail, snapshot, setSnapshot, onChanged, onPendingChange, ref
       <div className="verification-section-header">
         <h4>Ảnh giấy tờ &amp; chân dung ({captureEntries.length} ảnh)</h4>
         {captureEntries.length > 0 ? (
-          <Button size="small" onClick={() => setOpenAllSignal(v => v + 1)}>Mở tất cả ảnh</Button>
+          <Button
+            size="small"
+            onClick={() => {
+              setOpenAllSignal(v => v + 1);
+              setViewedSlots(captureEntries.map(([slot]) => slot));
+            }}
+          >
+            Mở tất cả ảnh
+          </Button>
         ) : null}
       </div>
       <div className="verification-capture-grid">
@@ -478,6 +502,27 @@ function Review({ detail, snapshot, setSnapshot, onChanged, onPendingChange, ref
             description="Chọn Yêu cầu bổ sung hoặc Từ chối."
           />
         ) : null}
+        {detail.status === "SUBMITTED" && current ? (
+          <div className="verification-quick-claim">
+            <Alert
+              type="info"
+              showIcon
+              title="Bước 1: Tiếp nhận hồ sơ vào xét duyệt"
+              description="Bấm nút bên dưới để chuyển sang trạng thái Đang xét duyệt, sau đó mở ảnh đối chiếu và chọn phạm vi GPLX."
+            />
+            <Button
+              type="primary"
+              block
+              loading={decision.isPending}
+              disabled={refreshing || decision.isPending}
+              onClick={() => decision.mutate({ revision: detail.revision, status: "UNDER_REVIEW", captures: [], fields: [] })}
+            >
+              Bắt đầu xét duyệt ngay
+            </Button>
+            {decision.error ? <Alert type="error" showIcon title={errorMessage(decision.error)} /> : null}
+          </div>
+        ) : null}
+        {detail.status !== "SUBMITTED" ? (
         <form className="verification-decision-form" onSubmit={submitDecision}>
           <FilterField label="Quyết định">
             <Select aria-label="Quyết định" placeholder="Chọn quyết định" value={action} style={{ width: "100%" }}
@@ -519,6 +564,7 @@ function Review({ detail, snapshot, setSnapshot, onChanged, onPendingChange, ref
           {decision.error ? <Alert type="error" showIcon title={errorMessage(decision.error)} /> : null}
           <Button type="primary" block danger={action === "REJECTED" || action === "REVOKED"} htmlType="submit" loading={decision.isPending} disabled={!action || !available.includes(action)}>Lưu quyết định</Button>
         </form>
+        ) : null}
       </aside>
     )}
   </div>;
@@ -588,6 +634,24 @@ export default function VerificationReview() {
             { title: "Thời gian nộp", dataIndex: "submittedAt", render: date, className: "numeric" },
             { title: "Lần bổ sung", dataIndex: "resubmissionCount", align: "right" },
             { title: "Cảnh báo", dataIndex: "warningCount", align: "right", render: value => value ? <Tag color="orange">{value}</Tag> : "0" },
+            {
+              title: "Thao tác",
+              key: "open",
+              align: "right",
+              render: (_, row) => (
+                <Button
+                  size="small"
+                  type={row.status === "SUBMITTED" || row.status === "UNDER_REVIEW" ? "primary" : "default"}
+                  onClick={() => {
+                    filters.update({ review: row.id }, false);
+                    setHistorical(undefined);
+                    setNotice("");
+                  }}
+                >
+                  {row.status === "SUBMITTED" || row.status === "UNDER_REVIEW" ? "Xét duyệt" : "Xem hồ sơ"}
+                </Button>
+              ),
+            },
           ]} />
         <div className="verification-pagination">
           <Button size="small" disabled={!filters.page} onClick={() => filters.update({ page: filters.page - 1 }, false)}>Trang trước</Button>
