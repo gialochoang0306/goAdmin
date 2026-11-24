@@ -1,13 +1,20 @@
+import { useState } from "react";
 import { FilterField } from "../components/FilterField";
 import { FilterSelect } from "../components/FilterSelect";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useLocation, useParams } from "react-router-dom";
 import {
+  Alert,
   App,
   Button,
+  Checkbox,
   Descriptions,
   Empty,
+  Form,
   Input,
+  Modal,
+  Select,
+  Space,
   Table,
   Tabs,
   Tag,
@@ -60,6 +67,11 @@ const verificationOptions = [
   "REJECTED",
   "SUSPENDED",
 ].map((value) => ({ value, label: label(value) }));
+const accountStatusOptions = [
+  { value: "ACTIVE", label: "Hoạt động" },
+  { value: "SUSPENDED", label: "Tạm ngưng nhận chuyến (Mức 1)" },
+  { value: "BANNED", label: "Khóa vĩnh viễn (Mức 2)" },
+];
 const booleanOptions = [
   { value: "true", label: "Có đánh dấu" },
   { value: "false", label: "Không đánh dấu" },
@@ -71,6 +83,7 @@ export function Drivers() {
     ...f.params,
     search: f.read("search"),
     verification_status: f.read("verification_status"),
+    account_status: f.read("account_status"),
     online: f.read("online"),
     flagged: f.read("flagged"),
   };
@@ -101,6 +114,16 @@ export function Drivers() {
       title: "Xác minh",
       dataIndex: "verificationStatus",
       render: (v) => <Status value={v} />,
+    },
+    {
+      title: "Tài khoản",
+      dataIndex: "accountStatus",
+      render: (v, r) => (
+        <Space direction="vertical" size={4}>
+          <Status value={v ?? "ACTIVE"} />
+          {r.withdrawalFrozen && <Tag color="red">Khóa rút tiền</Tag>}
+        </Space>
+      ),
     },
     {
       title: "Hoạt động",
@@ -144,6 +167,13 @@ export function Drivers() {
           value={f.read("verification_status")}
           options={verificationOptions}
           onChange={(v) => f.update({ verification_status: v })}
+        /></FilterField>
+        <FilterField label="Trạng thái tài khoản"><FilterSelect
+          aria-label="Trạng thái tài khoản"
+          allLabel="Tất cả tài khoản"
+          value={f.read("account_status")}
+          options={accountStatusOptions}
+          onChange={(v) => f.update({ account_status: v })}
         /></FilterField>
         <FilterField label="Kết nối tài xế"><FilterSelect
           aria-label="Kết nối tài xế"
@@ -197,6 +227,7 @@ export function DriverDetailPage() {
     retry: false,
   });
   const offline = useAction<void>(() => api.offline(id), undefined, `Đã chuyển tài xế #${id} sang ngoại tuyến.`);
+  const [statusModalOpen, setStatusModalOpen] = useState(false);
   if (!valid) return <InvalidRecord />;
   if (query.isPending) return <Loading />;
   if (!query.data)
@@ -243,6 +274,7 @@ export function DriverDetailPage() {
         subtitle={`Mã tài xế #${id} · ${driver.phoneNumber}`}
         actions={
           <>
+            <Status value={driver.accountStatus ?? "ACTIVE"} />
             <Status value={driver.verificationStatus} />
             <Refresh
               loading={query.isFetching || capabilities.isFetching}
@@ -252,6 +284,9 @@ export function DriverDetailPage() {
               }}
             />
             {verificationPath && <Link className="ant-btn ant-btn-default verification-header-link" to={verificationPath}>Xem hồ sơ eKYC</Link>}
+            <Button onClick={() => setStatusModalOpen(true)}>
+              Trạng thái tài khoản
+            </Button>
             <Button
               danger
               disabled={driver.status === "OFFLINE"}
@@ -296,6 +331,29 @@ export function DriverDetailPage() {
                         key: "phone",
                         label: "Số điện thoại",
                         children: driver.phoneNumber,
+                      },
+                      {
+                        key: "accountStatus",
+                        label: "Trạng thái tài khoản",
+                        children: <Status value={driver.accountStatus ?? "ACTIVE"} />,
+                      },
+                      ...(driver.accountStatusReason
+                        ? [
+                            {
+                              key: "accountStatusReason",
+                              label: "Lý do tạm ngưng / khóa",
+                              children: driver.accountStatusReason,
+                            },
+                          ]
+                        : []),
+                      {
+                        key: "withdrawalFrozen",
+                        label: "Rút tiền",
+                        children: driver.withdrawalFrozen ? (
+                          <Tag color="red">Đang khóa rút tiền (đối soát)</Tag>
+                        ) : (
+                          "Bình thường"
+                        ),
                       },
                       {
                         key: "status",
@@ -414,6 +472,122 @@ export function DriverDetailPage() {
           },
         ]}
       />
+      {statusModalOpen && (
+        <DriverAccountStatusModal
+          driver={driver}
+          onClose={() => setStatusModalOpen(false)}
+        />
+      )}
     </>
+  );
+}
+
+function DriverAccountStatusModal({
+  driver,
+  onClose,
+}: {
+  driver: Driver;
+  onClose: () => void;
+}) {
+  const [form] = Form.useForm();
+  const accountStatus =
+    Form.useWatch("accountStatus", form) ?? driver.accountStatus ?? "ACTIVE";
+  const withdrawalFrozen =
+    Form.useWatch("withdrawalFrozen", form) ?? Boolean(driver.withdrawalFrozen);
+  const mutation = useAction<{
+    accountStatus: string;
+    reason?: string;
+    withdrawalFrozen: boolean;
+  }>(
+    (values) =>
+      api.driverStatus(
+        driver.id,
+        values.accountStatus,
+        values.reason?.trim() || undefined,
+        values.withdrawalFrozen,
+      ),
+    onClose,
+    "Đã cập nhật trạng thái tài khoản tài xế.",
+  );
+  const reasonRequired =
+    accountStatus !== "ACTIVE" ||
+    (withdrawalFrozen && !driver.withdrawalFrozen);
+
+  return (
+    <Modal
+      open
+      title="Cập nhật trạng thái tài khoản tài xế"
+      okText="Lưu trạng thái"
+      cancelText="Đóng"
+      closable={!mutation.isPending}
+      keyboard={!mutation.isPending}
+      mask={{ closable: !mutation.isPending }}
+      confirmLoading={mutation.isPending}
+      cancelButtonProps={{ disabled: mutation.isPending }}
+      okButtonProps={{ danger: accountStatus === "BANNED" }}
+      onCancel={onClose}
+      onOk={() => void form.submit()}
+    >
+      <Form
+        form={form}
+        layout="vertical"
+        initialValues={{
+          accountStatus: driver.accountStatus ?? "ACTIVE",
+          withdrawalFrozen: Boolean(driver.withdrawalFrozen),
+          reason: driver.accountStatusReason ?? "",
+        }}
+        onFinish={(values) => {
+          if (!mutation.isPending) mutation.mutate(values);
+        }}
+      >
+        <Form.Item
+          name="accountStatus"
+          label="Mức xử lý tài khoản"
+          rules={[{ required: true, message: "Chọn trạng thái tài khoản" }]}
+        >
+          <Select options={accountStatusOptions} />
+        </Form.Item>
+        {accountStatus === "SUSPENDED" && (
+          <Alert
+            className="toolbar-note"
+            showIcon
+            type="info"
+            title="Mức 1 (Tạm ngưng nhận chuyến): Tài xế vẫn đăng nhập xem doanh thu, lịch sử chuyến, nạp tiền vào ví, cập nhật giấy tờ và gửi khiếu nại; nhưng bị khóa nút Bật trực tuyến và ngừng điều phối cuốc mới. Nếu đang Online sẽ tự động ép Offline; nếu đang trong chuyến sẽ hoàn tất cuốc rồi mới ép Offline."
+          />
+        )}
+        {accountStatus === "BANNED" && (
+          <Alert
+            className="toolbar-note"
+            showIcon
+            type="warning"
+            title="Mức 2 (Khóa vĩnh viễn): Đá văng phiên đăng nhập, thu hồi refresh token và chặn đăng nhập lại. Nếu tài xế đang có chuyến đi hoạt động, hệ thống cho hoàn tất cuốc hiện tại rồi mới tự động ép Offline và khóa phiên."
+          />
+        )}
+        <Form.Item name="withdrawalFrozen" valuePropName="checked">
+          <Checkbox>
+            Khóa rút tiền (giữ số dư ví chờ đối soát gian lận / tranh chấp)
+          </Checkbox>
+        </Form.Item>
+        <Form.Item
+          name="reason"
+          label="Lý do xử lý"
+          rules={[
+            {
+              required: reasonRequired,
+              whitespace: true,
+              message: "Nhập lý do khi tạm ngưng, khóa tài khoản hoặc khóa rút tiền",
+            },
+            { max: 1000, message: "Tối đa 1000 ký tự" },
+          ]}
+        >
+          <Input.TextArea
+            rows={3}
+            maxLength={1000}
+            showCount
+            placeholder="Ví dụ: GPLX hết hạn, tỷ lệ hủy cao, gian lận GPS..."
+          />
+        </Form.Item>
+      </Form>
+    </Modal>
   );
 }

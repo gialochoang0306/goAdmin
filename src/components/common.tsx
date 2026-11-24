@@ -103,7 +103,7 @@ export function Status({ value }: { value: string | null | undefined }) {
     ? "green"
     : ["REJECTED", "BANNED", "CANCELLED", "EXPIRED", "FAILED", "FAILED_SYSTEM"].includes(value ?? "")
       ? "red"
-      : ["PENDING", "SEARCHING", "NO_DRIVER_FOUND", "BUSY"].includes(
+      : ["PENDING", "SEARCHING", "NO_DRIVER_FOUND", "BUSY", "SUSPENDED"].includes(
             value ?? "",
           )
         ? "gold"

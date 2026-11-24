@@ -112,6 +112,9 @@ export type Driver = {
   phoneNumber: string;
   email: string | null;
   status: string;
+  accountStatus?: string;
+  accountStatusReason?: string | null;
+  withdrawalFrozen?: boolean;
   verificationStatus: string;
   flagged: boolean;
   totalTrips: number;

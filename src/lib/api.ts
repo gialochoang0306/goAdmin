@@ -242,6 +242,34 @@ export const api = {
   driver: (id: number) => request<DriverDetail>(`${admin}/drivers/${id}`),
   offline: (id: number) =>
     request(`${admin}/drivers/${id}/force-offline`, { method: "POST" }),
+  driverStatus: (
+    id: number,
+    accountStatus: string,
+    reason?: string,
+    withdrawalFrozen?: boolean,
+  ) =>
+    request<DriverDetail>(`${admin}/drivers/${id}/status`, {
+      method: "PUT",
+      body: {
+        account_status: accountStatus,
+        reason,
+        ...(withdrawalFrozen !== undefined
+          ? { withdrawal_frozen: withdrawalFrozen }
+          : {}),
+      },
+    }),
+  driverWithdrawalFreeze: (
+    id: number,
+    withdrawalFrozen: boolean,
+    reason?: string,
+  ) =>
+    request<DriverDetail>(`${admin}/drivers/${id}/withdrawal-freeze`, {
+      method: "PUT",
+      body: {
+        withdrawal_frozen: withdrawalFrozen,
+        reason,
+      },
+    }),
   customers: (params: Params = {}) =>
     request<Page<Customer>>(`${admin}/customers`, { params }),
   customer: (id: number) => request<CustomerDetail>(`${admin}/customers/${id}`),
